@@ -103,6 +103,7 @@ public class ComplianceCepJob {
 
     static class PaymentAlertProcess extends ProcessFunction<String, String> {
         private transient PatternEngine engine;
+        private transient RedisFeatureStore redis;
 
         private final JobConfig config;
 
@@ -112,8 +113,15 @@ public class ComplianceCepJob {
 
         @Override
         public void open(org.apache.flink.configuration.Configuration parameters) {
-            RedisFeatureStore redis = new RedisFeatureStore(config.redisHost, config.redisPort, config.tenantId);
+            redis = new RedisFeatureStore(config.redisHost, config.redisPort, config.tenantId);
             engine = new PatternEngine(config, redis);
+        }
+
+        @Override
+        public void close() {
+            if (redis != null) {
+                redis.close();
+            }
         }
 
         @Override
