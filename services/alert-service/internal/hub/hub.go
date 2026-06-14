@@ -44,10 +44,18 @@ func (h *Hub) Broadcast(msgType string, alert store.Alert) {
 	}
 
 	h.mu.RLock()
-	defer h.mu.RUnlock()
+	conns := make([]*websocket.Conn, 0, len(h.clients))
 	for conn := range h.clients {
+		conns = append(conns, conn)
+	}
+	h.mu.RUnlock()
+	for _, conn := range conns {
 		if err := conn.WriteMessage(websocket.TextMessage, data); err != nil {
 			slog.Warn("ws write failed", "error", err)
+			h.mu.Lock()
+			delete(h.clients, conn)
+			h.mu.Unlock()
+			_ = conn.Close()
 		}
 	}
 }
