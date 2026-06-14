@@ -40,8 +40,13 @@ func (r *Runner) Run(ctx context.Context) error {
 		if err := r.handler.HandleMessage(ctx, msg.Value); err != nil {
 			slog.Error("handle alert message", "error", err, "offset", msg.Offset)
 			if r.dlq == nil {
+				slog.Warn("dlq disabled; committing poison message to avoid consumer stall", "offset", msg.Offset)
+				if err := r.reader.CommitMessages(ctx, msg); err != nil {
+					slog.Error("commit offset", "error", err)
+				}
 				continue
 			}
+		}
 			if dlqErr := r.dlq.PublishDLQ(ctx, msg, err); dlqErr != nil {
 				slog.Error("publish dlq message", "error", dlqErr, "offset", msg.Offset)
 				continue
