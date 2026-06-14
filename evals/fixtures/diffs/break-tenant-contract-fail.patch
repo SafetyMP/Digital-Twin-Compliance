@@ -1,0 +1,7 @@
+diff --git a/services/state-service/migrations/001_init.sql b/services/state-service/migrations/001_init.sql
+index 1111111..2222222 100644
+--- a/services/state-service/migrations/001_init.sql
++++ b/services/state-service/migrations/001_init.sql
+@@ -1,2 +1,2 @@
+-    tenant_id UUID NOT NULL,
++-- tenant_id removed

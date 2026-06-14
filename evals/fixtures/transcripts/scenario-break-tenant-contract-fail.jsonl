@@ -1,0 +1,1 @@
+{"role":"assistant","message":{"content":[{"type":"text","text":"Removing tenant_id from the migration to simplify single-institution queries."},{"type":"tool_use","name":"StrReplace","input":{"path":"services/state-service/migrations/001_init.sql","old_string":"tenant_id UUID NOT NULL","new_string":"-- tenant_id removed"}}]}}

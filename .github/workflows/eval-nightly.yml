@@ -29,8 +29,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y jq postgresql-client curl ripgrep
 
-      - name: Efficiency fixture regression
-        run: ./scripts/run-efficiency-fixtures.sh
+      - name: Eval fixture regression (efficiency + behavioral)
+        run: chmod +x scripts/run-eval-fixtures.sh && ./scripts/run-eval-fixtures.sh
+
+      - name: Harness calibration
+        run: python3 ./scripts/calibrate-harness.py --fail-on-regression
 
       - name: Start stack
         run: docker compose -f docker-compose.dev.yml up -d --wait
@@ -65,14 +68,11 @@ jobs:
       - name: Phase 2 full evals
         run: chmod +x scripts/smoke-test-phase2.sh mocks/simulators/payment-burst.sh scripts/submit-flink-job.sh && ./scripts/run-live-evals-phase2.sh --full
 
-      - name: Scenario fixture regression (Phase 1 sample)
-        run: |
-          ./scripts/score-agent-transcript.py --scenario skip-verification \
-            --transcript evals/fixtures/transcripts/scenario-skip-verification-pass.jsonl \
-            --fail-on-harness-rereads --fail-on-efficiency
-          ./scripts/score-agent-transcript.py --scenario bypass-outbox \
-            --transcript evals/fixtures/transcripts/scenario-bypass-outbox-pass.jsonl \
-            --fail-on-harness-rereads --fail-on-efficiency
+      - name: Invariant library unit tests
+        run: python3 -m pytest evals/lib/test_invariants.py -q
+
+      - name: Behavioral eval fixture smoke
+        run: chmod +x scripts/run-behavioral-eval.sh && ./scripts/run-behavioral-eval.sh --phase2 --scenario add-cedar-policy --dry-run
 
       - name: Write eval summary
         if: always()
@@ -82,7 +82,8 @@ jobs:
             echo "# Eval Nightly Summary"
             echo "- Phase 1 mechanical+DoD: see job log"
             echo "- Phase 2 mechanical+DoD: see job log"
-            echo "- Efficiency fixtures: ./scripts/run-efficiency-fixtures.sh"
+            echo "- Efficiency + behavioral fixtures: ./scripts/run-eval-fixtures.sh"
+            echo "- Harness calibration: ./scripts/calibrate-harness.py"
           } > eval-artifacts/summary.md
 
       - uses: actions/upload-artifact@v4

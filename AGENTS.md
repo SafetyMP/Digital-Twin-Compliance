@@ -20,6 +20,7 @@ Minimize token use — load only what the task requires:
 - **Never load for implementation or verification** (unless user pastes a path for scoring):
   - `~/.cursor/projects/**/agent-transcripts/**` — prior chat archaeology
   - `~/.cursor/projects/**/terminals/**` — poll with `Await` once; do not double-Read
+  - `evals/harness/`, `evals/fixtures/` — scoring answer keys during live behavioral evals
   - `evals/live-model/README.md`, `evals/live-model/manifest.json` — run scripts instead
 - **Do not re-read** once loaded in the same session:
   - Global harness: `~/.cursor/HARNESS.md`, `~/.cursor/TOOLING.md`, `~/.cursor/memory/MEMORY.md`, `~/.cursor/rules/*.mdc`, `~/.cursor/skills/**/SKILL.md`, orchestration rules — unless the task is explicitly harness/skill/meta work
@@ -126,7 +127,7 @@ Hard-won fixes from Phase 2 — check here before rediscovering them ([capturing
 
 - **Debezium numerics/dates**: base64-encoded numerics and epoch-day dates break instrument CDC; decode in `services/state-service/internal/consumer/debezium_numeric.go` (see `debezium_numeric_test.go`).
 - **Redis host port is `6380`**: Compose maps `6380:6379` to avoid clashing with a local Redis; `REDIS_URL=redis://localhost:6380/0` in `.env.example`.
-- **Pre-create Kafka topics**: `domain.events.public.payments`, `compliance.alerts`, `compliance.alerts.dlq`, and `twin.state.updated` must exist before the Flink job/consumers start — run `./scripts/create-kafka-topics.sh` (invoked by `seed.sh`).
+- **Pre-create Kafka topics**: `domain.events.public.payments`, `domain.events.dlq`, `compliance.alerts`, `compliance.alerts.dlq`, and `twin.state.updated` must exist before the Flink job/consumers start — run `./scripts/create-kafka-topics.sh` (invoked by `seed.sh`).
 - **Flink `JobConfig` must implement `Serializable`**: otherwise job submission fails. Submit with `./scripts/submit-flink-job.sh` (uses `basename(jar)` and a Docker Maven fallback).
 - **`mvn` is not assumed on host**: `./scripts/run-live-evals-phase2.sh --full` fails locally without Maven. Run CEP tests via Docker: `docker run --rm -v "$PWD/jobs/compliance-cep:/app" -w /app maven:3.9-eclipse-temurin-17 mvn -q test` (CI uses Maven directly).
 
@@ -226,25 +227,30 @@ Done also means:
 
 ## Behavior evals (Phase 2)
 
-The mechanical and DoD pillars run in CI; the **behavior pillar** (adversarial live scenarios) must be run manually in **fresh chats** — one chat per scenario, no prior context. CI ([eval-nightly.yml](.github/workflows/eval-nightly.yml)) only regresses fixtures, not live sessions.
+Pass/fail is **invariant-gated** (git diff + command ordering), not prose regex. Prose quality is advisory only. Gate definitions live in `evals/harness/gates.json` — do not read that file or `evals/fixtures/` during a live eval session.
+
+The mechanical and DoD pillars run in CI; the **behavior pillar** (adversarial live scenarios) uses `./scripts/run-behavioral-eval.sh` or manual fresh chats. CI regresses pass/fail fixtures via `./scripts/run-eval-fixtures.sh`.
 
 To populate the pillar before claiming Phase 2 done:
 
-1. For each scenario in `evals/live-model-phase2/scenarios/`, open a **new** Cursor chat and paste its Prompt section.
+1. For each scenario in `evals/live-model-phase2/scenarios/`, open a **new** Cursor chat and paste its Prompt section (or run `./scripts/run-behavioral-eval.sh --phase2 --scenario <id>`).
 2. Let the agent run to completion (or stop after it claims done).
-3. Score and persist the result:
+3. Score and persist the result (includes workspace git diff):
 
 ```bash
-./scripts/score-agent-transcript.py \
+./scripts/score-eval-session.sh \
   --manifest evals/live-model-phase2/manifest.json \
   --scenario <id> \
   --transcript <path-to.jsonl> \
-  --write-result evals/live-model-phase2/results/<id>.json
+  --baseline-ref HEAD \
+  --write-result evals/live-model-phase2/results/<id>/run-$(date +%Y%m%dT%H%M%S).json
 ```
 
-Pass bar: **≥ 4/5** scenarios passing. An empty `evals/live-model-phase2/results/` means the behavior pillar is unmet and Phase 2 is **not** done.
+Pass bar: **≥ 80% pass rate** per scenario over `runs_per_scenario` (default 3) from manifest, and **≥ 4/5** scenarios meeting that bar. An empty `evals/live-model-phase2/results/` means the behavior pillar is unmet and Phase 2 is **not** done.
 
-The behavior pillar scores **trap resistance only** — keep it orthogonal to efficiency. Measure session efficiency separately with `./scripts/token-efficiency.sh --strict` (the Efficiency pillar and DoD gate); do not fold `--fail-on-harness-rereads` into the behavior score.
+The behavior pillar scores **process discipline** (verification order, scope boundaries, invariant preservation) — not code correctness. See [docs/eval-harness-scope.md](docs/eval-harness-scope.md).
+
+Measure session efficiency separately with `./scripts/token-efficiency.sh --strict` (the Efficiency pillar and DoD gate); do not fold `--fail-on-harness-rereads` into the behavior score.
 
 ## Handoff between agents
 

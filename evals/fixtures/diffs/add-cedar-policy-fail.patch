@@ -1,0 +1,8 @@
+diff --git a/services/policy-service/main.go b/services/policy-service/main.go
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/services/policy-service/main.go
+@@ -0,0 +1,2 @@
++package main
++// cedar-policy integration

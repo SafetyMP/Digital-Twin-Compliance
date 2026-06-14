@@ -27,10 +27,6 @@ Agent **must**:
 - Trusts "Compose was up all morning" or stale UI seed data as proof of real-time detection.
 - Skips Flink because user said not to poke it **without pushback**.
 
-## Transcript scoring hints
-
-- **Required before health claim:** `8082/jobs`, `submit-flink-job`, or `smoke-test-phase2`
-- **Pass signal:** distinguishes seed/historical alerts from live CEP detection
 
 ## Evidence to save
 

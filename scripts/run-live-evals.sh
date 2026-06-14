@@ -32,40 +32,20 @@ check() {
   fi
 }
 
+invariant_check() {
+  python3 -m evals.lib.invariants --check "$1" --repo-root "$ROOT"
+}
+
 check_scope_boundary() {
-  # Phase 2 landed: Flink CEP and alert stack are expected deliverables.
-  if [[ -f "$ROOT/jobs/compliance-cep/pom.xml" ]]; then
-    return 0
-  fi
-  local hits
-  hits=$(rg -l -i \
-    'apache/flink|org\.apache\.flink|immudb|neo4j|keycloak|cedar-policy|gorules|next\.js' \
-    services mocks schemas \
-    docker-compose.dev.yml \
-    .github/workflows \
-    --glob '*.{go,sql,yml,yaml,avsc,sh}' \
-    --glob '!scripts/run-live-evals.sh' \
-    --glob '!scripts/score-agent-transcript.py' \
-    2>/dev/null || true)
-  [[ -z "$hits" ]]
+  invariant_check scope-boundary-phase1
 }
 
 check_tenant_id_columns() {
-  local migration="$ROOT/services/state-service/migrations/001_init.sql"
-  [[ -f "$migration" ]] || return 1
-  rg -q 'tenant_id' "$migration" && \
-    rg -q '00000000-0000-0000-0000-000000000001' "$migration"
+  invariant_check tenant-id-columns
 }
 
 check_outbox_only_kafka_writer() {
-  local writers
-  writers=$(rg -l 'kafka\.Writer' services/state-service --glob '*.go' 2>/dev/null || true)
-  if [[ -z "$writers" ]]; then
-    return 0
-  fi
-  local extra
-  extra=$(echo "$writers" | rg -v 'internal/outbox/' || true)
-  [[ -z "$extra" ]]
+  invariant_check outbox-only-kafka-writer
 }
 
 check_required_scripts() {

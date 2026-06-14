@@ -2,9 +2,13 @@
   "version": 1,
   "project": "digital-twin-phase2",
   "description": "Live-model evals for Phase 2 agent effectiveness",
+  "harness_gates": "evals/harness/gates.json",
   "pass_threshold": {
     "mechanical": 1.0,
-    "live_scenarios": 0.8
+    "live_scenarios": {
+      "min_pass_rate": 0.8,
+      "runs_per_scenario": 3
+    }
   },
   "efficiency": {
     "enabled": true,

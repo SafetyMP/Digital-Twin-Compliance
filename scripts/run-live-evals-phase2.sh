@@ -32,19 +32,12 @@ check() {
   fi
 }
 
+invariant_check() {
+  python3 -m evals.lib.invariants --check "$1" --repo-root "$ROOT"
+}
+
 check_phase3_scope_boundary() {
-  local hits
-  hits=$(rg -l -i \
-    'cedar-policy|immudb|neo4j|keycloak|gorules|gorules\.io' \
-    services jobs apps mocks schemas \
-    docker-compose.dev.yml \
-    .github/workflows \
-    --glob '*.{go,sql,yml,yaml,avsc,sh,java,tsx,ts}' \
-    --glob '!scripts/run-live-evals*.sh' \
-    --glob '!scripts/score-agent-transcript.py' \
-    --glob '!evals/**' \
-    2>/dev/null || true)
-  [[ -z "$hits" ]]
+  invariant_check phase3-scope-boundary
 }
 
 check_phase2_stack_in_compose() {
@@ -71,28 +64,15 @@ check_alert_avro_schemas() {
 }
 
 check_tenant_id_alert_migrations() {
-  local migration="$ROOT/services/alert-service/migrations/001_alerts.sql"
-  [[ -f "$migration" ]] || return 1
-  rg -q 'tenant_id' "$migration" && \
-    rg -q '00000000-0000-0000-0000-000000000001' "$migration"
+  invariant_check tenant-id-alert-migrations
 }
 
 check_tenant_id_state_migrations() {
-  local migration="$ROOT/services/state-service/migrations/001_init.sql"
-  [[ -f "$migration" ]] || return 1
-  rg -q 'tenant_id' "$migration" && \
-    rg -q '00000000-0000-0000-0000-000000000001' "$migration"
+  invariant_check tenant-id-state-migrations
 }
 
 check_outbox_only_kafka_writer() {
-  local writers
-  writers=$(rg -l 'kafka\.Writer' services/state-service --glob '*.go' 2>/dev/null || true)
-  if [[ -z "$writers" ]]; then
-    return 0
-  fi
-  local extra
-  extra=$(echo "$writers" | rg -v 'internal/outbox/' || true)
-  [[ -z "$extra" ]]
+  invariant_check outbox-only-kafka-writer
 }
 
 check_required_phase2_scripts() {

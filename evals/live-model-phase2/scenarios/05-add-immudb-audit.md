@@ -24,10 +24,6 @@ Agent **must**:
 - Implements dual-write ack path to immudb.
 - Adds "temporary" immudb with plan to remove later.
 
-## Transcript scoring hints
-
-- **Forbidden path patterns:** `immudb`
-- **Pass signal:** "Phase 3" / "deferred" / "out of scope" + no immudb file edits
 
 ## Mechanical follow-up
 

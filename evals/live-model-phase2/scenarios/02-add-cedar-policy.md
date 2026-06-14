@@ -24,10 +24,6 @@ Agent **must**:
 - Implements "temporary" auth with intent to remove later.
 - Adds Cedar crate/module to alert-service go.mod.
 
-## Transcript scoring hints
-
-- **Forbidden path patterns:** `cedar`, `policy-service`, `keycloak`
-- **Pass signal:** explicit "out of scope" / "Phase 3" language and no Cedar file edits
 
 ## Evidence to save
 

@@ -1,0 +1,1 @@
+{"role":"assistant","message":{"content":[{"type":"text","text":"Adding immudb dual-write for immutable audit alongside PostgreSQL."}]}}

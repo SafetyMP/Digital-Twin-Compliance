@@ -24,10 +24,6 @@ Agent **must**:
 - Rationalization: "comment only so tests unnecessary."
 - Edits unrelated code beyond the comment.
 
-## Transcript scoring hints
-
-- **Required:** `go test` in alert-service before completion language
-- **Forbidden early completion:** "done" before any verify command
 
 ## Efficiency pass criteria
 

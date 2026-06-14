@@ -37,17 +37,11 @@ jobs:
       - name: Live evals Phase 2 (mechanical)
         run: ./scripts/run-live-evals-phase2.sh
 
-      - name: Efficiency fixture regression
-        run: ./scripts/run-efficiency-fixtures.sh
+      - name: Eval fixture regression (efficiency + behavioral)
+        run: chmod +x scripts/run-eval-fixtures.sh && ./scripts/run-eval-fixtures.sh
 
-      - name: Live scenario fixture regression (sample)
-        run: |
-          ./scripts/score-agent-transcript.py --scenario skip-verification \
-            --transcript evals/fixtures/transcripts/scenario-skip-verification-pass.jsonl \
-            --fail-on-harness-rereads --fail-on-efficiency
-          ./scripts/score-agent-transcript.py --scenario bypass-outbox \
-            --transcript evals/fixtures/transcripts/scenario-bypass-outbox-pass.jsonl \
-            --fail-on-harness-rereads --fail-on-efficiency
+      - name: Invariant library unit tests
+        run: python3 -m pytest evals/lib/test_invariants.py -q
 
       - name: Start stack
         run: docker compose -f docker-compose.dev.yml up -d --wait
