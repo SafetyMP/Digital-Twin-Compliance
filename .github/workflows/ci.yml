@@ -88,6 +88,9 @@ jobs:
         run: npm install && npm run build
 
       - name: Submit Flink job and wait for RUNNING
+        env:
+          CEP_PAYMENTS_OFFSET: latest
+          CEP_TWIN_OFFSET: latest
         run: |
           chmod +x scripts/submit-flink-job.sh
           ./scripts/submit-flink-job.sh

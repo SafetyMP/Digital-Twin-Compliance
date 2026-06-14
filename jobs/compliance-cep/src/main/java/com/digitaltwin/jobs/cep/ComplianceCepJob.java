@@ -7,7 +7,6 @@ import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.connector.kafka.sink.KafkaRecordSerializationSchema;
 import org.apache.flink.connector.kafka.sink.KafkaSink;
 import org.apache.flink.connector.kafka.source.KafkaSource;
-import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
@@ -32,7 +31,7 @@ public class ComplianceCepJob {
                 .setBootstrapServers(config.kafkaBrokers)
                 .setTopics("domain.events.public.payments")
                 .setGroupId("compliance-cep-payments")
-                .setStartingOffsets(OffsetsInitializer.earliest())
+                .setStartingOffsets(config.paymentsOffsets())
                 .setValueOnlyDeserializer(new SimpleStringSchema())
                 .build();
 
@@ -40,7 +39,7 @@ public class ComplianceCepJob {
                 .setBootstrapServers(config.kafkaBrokers)
                 .setTopics("twin.state.updated")
                 .setGroupId("compliance-cep-twin")
-                .setStartingOffsets(OffsetsInitializer.earliest())
+                .setStartingOffsets(config.twinOffsets())
                 .setValueOnlyDeserializer(new SimpleStringSchema())
                 .build();
 

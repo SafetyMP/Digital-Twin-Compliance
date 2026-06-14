@@ -35,7 +35,7 @@ echo "Uploading JAR..."
 UPLOAD=$(curl -sf -X POST -H "Expect:" -F "jarfile=@${JAR_PATH}" "${FLINK_URL}/jars/upload")
 JAR_ID=$(basename "$(echo "$UPLOAD" | jq -r '.filename')")
 
-PROGRAM_ARGS="--kafka kafka:9092 --redisHost redis --redisPort 6379 --tenantId 00000000-0000-0000-0000-000000000001 --velocityMax ${CEP_VELOCITY_MAX_PER_HOUR:-50} --exposureLimit ${CEP_EXPOSURE_LIMIT_EUR:-10000000} --lcrMinimum ${CEP_LCR_MINIMUM:-1.0} --parallelism ${FLINK_PARALLELISM:-1}"
+PROGRAM_ARGS="--kafka kafka:9092 --redisHost redis --redisPort 6379 --tenantId 00000000-0000-0000-0000-000000000001 --velocityMax ${CEP_VELOCITY_MAX_PER_HOUR:-50} --exposureLimit ${CEP_EXPOSURE_LIMIT_EUR:-10000000} --lcrMinimum ${CEP_LCR_MINIMUM:-1.0} --parallelism ${FLINK_PARALLELISM:-1} --paymentsOffset ${CEP_PAYMENTS_OFFSET:-earliest} --twinOffset ${CEP_TWIN_OFFSET:-earliest}"
 
 echo "Submitting job from $JAR_ID..."
 RUN=$(curl -sf -X POST "${FLINK_URL}/jars/${JAR_ID}/run" \
