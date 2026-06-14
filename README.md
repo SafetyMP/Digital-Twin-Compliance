@@ -8,6 +8,7 @@ Event-driven financial digital twin with embedded compliance monitoring. Phase 1
 [![CI](https://github.com/SafetyMP/Digital-Twin-Compliance/actions/workflows/ci.yml/badge.svg)](https://github.com/SafetyMP/Digital-Twin-Compliance/actions/workflows/ci.yml)
 [![Schema Compatibility](https://github.com/SafetyMP/Digital-Twin-Compliance/actions/workflows/schema-compat.yml/badge.svg)](https://github.com/SafetyMP/Digital-Twin-Compliance/actions/workflows/schema-compat.yml)
 [![Docker Publish](https://github.com/SafetyMP/Digital-Twin-Compliance/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/SafetyMP/Digital-Twin-Compliance/actions/workflows/docker-publish.yml)
+[![CodeQL](https://github.com/SafetyMP/Digital-Twin-Compliance/actions/workflows/codeql.yml/badge.svg)](https://github.com/SafetyMP/Digital-Twin-Compliance/actions/workflows/codeql.yml)
 
 ## Status
 
@@ -112,6 +113,7 @@ Persona types: `Institution`, `Account`, `Instrument`.
 | [AGENTS.md](AGENTS.md) | Coding-agent contract (commands, scope, definition of done) |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute |
 | [docs/deployment.md](docs/deployment.md) | GHCR, releases, staging deploy |
+| [docs/github-setup.md](docs/github-setup.md) | Branch protection, environments, first release |
 
 ## DevOps and deployment
 
@@ -122,6 +124,8 @@ Persona types: `Institution`, `Account`, `Instrument`.
 | **Releases** | Tag `v*.*.*` to publish versioned images and a GitHub Release |
 | **Staging deploy** | Manual workflow — SSH deploy to a host running `docker-compose.deploy.yml` |
 | **Dependabot** | Weekly updates for Go, GitHub Actions, and Docker |
+| **CodeQL** | Go security analysis on push, PR, and weekly schedule |
+| **Issue templates** | Structured bug reports and feature requests |
 
 Quick deploy on a host with Docker:
 
@@ -150,3 +154,5 @@ Phase 1 is **local development only**. There is no authentication middleware. Do
 ## Contributing
 
 Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
+
+This project follows the [Code of Conduct](CODE_OF_CONDUCT.md). GitHub setup (branch protection, environments, first release): [docs/github-setup.md](docs/github-setup.md).

@@ -1,0 +1,63 @@
+name: Bug Report
+description: Report a defect, CI failure, or smoke-test regression
+title: "[bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Include commands you ran and their output when possible.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Clear description of the bug
+      placeholder: Smoke test fails at step 3 with state_version unchanged...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Commands or workflow steps
+      placeholder: |
+        1. docker compose -f docker-compose.dev.yml up -d --wait
+        2. ./scripts/seed.sh
+        3. ./scripts/smoke-test.sh
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or output
+      description: Paste relevant stderr, CI link, or curl response
+      render: shell
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      options:
+        - Local dev (docker-compose.dev.yml)
+        - Staging (docker-compose.deploy.yml)
+        - GitHub Actions CI
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: commit
+    attributes:
+      label: Commit or image tag (optional)
+      placeholder: main, sha-abc1234, v0.1.0

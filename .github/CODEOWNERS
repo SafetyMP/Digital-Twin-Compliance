@@ -1,0 +1,8 @@
+# Default reviewers for all changes
+* @SafetyMP
+
+# Service and contract boundaries
+/services/state-service/ @SafetyMP
+/schemas/ @SafetyMP
+/.github/ @SafetyMP
+/docs/adr/ @SafetyMP

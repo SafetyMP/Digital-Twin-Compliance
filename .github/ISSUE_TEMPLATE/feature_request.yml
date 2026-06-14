@@ -1,0 +1,55 @@
+name: Feature Request
+description: Propose a capability aligned with the roadmap
+title: "[feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check [docs/roadmap.md](https://github.com/SafetyMP/Digital-Twin-Compliance/blob/main/docs/roadmap.md)
+        and [AGENTS.md out-of-scope](https://github.com/SafetyMP/Digital-Twin-Compliance/blob/main/AGENTS.md#out-of-scope-phase-1)
+        before filing. Phase 2+ items may be deferred intentionally.
+
+  - type: dropdown
+    id: phase
+    attributes:
+      label: Target phase
+      options:
+        - Phase 1 (ingestion / minimal twin)
+        - Phase 2 (Flink CEP / monitoring)
+        - Phase 3+ (rules, audit, graph, reporting)
+        - Unsure / needs triage
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: What problem does this solve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: High-level approach; ADR link if applicable
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Optional
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope checklist
+      options:
+        - label: This stays within the selected roadmap phase (not scope creep)
+          required: true
+        - label: I am willing to include tests or smoke-test updates if applicable
+          required: false

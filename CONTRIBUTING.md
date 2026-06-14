@@ -4,6 +4,8 @@ Thank you for contributing to the Digital Twin Compliance Platform.
 
 **Copyright holder:** SafetyMP · **License:** [Apache License 2.0](LICENSE)
 
+Please read the [Code of Conduct](CODE_OF_CONDUCT.md) before participating.
+
 ## Getting started
 
 1. Fork the repository and clone your fork.

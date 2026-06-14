@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Deployment guide
+    url: https://github.com/SafetyMP/Digital-Twin-Compliance/blob/main/docs/deployment.md
+    about: GHCR images, staging deploy, and host setup
+  - name: Security advisory
+    url: https://github.com/SafetyMP/Digital-Twin-Compliance/security/advisories/new
+    about: Report a vulnerability privately (do not use public issues)
