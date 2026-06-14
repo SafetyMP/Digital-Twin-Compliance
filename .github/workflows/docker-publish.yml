@@ -59,6 +59,75 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Docker metadata (alert-service)
+        id: meta_alert
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/safetymp/digital-twin-compliance/alert-service
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+
+      - name: Build and push Alert Service
+        uses: docker/build-push-action@v7
+        with:
+          context: ./services/alert-service
+          file: ./services/alert-service/Dockerfile
+          push: true
+          tags: ${{ steps.meta_alert.outputs.tags }}
+          labels: ${{ steps.meta_alert.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Docker metadata (alert-console)
+        id: meta_ui
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/safetymp/digital-twin-compliance/alert-console
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+
+      - name: Build and push Alert Console
+        uses: docker/build-push-action@v7
+        with:
+          context: ./apps/alert-console
+          file: ./apps/alert-console/Dockerfile
+          push: true
+          tags: ${{ steps.meta_ui.outputs.tags }}
+          labels: ${{ steps.meta_ui.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build Flink job JAR
+        run: cd jobs/compliance-cep && mvn -q package -DskipTests
+
+      - name: Docker metadata (compliance-cep)
+        id: meta_cep
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/safetymp/digital-twin-compliance/compliance-cep
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+
+      - name: Build and push compliance-cep runtime image
+        uses: docker/build-push-action@v7
+        with:
+          context: ./jobs/compliance-cep
+          file: ./jobs/compliance-cep/Dockerfile
+          push: true
+          tags: ${{ steps.meta_cep.outputs.tags }}
+          labels: ${{ steps.meta_cep.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
       - name: Image summary
         run: |
           echo "### Published images" >> "$GITHUB_STEP_SUMMARY"

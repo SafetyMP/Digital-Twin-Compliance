@@ -1,7 +1,6 @@
 package consumer
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/digital-twin/platform/services/state-service/internal/store"
@@ -11,7 +10,7 @@ func MapDebeziumToCDCInput(p DebeziumPayload) (store.CDCInput, string, error) {
 	if p.Op == "d" {
 		return store.CDCInput{}, "", nil
 	}
-	row := p.After
+	row := normalizeDebeziumRow(p.Source.Table, p.After)
 	if row == nil {
 		return store.CDCInput{}, "", nil
 	}
@@ -29,7 +28,7 @@ func MapDebeziumToCDCInput(p DebeziumPayload) (store.CDCInput, string, error) {
 	updatedAt := parseTimestamp(row["updated_at"])
 	idempotencyKey := fmt.Sprintf("%s-%s-%d", p.Source.Table, pk, updatedAt.UnixNano())
 
-	stateBytes, err := json.Marshal(row)
+	stateBytes, err := enrichStateBytes(p.Source.Table, pk, row)
 	if err != nil {
 		return store.CDCInput{}, "", err
 	}

@@ -18,19 +18,35 @@ jobs:
         run: |
           docker compose -f docker-compose.dev.yml up -d --wait schema-registry kafka
 
-      - name: Register baseline schema
+      - name: Register baseline schemas
         run: |
-          BODY=$(jq -n --arg schema "$(jq -c . schemas/avro/.baseline/event-envelope.avsc)" '{schema: $schema}')
-          curl -sf -X POST -H "Content-Type: application/vnd.schemaregistry.v1+json" \
-            --data "$BODY" \
-            http://localhost:8081/subjects/domain.events-value/versions
+          register_baseline() {
+            local subject="$1"
+            local file="$2"
+            BODY=$(jq -n --arg schema "$(jq -c . "$file")" '{schema: $schema}')
+            curl -sf -X POST -H "Content-Type: application/vnd.schemaregistry.v1+json" \
+              --data "$BODY" \
+              "http://localhost:8081/subjects/${subject}/versions"
+          }
+          register_baseline "domain.events-value" "schemas/avro/.baseline/event-envelope.avsc"
+          register_baseline "compliance.alerts-value" "schemas/avro/.baseline/event-envelope.avsc"
+          register_baseline "compliance-alert-raised" "schemas/avro/.baseline/compliance-alert-raised.avsc"
+          register_baseline "compliance-alert-resolved" "schemas/avro/.baseline/compliance-alert-resolved.avsc"
 
       - name: Check backward compatibility
         run: |
-          NEW_SCHEMA=$(jq -c . schemas/avro/event-envelope.avsc)
-          BODY=$(jq -n --arg schema "$NEW_SCHEMA" '{schema: $schema}')
-          RESULT=$(curl -sf -X POST -H "Content-Type: application/vnd.schemaregistry.v1+json" \
-            --data "$BODY" \
-            "http://localhost:8081/compatibility/subjects/domain.events-value/versions/latest")
-          echo "$RESULT"
-          echo "$RESULT" | jq -e '.is_compatible == true' >/dev/null
+          check_compat() {
+            local subject="$1"
+            local file="$2"
+            NEW_SCHEMA=$(jq -c . "$file")
+            BODY=$(jq -n --arg schema "$NEW_SCHEMA" '{schema: $schema}')
+            RESULT=$(curl -sf -X POST -H "Content-Type: application/vnd.schemaregistry.v1+json" \
+              --data "$BODY" \
+              "http://localhost:8081/compatibility/subjects/${subject}/versions/latest")
+            echo "$subject: $RESULT"
+            echo "$RESULT" | jq -e '.is_compatible == true' >/dev/null
+          }
+          check_compat "domain.events-value" "schemas/avro/event-envelope.avsc"
+          check_compat "compliance.alerts-value" "schemas/avro/event-envelope.avsc"
+          check_compat "compliance-alert-raised" "schemas/avro/compliance-alert-raised.avsc"
+          check_compat "compliance-alert-resolved" "schemas/avro/compliance-alert-resolved.avsc"

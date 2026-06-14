@@ -132,6 +132,161 @@ services:
       retries: 10
       start_period: 20s
 
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  alert-db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: alert
+      POSTGRES_PASSWORD: alert
+      POSTGRES_DB: alerts
+    ports:
+      - "5435:5432"
+    volumes:
+      - alert_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U alert -d alerts"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  alert-service:
+    build:
+      context: ./services/alert-service
+      dockerfile: Dockerfile
+    depends_on:
+      alert-db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    ports:
+      - "8085:8085"
+    environment:
+      ALERT_DB_URL: postgres://alert:alert@alert-db:5432/alerts?sslmode=disable
+      KAFKA_BROKERS: kafka:9092
+      DEFAULT_TENANT_ID: "00000000-0000-0000-0000-000000000001"
+      ALERT_SERVICE_HTTP_ADDR: ":8085"
+      ALERT_SERVICE_WS_PATH: /ws/alerts
+      COMPLIANCE_ALERTS_TOPIC: compliance.alerts
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8085/api/v1/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  flink-jobmanager:
+    image: flink:1.18-java17
+    ports:
+      - "8082:8081"
+    command: jobmanager
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: flink-jobmanager
+        taskmanager.numberOfTaskSlots: 2
+        parallelism.default: 2
+    volumes:
+      - flink_checkpoints:/tmp/flink-checkpoints
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8081/overview || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 20s
+
+  flink-taskmanager:
+    image: flink:1.18-java17
+    depends_on:
+      flink-jobmanager:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: taskmanager
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: flink-jobmanager
+        taskmanager.numberOfTaskSlots: 2
+        parallelism.default: 2
+    volumes:
+      - flink_checkpoints:/tmp/flink-checkpoints
+
+  flink-job-submitter:
+    image: maven:3.9-eclipse-temurin-17
+    depends_on:
+      flink-taskmanager:
+        condition: service_started
+      flink-jobmanager:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      alert-service:
+        condition: service_healthy
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+    environment:
+      FLINK_JOBMANAGER_URL: http://flink-jobmanager:8081
+      CEP_VELOCITY_MAX_PER_HOUR: "50"
+      CEP_EXPOSURE_LIMIT_EUR: "10000000"
+      CEP_LCR_MINIMUM: "1.0"
+      FLINK_PARALLELISM: "1"
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        apt-get update -qq && apt-get install -y -qq curl jq >/dev/null
+        cd /workspace/jobs/compliance-cep && mvn -q package -DskipTests
+        cd /workspace && FLINK_JOBMANAGER_URL=http://flink-jobmanager:8081 ./scripts/submit-flink-job.sh
+        echo "Flink job submitter done; sleeping to keep container alive for logs"
+        sleep infinity
+    restart: "no"
+
+  alert-console:
+    build:
+      context: ./apps/alert-console
+      dockerfile: Dockerfile
+    depends_on:
+      alert-service:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_ALERT_SERVICE_URL: http://localhost:8085
+      NEXT_PUBLIC_WS_URL: ws://localhost:8085/ws/alerts
+
+  grafana:
+    image: grafana/grafana:10.4.0
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+    volumes:
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./infra/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:3000/api/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
 volumes:
   core_banking_data:
   state_data:
+  alert_data:
+  flink_checkpoints:

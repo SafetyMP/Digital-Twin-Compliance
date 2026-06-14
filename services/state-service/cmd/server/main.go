@@ -31,7 +31,7 @@ func main() {
 	}
 	defer pool.Close()
 
-	if err := runMigrations(ctx, pool); err != nil {
+	if err := runMigrations(ctx, pool, migrationSearchPaths()); err != nil {
 		slog.Error("run migrations", "error", err)
 		os.Exit(1)
 	}
@@ -81,14 +81,24 @@ func main() {
 	_ = publisher.Close()
 }
 
-func runMigrations(ctx context.Context, pool *pgxpool.Pool) error {
-	sqlBytes, err := os.ReadFile("migrations/001_init.sql")
-	if err != nil {
-		sqlBytes, err = os.ReadFile("/app/migrations/001_init.sql")
-		if err != nil {
-			return err
+func migrationSearchPaths() []string {
+	return []string{"migrations/001_init.sql", "/app/migrations/001_init.sql"}
+}
+
+func readMigrationSQL(paths []string) (string, error) {
+	for _, path := range paths {
+		sqlBytes, err := os.ReadFile(path)
+		if err == nil {
+			return string(sqlBytes), nil
 		}
 	}
-	_, err = pool.Exec(ctx, string(sqlBytes))
-	return err
+	return "", os.ErrNotExist
+}
+
+func runMigrations(ctx context.Context, pool *pgxpool.Pool, paths []string) error {
+	sql, err := readMigrationSQL(paths)
+	if err != nil {
+		return err
+	}
+	return store.RunMigrations(ctx, pool, sql)
 }

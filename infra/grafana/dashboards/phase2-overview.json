@@ -1,0 +1,30 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "graphTooltip": 0,
+  "id": null,
+  "panels": [
+    {
+      "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+      "gridPos": { "h": 4, "w": 12, "x": 0, "y": 0 },
+      "id": 1,
+      "options": { "content": "Phase 2 Kafka + Flink monitoring placeholder. Wire Prometheus/JMX in staging.", "mode": "markdown" },
+      "title": "Kafka Overview",
+      "type": "text"
+    },
+    {
+      "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+      "gridPos": { "h": 4, "w": 12, "x": 12, "y": 0 },
+      "id": 2,
+      "options": { "content": "Flink checkpoint health — poll JobManager REST in ops runbooks.", "mode": "markdown" },
+      "title": "Flink Job",
+      "type": "text"
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["digital-twin", "phase2"],
+  "time": { "from": "now-6h", "to": "now" },
+  "title": "Digital Twin Phase 2",
+  "uid": "dt-phase2",
+  "version": 1
+}

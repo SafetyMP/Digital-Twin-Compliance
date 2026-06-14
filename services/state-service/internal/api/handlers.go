@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -9,11 +10,16 @@ import (
 	"github.com/digital-twin/platform/services/state-service/internal/store"
 )
 
-type Server struct {
-	store *store.Store
+type PersonaStore interface {
+	GetPersona(ctx context.Context, personaID string) (store.TwinPersona, error)
+	ListPersonas(ctx context.Context, personaType string, limit, offset int) ([]store.TwinPersona, error)
 }
 
-func NewServer(s *store.Store) *Server {
+type Server struct {
+	store PersonaStore
+}
+
+func NewServer(s PersonaStore) *Server {
 	return &Server{store: s}
 }
 

@@ -13,3 +13,11 @@ evals/live-model/results/*.json
 # Python
 __pycache__/
 *.pyc
+
+# Node / Next.js
+**/node_modules/
+**/.next/
+
+# Java build output
+jobs/compliance-cep/target/
+jobs/compliance-cep/dependency-reduced-pom.xml

@@ -33,12 +33,13 @@ type EntityStateUpdated struct {
 }
 
 type TwinStateUpdated struct {
-	PersonaID        string `json:"personaId"`
-	PersonaType      string `json:"personaType"`
-	SourceEntityID   string `json:"sourceEntityId"`
-	StateVersion     int    `json:"stateVersion"`
-	ComplianceStatus string `json:"complianceStatus"`
-	LastSyncedAt     string `json:"lastSyncedAt"`
+	PersonaID        string          `json:"personaId"`
+	PersonaType      string          `json:"personaType"`
+	SourceEntityID   string          `json:"sourceEntityId"`
+	StateVersion     int             `json:"stateVersion"`
+	ComplianceStatus string          `json:"complianceStatus"`
+	LastSyncedAt     string          `json:"lastSyncedAt"`
+	CurrentState     json.RawMessage `json:"currentState,omitempty"`
 }
 
 func NewEnvelope(eventType, source, idempotencyKey string, payload any) (Envelope, error) {

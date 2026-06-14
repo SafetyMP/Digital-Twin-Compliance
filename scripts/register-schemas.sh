@@ -33,5 +33,8 @@ register_schema "domain.events-value" "$ROOT/schemas/avro/event-envelope.avsc"
 register_schema "twin.state.updated-value" "$ROOT/schemas/avro/event-envelope.avsc"
 register_schema "entity-state-updated" "$ROOT/schemas/avro/entity-state-updated.avsc"
 register_schema "twin-state-updated" "$ROOT/schemas/avro/twin-state-updated.avsc"
+register_schema "compliance.alerts-value" "$ROOT/schemas/avro/event-envelope.avsc"
+register_schema "compliance-alert-raised" "$ROOT/schemas/avro/compliance-alert-raised.avsc"
+register_schema "compliance-alert-resolved" "$ROOT/schemas/avro/compliance-alert-resolved.avsc"
 
 echo "Schemas registered."

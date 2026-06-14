@@ -24,8 +24,29 @@ From `services/state-service/`:
 go test ./...
 go test ./internal/store/...
 go test ./internal/outbox/...
+go test ./... -cover
 go run ./cmd/server
 ```
+
+## Test expectations
+
+| Package | Minimum |
+|---------|---------|
+| `internal/api` | Handler routes, query parsing, error mapping |
+| `internal/config` | Env defaults and overrides |
+| `internal/events` | Envelope builder and idempotency fields |
+| `internal/consumer` | CDC mapping (existing) |
+| `internal/outbox` | Envelope/idempotency from outbox rows |
+| `internal/store` | Field helpers, hierarchy, store contracts |
+| `cmd/server` | Migration SQL path resolution |
+
+Repo gate: `./scripts/run-live-evals.sh --full` requires **≥35%** total coverage and package `_test.go` files in every package above.
+
+## Context efficiency (state-service work)
+
+- Load this file + the one package you are changing; do not preload `docs/architecture.md` or `docs/roadmap.md`.
+- Grep for symbols before opening `store.go` or `handlers.go` (large files).
+- Never read `agent-transcripts/` to debug — reproduce with `go test` and smoke scripts.
 
 From repo root: see [AGENTS.md](../../AGENTS.md) for Compose, seed, schema registration, and smoke test.
 
