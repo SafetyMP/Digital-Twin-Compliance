@@ -30,10 +30,10 @@ gantt
 
 ---
 
-## Phase 0: Domain Model and Architecture (Current)
+## Phase 0: Domain Model and Architecture
 
 **Duration**: 2 weeks  
-**Status**: In progress
+**Status**: Complete
 
 ### Deliverables
 
@@ -56,7 +56,8 @@ gantt
 ## Phase 1: Ingestion Backbone and Minimal Twin
 
 **Duration**: 4 weeks  
-**Dependencies**: Phase 0 complete
+**Dependencies**: Phase 0 complete  
+**Status**: Complete
 
 **Implementation handoff**: [phase1-implementation-spec.md](./phase1-implementation-spec.md) · [handoff-parallel-agent.md](./handoff-parallel-agent.md) · [AGENTS.md](../AGENTS.md) · [ADR-007](./adr/007-phase1-foundation-decisions.md)
 
@@ -98,7 +99,10 @@ gantt
 ## Phase 2: Real-Time Monitoring
 
 **Duration**: 4 weeks  
-**Dependencies**: Phase 1 complete
+**Dependencies**: Phase 1 complete  
+**Status**: Spec ready — implementation not started
+
+**Implementation handoff**: [phase2-implementation-spec.md](./phase2-implementation-spec.md) · [handoff-phase2-agent.md](./handoff-phase2-agent.md) · [ADR-008](./adr/008-phase2-foundation-decisions.md)
 
 ### Scope
 

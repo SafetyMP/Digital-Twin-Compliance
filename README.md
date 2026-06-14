@@ -15,7 +15,7 @@ Event-driven financial digital twin with embedded compliance monitoring. Phase 1
 | Phase | Scope | Status |
 |-------|--------|--------|
 | **Phase 1** | Kafka, Debezium CDC, State Service, outbox, persona API, schema CI | Complete |
-| Phase 2+ | Flink CEP, alerts UI, Cedar, immudb, graph, auth | Not started |
+| **Phase 2** | Flink CEP, Redis, Alert Service, WebSocket, alert console, Grafana | Spec ready |
 
 See [docs/roadmap.md](docs/roadmap.md) for the full implementation plan.
 
@@ -105,6 +105,7 @@ Persona types: `Institution`, `Account`, `Instrument`.
 | Document | Description |
 |----------|-------------|
 | [docs/phase1-implementation-spec.md](docs/phase1-implementation-spec.md) | Executable Phase 1 specification |
+| [docs/phase2-implementation-spec.md](docs/phase2-implementation-spec.md) | Executable Phase 2 specification |
 | [docs/architecture.md](docs/architecture.md) | C4 diagrams and component map |
 | [docs/domain-model.md](docs/domain-model.md) | Entities, personas, glossary |
 | [docs/data-flow.md](docs/data-flow.md) | Event envelopes, idempotency, topics |
