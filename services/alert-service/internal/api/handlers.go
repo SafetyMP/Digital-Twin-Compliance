@@ -49,6 +49,12 @@ func (s *Server) health(w http.ResponseWriter, r *http.Request) {
 func (s *Server) listAlerts(w http.ResponseWriter, r *http.Request) {
 	limit := parseIntDefault(r.URL.Query().Get("limit"), 50)
 	offset := parseIntDefault(r.URL.Query().Get("offset"), 0)
+	if limit < 0 {
+		limit = 50
+	}
+	if offset < 0 {
+		offset = 0
+	}
 	if limit > 200 {
 		limit = 200
 	}
