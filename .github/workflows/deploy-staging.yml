@@ -1,0 +1,52 @@
+name: Deploy Staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "State Service image tag (main, sha-abc1234, v1.0.0)"
+        required: true
+        default: main
+        type: string
+      action:
+        description: "Deploy action"
+        required: true
+        default: pull
+        type: choice
+        options:
+          - pull
+          - bootstrap
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT != '' && secrets.DEPLOY_PORT || '22' }}
+          script: |
+            set -euo pipefail
+            cd "${{ secrets.DEPLOY_PATH }}"
+            git fetch origin main
+            git checkout main
+            git pull origin main
+            export STATE_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/state-service:${{ inputs.image_tag }}
+            chmod +x scripts/deploy-stack.sh
+            ./scripts/deploy-stack.sh ${{ inputs.action }}
+
+      - name: Deployment summary
+        run: |
+          echo "### Staging deployment" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Image tag:** \`${{ inputs.image_tag }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Action:** \`${{ inputs.action }}\`" >> "$GITHUB_STEP_SUMMARY"

@@ -38,6 +38,10 @@ jobs:
       - name: Restart state-service after connector
         run: docker compose -f docker-compose.dev.yml restart state-service && docker compose -f docker-compose.dev.yml up -d --wait state-service
 
+      - name: Go vet
+        working-directory: services/state-service
+        run: go vet ./...
+
       - name: Go tests
         working-directory: services/state-service
         run: go test ./...

@@ -5,6 +5,10 @@ Event-driven financial digital twin with embedded compliance monitoring. Phase 1
 **Author:** [SafetyMP](https://github.com/SafetyMP)  
 **License:** [Apache License 2.0](LICENSE)
 
+[![CI](https://github.com/SafetyMP/Digital-Twin-Compliance/actions/workflows/ci.yml/badge.svg)](https://github.com/SafetyMP/Digital-Twin-Compliance/actions/workflows/ci.yml)
+[![Schema Compatibility](https://github.com/SafetyMP/Digital-Twin-Compliance/actions/workflows/schema-compat.yml/badge.svg)](https://github.com/SafetyMP/Digital-Twin-Compliance/actions/workflows/schema-compat.yml)
+[![Docker Publish](https://github.com/SafetyMP/Digital-Twin-Compliance/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/SafetyMP/Digital-Twin-Compliance/actions/workflows/docker-publish.yml)
+
 ## Status
 
 | Phase | Scope | Status |
@@ -92,7 +96,8 @@ Persona types: `Institution`, `Account`, `Instrument`.
 | [mocks/core-banking/](mocks/core-banking/) | CDC source database migrations and seed data |
 | [scripts/](scripts/) | Seed, smoke test, schema and connector registration |
 | [docs/](docs/) | Architecture, domain model, ADRs, Phase 1 spec |
-| [.github/workflows/](.github/workflows/) | CI and Avro schema compatibility checks |
+| [docker-compose.deploy.yml](docker-compose.deploy.yml) | Staging deploy stack (GHCR image) |
+| [.github/workflows/](.github/workflows/) | CI, Docker publish, release, staging deploy |
 
 ## Documentation
 
@@ -106,6 +111,26 @@ Persona types: `Institution`, `Account`, `Instrument`.
 | [docs/adr/](docs/adr/) | Architecture decision records |
 | [AGENTS.md](AGENTS.md) | Coding-agent contract (commands, scope, definition of done) |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute |
+| [docs/deployment.md](docs/deployment.md) | GHCR, releases, staging deploy |
+
+## DevOps and deployment
+
+| Capability | Details |
+|------------|---------|
+| **CI** | Full stack tests on every push and PR |
+| **Container registry** | State Service published to `ghcr.io/safetymp/digital-twin-compliance/state-service` on merge to `main` |
+| **Releases** | Tag `v*.*.*` to publish versioned images and a GitHub Release |
+| **Staging deploy** | Manual workflow — SSH deploy to a host running `docker-compose.deploy.yml` |
+| **Dependabot** | Weekly updates for Go, GitHub Actions, and Docker |
+
+Quick deploy on a host with Docker:
+
+```bash
+export STATE_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/state-service:main
+./scripts/deploy-stack.sh bootstrap
+```
+
+Full guide: [docs/deployment.md](docs/deployment.md).
 
 ## CI
 
@@ -113,9 +138,10 @@ GitHub Actions on every push and pull request:
 
 1. Mechanical live evals (`./scripts/run-live-evals.sh`)
 2. Docker Compose stack + seed + schema registration + Debezium connector
-3. `go test ./...` in `services/state-service`
+3. `go vet` and `go test ./...` in `services/state-service`
 4. `./scripts/smoke-test.sh`
 5. Avro BACKWARD compatibility check (separate workflow)
+6. Docker image build and push to GHCR on merge to `main` (separate workflow)
 
 ## Security
 

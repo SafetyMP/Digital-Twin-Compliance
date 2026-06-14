@@ -1,0 +1,35 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: write
+  packages: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          body: |
+            ## Container image
+
+            State Service image for this release:
+
+            ```text
+            ghcr.io/safetymp/digital-twin-compliance/state-service:${{ github.ref_name }}
+            ghcr.io/safetymp/digital-twin-compliance/state-service:latest
+            ```
+
+            ## Deploy
+
+            See [docs/deployment.md](https://github.com/SafetyMP/Digital-Twin-Compliance/blob/main/docs/deployment.md).

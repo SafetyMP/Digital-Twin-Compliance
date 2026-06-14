@@ -80,6 +80,12 @@ For Go work in the State Service, see [services/state-service/AGENTS.md](service
 
 Significant design changes should be documented as ADRs under [docs/adr/](docs/adr/) before or alongside implementation.
 
+## Deployment
+
+- Images are published to GHCR on merge to `main` ([docker-publish.yml](.github/workflows/docker-publish.yml)).
+- Staging deploy is manual via the **Deploy Staging** workflow; configure the `staging` environment secrets first.
+- See [docs/deployment.md](docs/deployment.md) for host setup, releases, and troubleshooting.
+
 ## Questions
 
 Open a [GitHub issue](https://github.com/SafetyMP/Digital-Twin-Compliance/issues) for bugs, questions, or proposed scope changes.
