@@ -1,0 +1,16 @@
+{
+  "type": "record",
+  "name": "EventEnvelope",
+  "namespace": "com.digitaltwin.events",
+  "fields": [
+    {"name": "eventId", "type": "string"},
+    {"name": "eventType", "type": "string"},
+    {"name": "eventVersion", "type": "string"},
+    {"name": "source", "type": "string"},
+    {"name": "correlationId", "type": "string"},
+    {"name": "causationId", "type": ["null", "string"], "default": null},
+    {"name": "timestamp", "type": "string"},
+    {"name": "idempotencyKey", "type": "string"},
+    {"name": "payload", "type": "string"}
+  ]
+}

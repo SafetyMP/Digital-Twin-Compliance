@@ -1,0 +1,18 @@
+---
+description: Run Phase 1 live-model evals (mechanical checks and optional transcript scoring).
+---
+Run Digital Twin Phase 1 effectiveness evals.
+
+**Do not Read** eval harness source unless debugging the harness itself. Run scripts directly:
+
+1. **Mechanical (always):** `./scripts/run-live-evals.sh`
+2. **Full DoD (stack up):** `./scripts/run-live-evals.sh --full`
+3. **Live scenario scoring:** `./scripts/score-agent-transcript.py --scenario <id> --transcript <path>`
+   - List ids: `./scripts/score-agent-transcript.py --list-scenarios`
+   - Fail on harness rereads (eval sessions): add `--fail-on-harness-rereads`
+
+Scenario prompts: `evals/live-model/scenarios/` — **fresh chat** per scenario ([AGENTS.md](../../AGENTS.md) § Session hygiene).
+
+Efficiency: `./scripts/token-efficiency.sh` (not `/token-efficiency` via Read loop).
+
+Report: mechanical result, optional DoD, pass bar (100% mechanical, ≥4/5 live scenarios).

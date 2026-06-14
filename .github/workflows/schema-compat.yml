@@ -1,0 +1,36 @@
+name: Schema Compatibility
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  schema-compat:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq curl
+
+      - name: Start Schema Registry
+        run: |
+          docker compose -f docker-compose.dev.yml up -d --wait schema-registry kafka
+
+      - name: Register baseline schema
+        run: |
+          BODY=$(jq -n --arg schema "$(jq -c . schemas/avro/.baseline/event-envelope.avsc)" '{schema: $schema}')
+          curl -sf -X POST -H "Content-Type: application/vnd.schemaregistry.v1+json" \
+            --data "$BODY" \
+            http://localhost:8081/subjects/domain.events-value/versions
+
+      - name: Check backward compatibility
+        run: |
+          NEW_SCHEMA=$(jq -c . schemas/avro/event-envelope.avsc)
+          BODY=$(jq -n --arg schema "$NEW_SCHEMA" '{schema: $schema}')
+          RESULT=$(curl -sf -X POST -H "Content-Type: application/vnd.schemaregistry.v1+json" \
+            --data "$BODY" \
+            "http://localhost:8081/compatibility/subjects/domain.events-value/versions/latest")
+          echo "$RESULT"
+          echo "$RESULT" | jq -e '.is_compatible == true' >/dev/null

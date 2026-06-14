@@ -1,0 +1,37 @@
+---
+description: Phase 1 context budget — doc boundaries and skill filter for Digital Twin
+alwaysApply: true
+---
+
+# Phase 1 context budget
+
+Follow [AGENTS.md](../AGENTS.md) § Context loading. Do not preload planning docs.
+
+## Doc boundaries
+
+| Load | When |
+|------|------|
+| `AGENTS.md`, `docs/phase1-implementation-spec.md` | Always (once per session) |
+| `services/state-service/AGENTS.md` | Go State Service work |
+| `docs/data-flow.md` | Envelope, idempotency, or outbox tasks only |
+| `docs/architecture.md`, `domain-model.md`, `compliance-mapping.md`, `roadmap.md`, ADRs (except ADR-007) | Only when task explicitly requires |
+
+## Do not re-read (same session)
+
+Unless the user edited the file, you StrReplace'd it, or the task is harness/meta work:
+
+- **Global:** `~/.cursor/HARNESS.md`, `~/.cursor/TOOLING.md`, `~/.cursor/memory/MEMORY.md`, `~/.cursor/rules/`, `~/.cursor/skills/**/SKILL.md`
+- **Repo contract:** `AGENTS.md`, `docs/phase1-implementation-spec.md`, `docs/handoff-parallel-agent.md`
+- **Eval harness:** `scripts/score-agent-transcript.py`, `evals/live-model/README.md`, `evals/live-model/manifest.json` — run scripts instead of reading source
+
+For `/token-efficiency` and `/live-eval`: one Shell call to `./scripts/token-efficiency.sh` or `./scripts/run-live-evals.sh`; no Read of scorer/eval files.
+
+## Relevant skills (prefer these)
+
+- `verifying-changes`, `systematic-debugging`, `planning-implementations`
+- `docker-expert` (Compose/stack tasks)
+- `capturing-learnings` (repo gotchas → AGENTS.md, not global memory)
+
+## Ignore unless asked
+
+Prisma, Vercel, Next.js, Encore, Neon, and other full-stack plugin skills — this repo is Go + Kafka + Docker Compose for Phase 1.

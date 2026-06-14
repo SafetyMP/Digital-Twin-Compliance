@@ -1,0 +1,15 @@
+.env
+.env.*
+!.env.example
+
+.DS_Store
+
+# Go build output
+services/state-service/state-service
+
+# Live eval session outputs (scenarios and scripts are committed)
+evals/live-model/results/*.json
+
+# Python
+__pycache__/
+*.pyc

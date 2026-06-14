@@ -1,0 +1,15 @@
+{
+  "type": "record",
+  "name": "EntityStateUpdated",
+  "namespace": "com.digitaltwin.events",
+  "fields": [
+    {"name": "personaId", "type": "string"},
+    {"name": "personaType", "type": "string"},
+    {"name": "sourceEntityId", "type": "string"},
+    {"name": "stateVersion", "type": "int"},
+    {"name": "changedFields", "type": {"type": "array", "items": "string"}},
+    {"name": "currentState", "type": "string"},
+    {"name": "sourceSystem", "type": "string"},
+    {"name": "sourceTimestamp", "type": "string"}
+  ]
+}

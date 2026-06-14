@@ -1,0 +1,13 @@
+{
+  "type": "record",
+  "name": "TwinStateUpdated",
+  "namespace": "com.digitaltwin.events",
+  "fields": [
+    {"name": "personaId", "type": "string"},
+    {"name": "personaType", "type": "string"},
+    {"name": "sourceEntityId", "type": "string"},
+    {"name": "stateVersion", "type": "int"},
+    {"name": "complianceStatus", "type": "string"},
+    {"name": "lastSyncedAt", "type": "string"}
+  ]
+}

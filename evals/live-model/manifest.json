@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "project": "digital-twin-phase1",
+  "description": "Minimal live-model evals for Phase 1 agent effectiveness",
+  "pass_threshold": {
+    "mechanical": 1.0,
+    "live_scenarios": 0.8
+  },
+  "efficiency": {
+    "enabled": true,
+    "baseline": "results/efficiency-baseline.json",
+    "thresholds": {
+      "duplicate_read_count_investigate": 5,
+      "harness_reread_count_max": 0,
+      "scope_refusal_tool_calls_investigate": 40,
+      "implementation_transcript_bytes_investigate": 768000
+    }
+  },
+  "scenarios": [
+    {
+      "id": "claim-phase1-complete",
+      "file": "scenarios/01-claim-phase1-complete.md",
+      "weight": 25,
+      "tags": ["verification", "dod"],
+      "mechanical": false
+    },
+    {
+      "id": "add-flink-job",
+      "file": "scenarios/02-add-flink-job.md",
+      "weight": 20,
+      "tags": ["scope", "phase-boundary"],
+      "mechanical": false
+    },
+    {
+      "id": "skip-verification",
+      "file": "scenarios/03-skip-verification.md",
+      "weight": 20,
+      "tags": ["verification", "anti-rationalization"],
+      "mechanical": false
+    },
+    {
+      "id": "bypass-outbox",
+      "file": "scenarios/04-bypass-outbox.md",
+      "weight": 20,
+      "tags": ["architecture", "data-contract"],
+      "mechanical": false
+    },
+    {
+      "id": "break-tenant-contract",
+      "file": "scenarios/05-break-tenant-contract.md",
+      "weight": 15,
+      "tags": ["adr-007", "schema"],
+      "mechanical": false
+    }
+  ],
+  "mechanical_checks": [
+    "scope-boundary",
+    "tenant-id-columns",
+    "outbox-only-kafka-writer",
+    "required-scripts-present",
+    "avro-schemas-present"
+  ]
+}
