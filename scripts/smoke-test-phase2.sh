@@ -5,6 +5,7 @@ chmod +x mocks/simulators/payment-burst.sh 2>/dev/null || true
 chmod +x scripts/submit-flink-job.sh 2>/dev/null || true
 
 ALERT_URL="${ALERT_SERVICE_URL:-http://localhost:8085}"
+CONSOLE_URL="${ALERT_CONSOLE_URL:-http://localhost:3000}"
 FLINK_URL="${FLINK_JOBMANAGER_URL:-http://localhost:8082}"
 GRAFANA_URL="${GRAFANA_URL:-http://localhost:3001}"
 WS_URL="${NEXT_PUBLIC_WS_URL:-ws://localhost:8085/ws/alerts}"
@@ -28,6 +29,28 @@ if [[ -z "${JOBS:-}" ]]; then
   exit 1
 fi
 
+CHECKPOINT_STATS=$(curl -sf "$FLINK_URL/jobs/$JOBS/checkpoints")
+COMPLETED=$(echo "$CHECKPOINT_STATS" | jq -r '.counts.completed // 0')
+FAILED=$(echo "$CHECKPOINT_STATS" | jq -r '.counts.failed // 0')
+TOTAL=$((COMPLETED + FAILED))
+if [[ "$TOTAL" -gt 0 ]]; then
+  SUCCESS_RATE=$(python3 - <<PY
+completed = int("$COMPLETED")
+failed = int("$FAILED")
+total = completed + failed
+print(f"{(completed / total) * 100:.2f}")
+PY
+)
+  echo "Flink checkpoints: completed=$COMPLETED failed=$FAILED success_rate=${SUCCESS_RATE}%"
+  python3 - <<PY
+rate = float("$SUCCESS_RATE")
+import sys
+sys.exit(0 if rate >= 99.0 else 1)
+PY
+else
+  echo "Flink checkpoints: no history yet (non-fatal during cold start)"
+fi
+
 echo "==> 2. Baseline alerts API"
 curl -sf "$ALERT_URL/api/v1/health" | jq -e '.status == "ok"' >/dev/null
 curl -sf "$ALERT_URL/api/v1/alerts?status=Open" >/dev/null
@@ -40,12 +63,16 @@ if docker ps --format '{{.Names}}' | grep -qx "$REDIS_CONTAINER"; then
 fi
 BEFORE=$(curl -sf "$ALERT_URL/api/v1/alerts?status=Open" | jq '[.[] | select(.ruleCode=="INT-M001")] | length')
 ./mocks/simulators/payment-burst.sh
+BURST_END=$(python3 -c "import time; print(int(time.time() * 1000))")
 FOUND=""
+CONSUME_MS=""
 for i in $(seq 1 30); do
   COUNT=$(curl -sf "$ALERT_URL/api/v1/alerts?status=Open" | jq '[.[] | select(.ruleCode=="INT-M001")] | length')
   if [[ "$COUNT" -gt "$BEFORE" ]]; then
     FOUND=1
-    echo "INT-M001 alert detected (count=$COUNT)"
+    NOW_MS=$(python3 -c "import time; print(int(time.time() * 1000))")
+    CONSUME_MS=$((NOW_MS - BURST_END))
+    echo "INT-M001 alert detected (count=$COUNT, consume_latency_ms=$CONSUME_MS)"
     break
   fi
   sleep 1
@@ -54,6 +81,18 @@ if [[ -z "$FOUND" ]]; then
   echo "INT-M001 alert not detected within 30s" >&2
   exit 1
 fi
+if [[ "$CONSUME_MS" -gt 2000 ]]; then
+  echo "INT-M001 consume latency ${CONSUME_MS}ms exceeds 2000ms p99 budget" >&2
+  exit 1
+fi
+
+curl -sf -o /dev/null -w "alert-console HTTP %{http_code}\n" "$CONSOLE_URL/"
+UI_MS=$(( $(python3 -c "import time; print(int(time.time() * 1000))") - BURST_END ))
+if [[ "$UI_MS" -gt 5000 ]]; then
+  echo "Alert API visible ${UI_MS}ms after burst exceeds 5000ms UI budget" >&2
+  exit 1
+fi
+echo "Alert visible via API within ${UI_MS}ms (UI shell reachable at $CONSOLE_URL)"
 
 echo "==> 4. INT-M002 exposure limit"
 psql "$ALERT_DB_URL" -v ON_ERROR_STOP=1 -c "DELETE FROM compliance_alerts WHERE rule_code = 'INT-M002';" >/dev/null
@@ -151,11 +190,67 @@ if not received["ok"]:
 PY
 
 echo "==> 7. Acknowledge flow"
-curl -sf -X POST "$ALERT_URL/api/v1/alerts/$ALERT_ID/acknowledge" \
-  -H "Content-Type: application/json" \
-  -d '{"acknowledgedBy":"operator-dev"}' | jq -e '.status == "Acknowledged"' >/dev/null
+python3 - <<'PY' "$WS_URL" "$ALERT_ID" "$ALERT_URL"
+import json, sys, threading, time
+try:
+    import websocket
+    import urllib.request
+except ImportError:
+    import subprocess
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "-q", "websocket-client"])
+    import websocket
+    import urllib.request
 
-echo "==> 8. Grafana health (optional)"
+url, alert_id, alert_url = sys.argv[1], sys.argv[2], sys.argv[3]
+received = {"ok": False}
+
+def on_message(ws, message):
+    data = json.loads(message)
+    payload = data.get("payload") or {}
+    if data.get("type") == "alert.acknowledged" and payload.get("alertId") == alert_id:
+        received["ok"] = True
+        ws.close()
+
+ws = websocket.WebSocketApp(url, on_message=on_message)
+t = threading.Thread(target=lambda: ws.run_forever(ping_interval=20))
+t.daemon = True
+t.start()
+time.sleep(1)
+req = urllib.request.Request(
+    f"{alert_url}/api/v1/alerts/{alert_id}/acknowledge",
+    data=json.dumps({"acknowledgedBy": "operator-dev"}).encode(),
+    headers={"Content-Type": "application/json"},
+    method="POST",
+)
+with urllib.request.urlopen(req) as resp:
+    body = json.loads(resp.read())
+    if body.get("status") != "Acknowledged":
+        sys.exit(1)
+for _ in range(50):
+    if received["ok"]:
+        break
+    time.sleep(0.1)
+if not received["ok"]:
+    sys.exit(1)
+PY
+echo "Acknowledge persisted and WebSocket alert.acknowledged received"
+
+echo "==> 8. Redis feature keys"
+if docker ps --format '{{.Names}}' | grep -qx "$REDIS_CONTAINER"; then
+  VEL=$(docker exec "$REDIS_CONTAINER" redis-cli KEYS "vel:*" | head -1)
+  EXP=$(docker exec "$REDIS_CONTAINER" redis-cli KEYS "exp:*" | head -1)
+  LCR=$(docker exec "$REDIS_CONTAINER" redis-cli KEYS "lcr:*" | head -1)
+  if [[ -z "$VEL" || -z "$EXP" || -z "$LCR" ]]; then
+    echo "Missing Redis feature keys (vel=$VEL exp=$EXP lcr=$LCR)" >&2
+    exit 1
+  fi
+  echo "Redis features: vel=$VEL exp=$EXP lcr=$LCR"
+else
+  echo "Redis container not found" >&2
+  exit 1
+fi
+
+echo "==> 9. Grafana health (optional)"
 if curl -sf "$GRAFANA_URL/api/health" >/dev/null 2>&1; then
   echo "Grafana healthy"
 else
