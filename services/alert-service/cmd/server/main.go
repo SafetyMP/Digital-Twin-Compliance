@@ -79,6 +79,9 @@ func readMigrationSQL(paths []string) (string, error) {
 		if err == nil {
 			return string(sqlBytes), nil
 		}
+		if !os.IsNotExist(err) {
+			return "", err
+		}
 	}
 	return "", os.ErrNotExist
 }
