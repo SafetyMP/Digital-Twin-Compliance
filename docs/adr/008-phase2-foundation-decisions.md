@@ -1,4 +1,4 @@
-# ADR-008: Phase 2 Foundation Decisions (D10–D13)
+# ADR-008: Phase 2 Foundation Decisions (D10–D14)
 
 **Status**: Accepted  
 **Date**: 2026-06-13  
@@ -14,7 +14,8 @@ Phase 2 adds real-time compliance monitoring (Flink CEP), Redis features, Alert 
 | D10 | Flink runtime (dev vs staging) | Compose vs Kubernetes Operator |
 | D11 | Alert durability store | PostgreSQL vs immudb |
 | D12 | Threshold evaluation location | Flink inline vs Decision Service |
-| D13 | Payment event source | CDC table vs synthetic Kafka producer |
+| D13 | Payments ingested via Debezium CDC | Reuses Phase 1 ingestion pattern; avoids a one-off Kafka producer that bypasses schema and ordering guarantees. |
+| D14 | JSON Kafka payloads in Phase 2 dev | Matches Phase 1 outbox; Avro schemas registered for CI compat until staging wire encoding |
 
 ## Decision
 
@@ -41,6 +42,14 @@ Phase 2 adds real-time compliance monitoring (Flink CEP), Redis features, Alert 
 **Decision**: Add `payments` table to mock core banking; extend Debezium to publish `domain.events.public.payments`. Flink consumes CDC events for velocity detection.
 
 **Rationale**: Reuses Phase 1 ingestion pattern; avoids a one-off Kafka producer that bypasses schema and ordering guarantees.
+
+### D14 — JSON Kafka payloads in Phase 2 dev; Avro on staging upgrade path
+
+**Decision**: Flink and Alert Service exchange `EventEnvelope` messages as **UTF-8 JSON strings** on Kafka topics in local dev and CI. Avro schemas remain registered for contract documentation and BACKWARD compatibility CI; Confluent wire encoding is required before shared staging/production promotion.
+
+**Rationale**: Phase 1 State Service outbox already publishes JSON envelopes. Wiring Avro serializers through Flink and Alert Service adds dependency surface without blocking pattern validation. Schema files and registry checks prevent silent field drift.
+
+**Migration path**: Phase 3 staging hardening replaces `SimpleStringSchema` with Schema Registry Avro serializers and sets `EventEnvelope.payload` to a JSON string (not embedded object) per `event-envelope.avsc`.
 
 ## Consequences
 

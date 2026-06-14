@@ -57,10 +57,13 @@ Make the package **public** under GitHub → Packages → Package settings if st
 | [docker-compose.dev.yml](../docker-compose.dev.yml) | Local development; builds State Service from source |
 | [docker-compose.deploy.yml](../docker-compose.deploy.yml) | Staging/production-like; pulls State Service from GHCR |
 
-Deploy Compose requires `STATE_SERVICE_IMAGE`:
+Deploy Compose requires image variables:
 
 ```bash
 export STATE_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/state-service:main
+export ALERT_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/alert-service:main
+export ALERT_CONSOLE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/alert-console:main
+export COMPLIANCE_CEP_IMAGE=ghcr.io/safetymp/digital-twin-compliance/compliance-cep:main
 docker compose -f docker-compose.deploy.yml up -d --wait
 ```
 

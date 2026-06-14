@@ -24,11 +24,66 @@ public class RedisFeatureStore implements AutoCloseable {
         }
     }
 
-    public double addExposure(String institutionId, String counterpartyId, double notionalEur) {
-        String key = "exp:" + tenantId + ":" + institutionId + ":" + counterpartyId;
+    /**
+     * Applies notional delta for an instrument persona, skipping stale stateVersion replays.
+     */
+    public double applyExposureDelta(
+            String personaId,
+            String institutionId,
+            String counterpartyId,
+            double newNotionalEur,
+            int stateVersion
+    ) {
+        String aggregateKey = "exp:" + tenantId + ":" + institutionId + ":" + counterpartyId;
+        String lastNotionalKey = "exp-last:" + tenantId + ":" + personaId;
+        String versionKey = "exp-ver:" + tenantId + ":" + personaId;
         try (Jedis jedis = pool.getResource()) {
-            double total = jedis.incrByFloat(key, notionalEur);
+            int lastVersion = parseIntOrZero(jedis.get(versionKey));
+            if (stateVersion > 0 && stateVersion <= lastVersion) {
+                return parseDoubleOrZero(jedis.get(aggregateKey));
+            }
+            double previousNotional = parseDoubleOrZero(jedis.get(lastNotionalKey));
+            double delta = exposureDeltaAmount(previousNotional, newNotionalEur, lastVersion, stateVersion);
+            double total = jedis.incrByFloat(aggregateKey, delta);
+            jedis.set(lastNotionalKey, Double.toString(newNotionalEur));
+            if (stateVersion > 0) {
+                jedis.set(versionKey, Integer.toString(stateVersion));
+            }
             return total;
+        }
+    }
+
+    public static double exposureDeltaAmount(
+            double previousNotional,
+            double newNotionalEur,
+            int lastVersion,
+            int stateVersion
+    ) {
+        if (stateVersion > 0 && stateVersion <= lastVersion) {
+            return 0.0;
+        }
+        return newNotionalEur - previousNotional;
+    }
+
+    private static int parseIntOrZero(String raw) {
+        if (raw == null || raw.isEmpty()) {
+            return 0;
+        }
+        try {
+            return Integer.parseInt(raw);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
+    private static double parseDoubleOrZero(String raw) {
+        if (raw == null || raw.isEmpty()) {
+            return 0.0;
+        }
+        try {
+            return Double.parseDouble(raw);
+        } catch (NumberFormatException e) {
+            return 0.0;
         }
     }
 

@@ -62,10 +62,16 @@ public final class JsonParsers {
             if (personaType.isEmpty()) {
                 return Optional.empty();
             }
+            int stateVersion = 0;
+            JsonNode versionNode = payload.get("stateVersion");
+            if (versionNode != null && versionNode.isNumber()) {
+                stateVersion = versionNode.asInt();
+            }
             return Optional.of(new TwinStateEvent(
                     text(payload, "personaId"),
                     personaType,
                     text(payload, "sourceEntityId"),
+                    stateVersion,
                     payload.get("currentState")
             ));
         } catch (Exception e) {
@@ -107,6 +113,7 @@ public final class JsonParsers {
             String personaId,
             String personaType,
             String sourceEntityId,
+            int stateVersion,
             JsonNode currentState
     ) {}
 }

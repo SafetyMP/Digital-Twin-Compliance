@@ -32,7 +32,13 @@ public final class ExposureChecker {
         double notional = parseDouble(state, "notional_amount");
         String currency = text(state, "currency");
         double notionalEur = toEur(notional, currency);
-        double total = redis.addExposure(ownerId, counterpartyId, notionalEur);
+        double total = redis.applyExposureDelta(
+                twin.personaId(),
+                ownerId,
+                counterpartyId,
+                notionalEur,
+                twin.stateVersion()
+        );
         if (total <= config.exposureLimitEur) {
             return Optional.empty();
         }

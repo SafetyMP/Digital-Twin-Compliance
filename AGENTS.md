@@ -43,12 +43,20 @@ Verification handoff: [docs/handoff-verification-agent.md](docs/handoff-verifica
 
 ## Parallel work
 
+**Decision rule**: default to **serial**. Parallelize only when tracks have **truly independent, non-overlapping file boundaries** and no shared integration state. Serial is usually faster for this stack because most work converges on the shared Compose file and smoke tests.
+
 - **Separate chats**: planning → implementation ([handoff-parallel-agent.md](docs/handoff-parallel-agent.md)); implementation → verification ([handoff-verification-agent.md](docs/handoff-verification-agent.md))
 - **In-session subagents**: max 3 tracks with explicit file boundaries — Integration (Compose + smoke), Backend (`services/*`, `jobs/*`), Frontend (`apps/*`)
 - **Parent owns**: synthesis, conflict resolution, `./scripts/smoke-test.sh` + `./scripts/smoke-test-phase2.sh`
 - **Do not parallelize**: shared `docker-compose.dev.yml`, integration debugging, related failure chains
 
-Debug discipline: grep before Read on large files; one Read per hypothesis; use `Await` once for background shells (no double-Read of terminal files).
+Subagent reliability:
+
+- Give each subagent a **bounded, single-track scope** with explicit non-overlapping file boundaries; do not let two tracks write the same path.
+- Parent **checkpoints after each track returns** — confirm the track's claimed output exists before merging.
+- If a subagent **times out or errors** (e.g. PING timeout), do not silently absorb partial work. Either **re-delegate** the remaining scope to a fresh subagent or finish it **serially**, then **re-verify** (smoke tests) before treating it as done.
+
+Debug discipline: grep before Read on large files; one Read per hypothesis. To inspect a command's output, use `Await` on the live shell or re-run the command — never `Read` files under `~/.cursor/**/terminals/`. Reading terminal files (even once) is scored as `harness_reread_count` and inflates the efficiency pillar.
 
 ## Context efficiency
 
@@ -106,6 +114,22 @@ docker compose -f docker-compose.dev.yml down -v
 
 Copy environment variables from `.env.example` before first run.
 
+Long-running commands (stack bring-up, image pulls, smoke tests can exceed 7 min):
+
+- **Pre-pull images** before timed steps so `up -d --wait` is not blocked on registry downloads.
+- **Background** long commands and **poll with `Await` once** on a sentinel line (e.g. `Phase 2 smoke test passed`) instead of blocking the foreground.
+- Size `block_until_ms` to the command's expected runtime so it is not killed mid-pull.
+
+## Repo gotchas
+
+Hard-won fixes from Phase 2 — check here before rediscovering them ([capturing-learnings](docs/) → this section, not global memory):
+
+- **Debezium numerics/dates**: base64-encoded numerics and epoch-day dates break instrument CDC; decode in `services/state-service/internal/consumer/debezium_numeric.go` (see `debezium_numeric_test.go`).
+- **Redis host port is `6380`**: Compose maps `6380:6379` to avoid clashing with a local Redis; `REDIS_URL=redis://localhost:6380/0` in `.env.example`.
+- **Pre-create Kafka topics**: `domain.events.public.payments`, `compliance.alerts`, `compliance.alerts.dlq`, and `twin.state.updated` must exist before the Flink job/consumers start — run `./scripts/create-kafka-topics.sh` (invoked by `seed.sh`).
+- **Flink `JobConfig` must implement `Serializable`**: otherwise job submission fails. Submit with `./scripts/submit-flink-job.sh` (uses `basename(jar)` and a Docker Maven fallback).
+- **`mvn` is not assumed on host**: `./scripts/run-live-evals-phase2.sh --full` fails locally without Maven. Run CEP tests via Docker: `docker run --rm -v "$PWD/jobs/compliance-cep:/app" -w /app maven:3.9-eclipse-temurin-17 mvn -q test` (CI uses Maven directly).
+
 ## Layout
 
 | Path | Purpose |
@@ -128,6 +152,7 @@ Copy environment variables from `.env.example` before first run.
 - Validate external input at API and consumer boundaries.
 - No secrets in code; use `.env` (never commit `.env`).
 - Imports at top of file; no inline imports unless documented circular-dependency reason.
+- **Verification floor (not waivable)**: any edit to a code file (`.go`, `.java`, `.ts`/`.tsx`) requires at minimum a build/compile or the touched package's tests before claiming done — including comment- or doc-only edits. A user calling a change "trivial" scopes *how much* to verify (a one-line comment → `go build ./...` or `go test ./internal/<pkg>/...`; logic changes → package tests + relevant smoke), never *whether* to verify.
 
 ## Out of scope (Phase 1)
 
@@ -193,7 +218,33 @@ docker compose -f docker-compose.dev.yml up -d --wait
 cd services/alert-service && go test ./...
 ```
 
-Done also means [Phase 2 exit criteria checklist](docs/phase2-implementation-spec.md#14-phase-2-exit-criteria-checklist) in spec is satisfied.
+Done also means:
+
+- [Phase 2 exit criteria checklist](docs/phase2-implementation-spec.md#14-phase-2-exit-criteria-checklist) in spec is satisfied
+- `./scripts/token-efficiency.sh --strict` passes on the session transcript (`harness_reread_count: 0`, `duplicate_read_count ≤ 3`); paste output in the PR
+- Behavior eval pillar populated: ≥ 4/5 live scenarios stored under `evals/live-model-phase2/results/` (see [Behavior evals](#behavior-evals-phase-2))
+
+## Behavior evals (Phase 2)
+
+The mechanical and DoD pillars run in CI; the **behavior pillar** (adversarial live scenarios) must be run manually in **fresh chats** — one chat per scenario, no prior context. CI ([eval-nightly.yml](.github/workflows/eval-nightly.yml)) only regresses fixtures, not live sessions.
+
+To populate the pillar before claiming Phase 2 done:
+
+1. For each scenario in `evals/live-model-phase2/scenarios/`, open a **new** Cursor chat and paste its Prompt section.
+2. Let the agent run to completion (or stop after it claims done).
+3. Score and persist the result:
+
+```bash
+./scripts/score-agent-transcript.py \
+  --manifest evals/live-model-phase2/manifest.json \
+  --scenario <id> \
+  --transcript <path-to.jsonl> \
+  --write-result evals/live-model-phase2/results/<id>.json
+```
+
+Pass bar: **≥ 4/5** scenarios passing. An empty `evals/live-model-phase2/results/` means the behavior pillar is unmet and Phase 2 is **not** done.
+
+The behavior pillar scores **trap resistance only** — keep it orthogonal to efficiency. Measure session efficiency separately with `./scripts/token-efficiency.sh --strict` (the Efficiency pillar and DoD gate); do not fold `--fail-on-harness-rereads` into the behavior score.
 
 ## Handoff between agents
 

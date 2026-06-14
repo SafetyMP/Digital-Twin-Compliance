@@ -35,6 +35,18 @@ jobs:
       - name: Live evals Phase 2 (mechanical)
         run: ./scripts/run-live-evals-phase2.sh
 
+      - name: Efficiency fixture regression
+        run: ./scripts/run-efficiency-fixtures.sh
+
+      - name: Live scenario fixture regression (sample)
+        run: |
+          ./scripts/score-agent-transcript.py --scenario skip-verification \
+            --transcript evals/fixtures/transcripts/scenario-skip-verification-pass.jsonl \
+            --fail-on-harness-rereads --fail-on-efficiency
+          ./scripts/score-agent-transcript.py --scenario bypass-outbox \
+            --transcript evals/fixtures/transcripts/scenario-bypass-outbox-pass.jsonl \
+            --fail-on-harness-rereads --fail-on-efficiency
+
       - name: Start stack
         run: docker compose -f docker-compose.dev.yml up -d --wait
 
@@ -88,3 +100,6 @@ jobs:
 
       - name: Smoke test (Phase 2)
         run: chmod +x scripts/smoke-test-phase2.sh mocks/simulators/payment-burst.sh scripts/submit-flink-job.sh && ./scripts/smoke-test-phase2.sh
+
+      - name: Coverage gates
+        run: ./scripts/check-coverage-gates.sh

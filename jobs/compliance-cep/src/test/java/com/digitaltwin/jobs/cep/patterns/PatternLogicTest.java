@@ -39,4 +39,18 @@ class PatternLogicTest {
     void exposureConvertsUsdToEur() {
         assertEquals(9200.0, ExposureChecker.toEur(10000, "USD"), 0.01);
     }
+
+    @Test
+    void exposureDeltaSkipsStaleStateVersion() {
+        assertEquals(0.0, com.digitaltwin.jobs.cep.RedisFeatureStore.exposureDeltaAmount(
+                5_000_000, 6_000_000, 2, 2));
+    }
+
+    @Test
+    void exposureDeltaComputesNotionalChange() {
+        assertEquals(1_000_000.0, com.digitaltwin.jobs.cep.RedisFeatureStore.exposureDeltaAmount(
+                5_000_000, 6_000_000, 1, 2));
+        assertEquals(6_000_000.0, com.digitaltwin.jobs.cep.RedisFeatureStore.exposureDeltaAmount(
+                0, 6_000_000, 0, 1));
+    }
 }

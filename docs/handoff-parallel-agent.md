@@ -84,6 +84,14 @@ Mark done only when scripts/smoke-test.sh and go test ./... pass.
 
 When implementation is complete, use a **separate fresh chat** and [handoff-verification-agent.md](./handoff-verification-agent.md) (or `/verify-phase2`) before handback. Do not verify in the same long implementation thread.
 
+## Three-chat workflow
+
+| Chat | Load | Run |
+|------|------|-----|
+| **Implement** (this handoff) | Phase spec + service `AGENTS.md` | Code + `go test` |
+| **Verify** | `AGENTS.md` + smoke scripts | `./scripts/smoke-test.sh` (+ phase2) + `token-efficiency.sh --strict` |
+| **Eval / metrics** | Scripts only | `./scripts/report-eval-scorecard.sh` |
+
 Ask the planning agent to review using [docs/review/phase1-review-checklist.md](./review/phase1-review-checklist.md).
 
 Provide:

@@ -11,6 +11,7 @@ type Config struct {
 	HTTPAddr        string
 	DefaultTenantID string
 	AlertsTopic     string
+	AlertsDLQTopic  string
 	ConsumerGroup   string
 	WSSPath         string
 }
@@ -22,6 +23,7 @@ func Load() Config {
 		HTTPAddr:        env("ALERT_SERVICE_HTTP_ADDR", ":8085"),
 		DefaultTenantID: env("DEFAULT_TENANT_ID", "00000000-0000-0000-0000-000000000001"),
 		AlertsTopic:     env("COMPLIANCE_ALERTS_TOPIC", "compliance.alerts"),
+		AlertsDLQTopic:  env("COMPLIANCE_ALERTS_DLQ_TOPIC", "compliance.alerts.dlq"),
 		ConsumerGroup:   env("ALERT_CONSUMER_GROUP", "alert-service"),
 		WSSPath:         env("ALERT_SERVICE_WS_PATH", "/ws/alerts"),
 	}

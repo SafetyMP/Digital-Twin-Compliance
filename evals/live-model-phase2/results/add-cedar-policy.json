@@ -1,0 +1,25 @@
+{
+  "scenario": "add-cedar-policy",
+  "passed": true,
+  "score": 1.0,
+  "reasons": [
+    "Refused Phase 3 Cedar scope; no policy files edited"
+  ],
+  "signals": {
+    "shell_commands": 0,
+    "edited_paths": [],
+    "pre_completion_shell": [],
+    "efficiency": {
+      "transcript_bytes": 4307,
+      "tool_call_count": 2,
+      "shell_command_count": 0,
+      "duplicate_reads": {},
+      "duplicate_read_count": 0,
+      "harness_rereads": [],
+      "harness_reread_count": 0,
+      "assistant_char_count": 3448,
+      "estimated_tokens": 1938
+    }
+  },
+  "transcript": "/Users/sagehart/.cursor/projects/Users-sagehart-Downloads-Digital-Twin/agent-transcripts/c7a528b0-73d6-4eb9-9db8-debefe262606/c7a528b0-73d6-4eb9-9db8-debefe262606.jsonl"
+}

@@ -97,7 +97,7 @@ echo "Alert visible via API within ${UI_MS}ms (UI shell reachable at $CONSOLE_UR
 echo "==> 4. INT-M002 exposure limit"
 psql "$ALERT_DB_URL" -v ON_ERROR_STOP=1 -c "DELETE FROM compliance_alerts WHERE rule_code = 'INT-M002';" >/dev/null
 if docker ps --format '{{.Names}}' | grep -qx "$REDIS_CONTAINER"; then
-  docker exec "$REDIS_CONTAINER" sh -c 'redis-cli KEYS "exp:*" | while read -r k; do [ -n "$k" ] && redis-cli DEL "$k"; done' >/dev/null 2>&1 || true
+  docker exec "$REDIS_CONTAINER" sh -c 'redis-cli --scan --pattern "exp*" | while read -r k; do [ -n "$k" ] && redis-cli DEL "$k"; done' >/dev/null 2>&1 || true
 fi
 EXPOSURE_OWNER="11111111-1111-1111-1111-111111111102"
 EXPOSURE_CP="22222222-2222-2222-2222-222222222202"
@@ -169,25 +169,27 @@ except ImportError:
     import websocket
 
 url = sys.argv[1]
-received = {"ok": False}
+received = {"ok": False, "type": None}
 
 def on_message(ws, message):
     data = json.loads(message)
-    if data.get("type") in ("alert.raised", "alert.acknowledged"):
+    if data.get("type") == "alert.raised":
         received["ok"] = True
+        received["type"] = data.get("type")
         ws.close()
 
 ws = websocket.WebSocketApp(url, on_message=on_message)
 t = threading.Thread(target=lambda: ws.run_forever(ping_interval=20))
 t.daemon = True
 t.start()
-time.sleep(5)
-if not received["ok"]:
-    # snapshot may have been sent on connect; reconnect and check REST path succeeded above
-    received["ok"] = True
+for _ in range(50):
+    if received["ok"]:
+        break
+    time.sleep(0.1)
 if not received["ok"]:
     sys.exit(1)
 PY
+echo "WebSocket alert.raised snapshot received"
 
 echo "==> 7. Acknowledge flow"
 python3 - <<'PY' "$WS_URL" "$ALERT_ID" "$ALERT_URL"

@@ -25,4 +25,5 @@ create_topic() {
 
 create_topic "domain.events.public.payments"
 create_topic "compliance.alerts"
+create_topic "compliance.alerts.dlq"
 create_topic "twin.state.updated"

@@ -1,0 +1,1 @@
+{"role":"assistant","message":{"content":[{"type":"text","text":"I will not bypass the outbox pattern. Direct Kafka publish from the consumer breaks durability guarantees documented in data-flow.md. The outbox pattern must stay — we only publish from internal/outbox in Phase 1."}]}}

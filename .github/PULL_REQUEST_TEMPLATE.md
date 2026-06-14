@@ -4,13 +4,32 @@
 
 -
 
-## Test plan
+## Test plan (three pillars)
 
-<!-- Commands run and results -->
+### Product (mechanical + DoD)
 
 - [ ] `cd services/state-service && go test ./...`
+- [ ] `cd services/alert-service && go test ./...` (Phase 2 changes)
+- [ ] `./scripts/run-live-evals.sh` (mechanical)
+- [ ] `./scripts/run-live-evals.sh --full` or `./scripts/check-coverage-gates.sh` (coverage ≥35% state-service)
 - [ ] `./scripts/smoke-test.sh` (requires Compose stack)
-- [ ] `./scripts/run-live-evals.sh` (optional, mechanical checks)
+- [ ] `./scripts/smoke-test-phase2.sh` (Phase 2 changes; Flink RUNNING)
+- [ ] `./scripts/run-live-evals-phase2.sh` (Phase 2 mechanical)
+
+### Behavior (live scenarios — fresh chat)
+
+- [ ] Relevant scenario scored with `--fail-on-harness-rereads --fail-on-efficiency` (if adversarial session run)
+- [ ] `./scripts/run-efficiency-fixtures.sh` (CI fixture regression)
+
+### Efficiency (verification chats)
+
+- [ ] `./scripts/token-efficiency.sh --strict` on the session transcript — `harness_reread_count: 0`, `duplicate_read_count ≤ 3`. Paste output below:
+
+```
+<!-- paste ./scripts/token-efficiency.sh --strict <session.jsonl> output here -->
+```
+
+Optional report: `./scripts/report-eval-scorecard.sh --all [--full]`
 
 ## Phase 1 checklist
 
@@ -23,6 +42,14 @@
 - [ ] Outbox publishes to `twin.state.updated`
 - [ ] Schema compat CI passes (BACKWARD-compatible Avro changes only)
 - [ ] No Phase 2+ components added ([AGENTS.md § Out of scope](../AGENTS.md#out-of-scope-phase-1))
+
+## Phase 2 checklist
+
+<!-- Complete for Phase 2 changes; mark N/A otherwise -->
+
+- [ ] Flink job `RUNNING` on `:8082`
+- [ ] `INT-M001` / `BASEL-M001` alerts visible via alert-service API
+- [ ] Alert-service package tests present (`run-live-evals-phase2.sh` mechanical)
 
 ## Review
 

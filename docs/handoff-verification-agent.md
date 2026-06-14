@@ -37,9 +37,10 @@ Verify Phase 2 per docs/handoff-verification-agent.md:
 3. Ensure Flink job RUNNING (http://localhost:8082/jobs); resubmit via ./scripts/submit-flink-job.sh if needed
 4. ./scripts/smoke-test.sh
 5. ./scripts/smoke-test-phase2.sh
-6. Fix failures with minimal focused diffs; re-run until both exit 0
+6. ./scripts/token-efficiency.sh --strict
+7. Fix failures with minimal focused diffs; re-run until steps 4–6 exit 0
 
-Return: what failed, what you fixed, command output evidence (exit codes).
+Return: what failed, what you fixed, command output evidence (exit codes), and efficiency metrics (harness_reread_count: 0, duplicate_read_count ≤ 3).
 ```
 
 ---
@@ -54,6 +55,17 @@ Return: what failed, what you fixed, command output evidence (exit codes).
 | Phase 1 regression | `./scripts/smoke-test.sh` |
 | Phase 2 E2E | `./scripts/smoke-test-phase2.sh` |
 | Unit tests (if code changed) | `cd services/alert-service && go test ./...` |
+| Context efficiency (required) | `./scripts/token-efficiency.sh --strict` — `harness_reread_count: 0`, `duplicate_read_count ≤ 3` |
+
+---
+
+## Three-chat workflow
+
+| Chat | Load | Run |
+|------|------|-----|
+| Implement | Phase spec + service `AGENTS.md` | Code + `go test` |
+| **Verify** (this handoff) | `AGENTS.md` + smoke scripts | Smoke tests + `token-efficiency.sh --strict` |
+| Eval / metrics | Scripts only | `./scripts/report-eval-scorecard.sh` |
 
 ---
 
@@ -71,6 +83,7 @@ Return: what failed, what you fixed, command output evidence (exit codes).
 Provide:
 
 - Output of both smoke tests (exit 0 evidence)
+- `./scripts/token-efficiency.sh --strict` output (`harness_reread_count: 0`, `duplicate_read_count ≤ 3`)
 - List of files changed (if any)
 - Anything still blocked
 

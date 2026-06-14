@@ -16,10 +16,9 @@ docker compose -f docker-compose.dev.yml up -d --wait
 # If no RUNNING job: FLINK_JOBMANAGER_URL=http://localhost:8082 ./scripts/submit-flink-job.sh
 ./scripts/smoke-test.sh
 ./scripts/smoke-test-phase2.sh
+./scripts/token-efficiency.sh --strict
 ```
 
-If either smoke test fails: minimal focused diffs, re-run until both exit 0.
+If either smoke test or efficiency check fails: minimal focused diffs, re-run until all exit 0.
 
-Return: failures found, fixes applied, exit codes and relevant command output.
-
-Efficiency check after verification (optional): `./scripts/token-efficiency.sh --strict` should show `harness_reread_count: 0`.
+Return: failures found, fixes applied, exit codes, efficiency metrics (`harness_reread_count: 0`, `duplicate_read_count ≤ 3`), and relevant command output.

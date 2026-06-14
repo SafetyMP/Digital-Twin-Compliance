@@ -64,6 +64,7 @@ Measure sessions with:
 # Wrapper — finds latest substantive transcript (agents: run this, do not Read scorer source)
 ./scripts/token-efficiency.sh
 ./scripts/token-efficiency.sh --compare-baseline
+./scripts/token-efficiency.sh --strict   # exit 1 if harness_reread_count > 0 or duplicate_read_count > 5
 
 # Baseline all parent transcripts in the Cursor project folder
 ./scripts/score-agent-transcript.py \

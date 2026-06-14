@@ -1,22 +1,33 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
 
-	"github.com/digital-twin/platform/services/alert-service/internal/hub"
 	"github.com/digital-twin/platform/services/alert-service/internal/store"
 )
 
+type AlertStore interface {
+	ListAlerts(ctx context.Context, status, severity string, limit, offset int) ([]store.Alert, error)
+	GetAlert(ctx context.Context, alertID string) (store.Alert, error)
+	Acknowledge(ctx context.Context, alertID, acknowledgedBy string) (store.Alert, error)
+}
+
+type AlertBroadcaster interface {
+	Broadcast(msgType string, alert store.Alert)
+	ServeHTTP(w http.ResponseWriter, r *http.Request, initial []store.Alert)
+}
+
 type Server struct {
-	store  *store.Store
-	hub    *hub.Hub
+	store  AlertStore
+	hub    AlertBroadcaster
 	wsPath string
 }
 
-func NewServer(st *store.Store, h *hub.Hub, wsPath string) *Server {
+func NewServer(st AlertStore, h AlertBroadcaster, wsPath string) *Server {
 	return &Server{store: st, hub: h, wsPath: wsPath}
 }
 
@@ -30,6 +41,7 @@ func (s *Server) Handler() http.Handler {
 	return mux
 }
 
+// health is a liveness probe: it returns 200 OK to signal the process is up.
 func (s *Server) health(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 }
