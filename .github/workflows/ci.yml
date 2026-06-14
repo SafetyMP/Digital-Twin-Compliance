@@ -76,7 +76,10 @@ jobs:
 
       - name: Maven tests (compliance-cep)
         working-directory: jobs/compliance-cep
-        run: mvn -q test
+        run: |
+          # flink-job-submitter builds inside Docker as root; reset before host mvn test.
+          sudo rm -rf target
+          mvn -q test
 
       - name: Build alert-console
         working-directory: apps/alert-console
