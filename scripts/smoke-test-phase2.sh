@@ -12,6 +12,14 @@ WS_URL="${NEXT_PUBLIC_WS_URL:-ws://localhost:8085/ws/alerts}"
 CORE_URL="${CORE_BANKING_DB_URL:-postgres://core:core@localhost:5433/core_banking?sslmode=disable}"
 ALERT_DB_URL="${ALERT_DB_URL:-postgres://alert:alert@localhost:5435/alerts?sslmode=disable}"
 REDIS_CONTAINER="${REDIS_CONTAINER:-digitaltwin-redis-1}"
+ALERT_WAIT_SEC="${SMOKE_PHASE2_ALERT_WAIT_SEC:-30}"
+
+if ! docker ps --format '{{.Names}}' | grep -qx "$REDIS_CONTAINER"; then
+  DETECTED=$(docker ps --format '{{.Names}}' | grep -E 'redis-1$' | head -1 || true)
+  if [[ -n "$DETECTED" ]]; then
+    REDIS_CONTAINER="$DETECTED"
+  fi
+fi
 
 echo "==> Phase 2 smoke test"
 
@@ -66,7 +74,7 @@ BEFORE=$(curl -sf "$ALERT_URL/api/v1/alerts?status=Open" | jq '[.[] | select(.ru
 BURST_END=$(python3 -c "import time; print(int(time.time() * 1000))")
 FOUND=""
 CONSUME_MS=""
-for i in $(seq 1 30); do
+for i in $(seq 1 "$ALERT_WAIT_SEC"); do
   COUNT=$(curl -sf "$ALERT_URL/api/v1/alerts?status=Open" | jq '[.[] | select(.ruleCode=="INT-M001")] | length')
   if [[ "$COUNT" -gt "$BEFORE" ]]; then
     FOUND=1
@@ -78,7 +86,7 @@ for i in $(seq 1 30); do
   sleep 1
 done
 if [[ -z "$FOUND" ]]; then
-  echo "INT-M001 alert not detected within 30s" >&2
+  echo "INT-M001 alert not detected within ${ALERT_WAIT_SEC}s" >&2
   exit 1
 fi
 if [[ "$CONSUME_MS" -gt 2000 ]]; then

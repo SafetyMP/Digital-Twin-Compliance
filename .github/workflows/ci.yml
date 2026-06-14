@@ -8,6 +8,8 @@ on:
 jobs:
   phase1:
     runs-on: ubuntu-latest
+    env:
+      COMPOSE_PROJECT_NAME: digitaltwin
     steps:
       - uses: actions/checkout@v4
 
@@ -110,6 +112,8 @@ jobs:
         run: ./scripts/smoke-test.sh
 
       - name: Smoke test (Phase 2)
+        env:
+          SMOKE_PHASE2_ALERT_WAIT_SEC: 90
         run: chmod +x scripts/smoke-test-phase2.sh mocks/simulators/payment-burst.sh scripts/submit-flink-job.sh && ./scripts/smoke-test-phase2.sh
 
       - name: Coverage gates
