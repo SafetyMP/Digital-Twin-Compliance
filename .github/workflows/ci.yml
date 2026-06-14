@@ -85,9 +85,15 @@ jobs:
         working-directory: apps/alert-console
         run: npm install && npm run build
 
-      - name: Wait for Flink job
+      - name: Submit Flink job and wait for RUNNING
         run: |
-          for i in $(seq 1 90); do
+          chmod +x scripts/submit-flink-job.sh
+          ./scripts/submit-flink-job.sh
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:8082/jobs/overview | jq -e '.jobs[] | select(.state=="RUNNING")' >/dev/null; then
+              echo "Flink job running"
+              exit 0
+            fi
             if curl -sf http://localhost:8082/jobs | jq -e '.jobs[] | select(.status=="RUNNING")' >/dev/null; then
               echo "Flink job running"
               exit 0
@@ -95,7 +101,9 @@ jobs:
             sleep 5
           done
           echo "Flink job did not reach RUNNING" >&2
-          docker compose -f docker-compose.dev.yml logs flink-job-submitter --tail 100
+          curl -sf http://localhost:8082/jobs/overview | jq . || true
+          docker compose -f docker-compose.dev.yml logs flink-jobmanager --tail 80
+          docker compose -f docker-compose.dev.yml logs flink-taskmanager --tail 80
           exit 1
 
       - name: Smoke test (Phase 1)

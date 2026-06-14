@@ -24,6 +24,13 @@ for i in $(seq 1 60); do
   sleep 2
 done
 
+echo "Cancelling existing RUNNING compliance-cep jobs (if any)..."
+EXISTING=$(curl -sf "${FLINK_URL}/jobs/overview" 2>/dev/null | jq -r '.jobs[] | select(.name=="compliance-cep" and .state=="RUNNING") | .jid' || true)
+for jid in $EXISTING; do
+  echo "Cancelling job $jid"
+  curl -sf -X PATCH "${FLINK_URL}/jobs/${jid}?mode=cancel" >/dev/null || true
+done
+
 echo "Uploading JAR..."
 UPLOAD=$(curl -sf -X POST -H "Expect:" -F "jarfile=@${JAR_PATH}" "${FLINK_URL}/jars/upload")
 JAR_ID=$(basename "$(echo "$UPLOAD" | jq -r '.filename')")
