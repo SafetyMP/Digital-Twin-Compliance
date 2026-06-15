@@ -50,6 +50,9 @@ jobs:
       - name: Seed databases
         run: ./scripts/seed.sh
 
+      - name: Restart alert-service after seed
+        run: docker compose -f docker-compose.dev.yml restart alert-service && docker compose -f docker-compose.dev.yml up -d --wait alert-service
+
       - name: Register schemas
         run: ./scripts/register-schemas.sh
 
@@ -71,12 +74,12 @@ jobs:
         working-directory: services/alert-service
         run: go mod tidy && go test ./...
 
-      - name: Maven tests (compliance-cep)
+      - name: Maven package (compliance-cep)
         working-directory: jobs/compliance-cep
         run: |
-          # flink-job-submitter builds inside Docker as root; reset before host mvn test.
+          # flink-job-submitter builds inside Docker as root; reset before host mvn package.
           sudo rm -rf target
-          mvn -q test
+          mvn -q package
 
       - name: Build alert-console
         working-directory: apps/alert-console

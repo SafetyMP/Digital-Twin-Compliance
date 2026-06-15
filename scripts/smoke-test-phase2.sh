@@ -37,8 +37,10 @@ dump_int_m001_debug() {
   PAYMENT_ROWS=$(psql "$CORE_URL" -tA -c "SELECT COUNT(*) FROM payments;" 2>/dev/null || echo "?")
   echo "payments rows in core DB: $PAYMENT_ROWS" >&2
   if docker ps --format '{{.Names}}' | grep -qx "$KAFKA_CONTAINER"; then
-    docker exec "$KAFKA_CONTAINER" kafka-run-class kafka.tools.GetOffsetShell \
-      --broker-list localhost:9092 --topic domain.events.public.payments 2>/dev/null | head -5 >&2 || true
+    docker exec "$KAFKA_CONTAINER" /opt/kafka/bin/kafka-get-offsets.sh \
+      --bootstrap-server localhost:9092 --topic domain.events.public.payments 2>/dev/null | head -5 >&2 || true
+    docker exec "$KAFKA_CONTAINER" /opt/kafka/bin/kafka-get-offsets.sh \
+      --bootstrap-server localhost:9092 --topic compliance.alerts 2>/dev/null | head -5 >&2 || true
   fi
   if docker ps --format '{{.Names}}' | grep -qx "$REDIS_CONTAINER"; then
     docker exec "$REDIS_CONTAINER" redis-cli KEYS "vel:${TENANT_ID}:*" 2>/dev/null | head -5 >&2 || true
@@ -47,6 +49,7 @@ dump_int_m001_debug() {
     fi
   fi
   curl -sf "$ALERT_URL/api/v1/alerts?status=Open" 2>/dev/null | jq '[.[] | {ruleCode, idempotencyKey}]' >&2 || true
+  psql "$ALERT_DB_URL" -tA -c "SELECT rule_code, status, idempotency_key FROM compliance_alerts ORDER BY detected_at DESC LIMIT 5;" 2>/dev/null >&2 || true
 }
 
 echo "==> Phase 2 smoke test"
