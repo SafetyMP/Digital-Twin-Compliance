@@ -6,7 +6,7 @@ Operational contract for coding agents working in this repository.
 
 **Phase 2** — Real-time compliance monitoring and alert delivery. Full spec: [docs/phase2-implementation-spec.md](docs/phase2-implementation-spec.md). Phase 1 spec: [docs/phase1-implementation-spec.md](docs/phase1-implementation-spec.md).
 
-Architecture and domain docs live under [docs/](docs/). Do not implement Phase 2+ components unless explicitly requested.
+Architecture and domain docs live under [docs/](docs/). Do not implement Phase 3+ components unless explicitly requested.
 
 ## Context loading
 
@@ -82,28 +82,36 @@ After verification or eval scoring, run `./scripts/token-efficiency.sh --strict`
 
 ## Commands
 
-Run from repository root after Phase 1 scaffold exists:
+Run from repository root:
 
 ```bash
+# First run: copy env (scripts also fall back to .env.example defaults)
+cp .env.example .env
+
 # Start local stack
 docker compose -f docker-compose.dev.yml up -d --wait
 
-# Apply seed data
+# Apply seed data (also creates Kafka topics when stack is healthy)
 ./scripts/seed.sh
 
-# Register Avro schemas
-./scripts/register-schemas.sh
+# If Debezium/state lag after seed (CI order):
+./scripts/register-debezium-connector.sh
+docker compose -f docker-compose.dev.yml restart state-service && docker compose -f docker-compose.dev.yml up -d --wait state-service
+
+# Phase 2: restart alert-service after seed so consumers see new topics
+docker compose -f docker-compose.dev.yml restart alert-service && docker compose -f docker-compose.dev.yml up -d --wait alert-service
+
+# Phase 2: ensure Flink CEP job RUNNING
+./scripts/submit-flink-job.sh
 
 # State Service — tests
 cd services/state-service && go test ./...
 
-# State Service — run locally (if not using Compose build)
-cd services/state-service && go run ./cmd/server
+# Alert Service — tests (store package needs Docker for testcontainers)
+cd services/alert-service && go test ./...
 
-# End-to-end smoke test
+# End-to-end smoke tests
 ./scripts/smoke-test.sh
-
-# Phase 2 smoke test (after Flink job RUNNING)
 ./scripts/smoke-test-phase2.sh
 
 # Token efficiency (latest agent transcript)
@@ -113,7 +121,7 @@ cd services/state-service && go run ./cmd/server
 docker compose -f docker-compose.dev.yml down -v
 ```
 
-Copy environment variables from `.env.example` before first run.
+`seed.sh` conditionally runs schema registration and Debezium connector setup when the stack is healthy; use the explicit restart/submit steps above when smoke tests fail after a cold start.
 
 Long-running commands (stack bring-up, image pulls, smoke tests can exceed 7 min):
 
@@ -161,16 +169,22 @@ Hard-won fixes from Phase 2 — check here before rediscovering them ([capturing
 - Imports at top of file; no inline imports unless documented circular-dependency reason.
 - **Verification floor (not waivable)**: any edit to a code file (`.go`, `.java`, `.ts`/`.tsx`) requires at minimum a build/compile or the touched package's tests before claiming done — including comment- or doc-only edits. A user calling a change "trivial" scopes *how much* to verify (a one-line comment → `go build ./...` or `go test ./internal/<pkg>/...`; logic changes → package tests + relevant smoke), never *whether* to verify.
 
-## Out of scope (Phase 1)
+## Scope by phase
 
-Do **not** add in Phase 1 PRs:
+### Phase 2 (current)
 
-- Apache Flink / CEP jobs
+In scope unless a task is explicitly Phase 1-only:
+
+- Flink CEP job (`jobs/compliance-cep/`), Redis features, Alert Service, Alert Console, Grafana, Phase 2 smoke/CI
+
+### Out of scope (Phase 3+)
+
+Do **not** add unless the task explicitly targets a later phase:
+
 - Cedar Policy Service / GoRules Zen
 - immudb audit ledger
 - Neo4j / Graph Service
-- Next.js UI / WebSocket alert console
-- Keycloak / auth middleware
+- Keycloak / full auth middleware
 - Regulatory reporting (XBRL)
 
 Phase/deferral rationale: [docs/roadmap.md](docs/roadmap.md).

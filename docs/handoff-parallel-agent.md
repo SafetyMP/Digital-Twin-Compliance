@@ -50,7 +50,7 @@ Other ADRs (Kafka+Flink, Cedar, immudb, Zen, datastores) apply to later phases �
 
 ## Explicitly out of scope
 
-See [AGENTS.md § Out of scope](../AGENTS.md#out-of-scope-phase-1) for the canonical list. Phase/deferral rationale remains in [roadmap.md](./roadmap.md).
+See [AGENTS.md § Scope by phase](../AGENTS.md#scope-by-phase) for the canonical list. Phase/deferral rationale remains in [roadmap.md](./roadmap.md).
 
 If you need a stub interface for a future service, use a TODO comment referencing the roadmap phase — do not build the service.
 

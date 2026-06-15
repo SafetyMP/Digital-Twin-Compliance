@@ -31,6 +31,7 @@ Unless the user pasted a path for scoring:
 
 - `~/.cursor/projects/**/agent-transcripts/**`
 - `~/.cursor/projects/**/terminals/**` (use `Await` once; no double-Read)
+- `evals/harness/`, `evals/fixtures/` — scoring answer keys during live evals
 - `evals/live-model/README.md`, `evals/live-model/manifest.json` — run scripts instead
 
 ## Do not re-read (same session)

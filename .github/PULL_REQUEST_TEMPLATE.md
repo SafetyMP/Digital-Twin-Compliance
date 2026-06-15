@@ -41,7 +41,7 @@ Optional report: `./scripts/report-eval-scorecard.sh --all [--full]`
 - [ ] Core-banking UPDATE propagates to state within 5s; `state_version` increments
 - [ ] Outbox publishes to `twin.state.updated`
 - [ ] Schema compat CI passes (BACKWARD-compatible Avro changes only)
-- [ ] No Phase 2+ components added ([AGENTS.md § Out of scope](../AGENTS.md#out-of-scope-phase-1))
+- [ ] No Phase 3+ components added ([AGENTS.md § Scope by phase](../AGENTS.md#scope-by-phase))
 
 ## Phase 2 checklist
 

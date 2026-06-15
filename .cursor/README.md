@@ -13,7 +13,7 @@ See [AGENTS.md](../AGENTS.md) § Session hygiene:
 | Eval / metrics | Yes | `./scripts/token-efficiency.sh` only |
 | Analysis | Optional | User-directed; avoid transcript reads |
 
-Verification chats should pass `./scripts/token-efficiency.sh --strict` (`harness_reread_count: 0`).
+Verification chats should pass `./scripts/token-efficiency.sh --strict` (`harness_reread_count: 0`, `duplicate_read_count ≤ 3`).
 
 ## Recommended plugins (enable)
 
@@ -40,7 +40,7 @@ Re-enable when working on those stacks in other projects.
 
 1. Cursor → **Settings → Plugins** — disable plugins listed above *(done for this workspace)*
 2. Cursor → **Settings → Rules → User Rules** — paste [USER-RULES.expected.txt](file:///Users/sagehart/.cursor/rules/USER-RULES.expected.txt) *(done)*
-3. Open a **fresh chat** and run `./scripts/token-efficiency.sh --strict` on a verification task to confirm `harness_reread_count: 0`
+3. Open a **fresh chat** and run `./scripts/token-efficiency.sh --strict` on a verification task to confirm `harness_reread_count: 0` and `duplicate_read_count ≤ 3`
 
 ## Project rules
 

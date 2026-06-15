@@ -12,10 +12,12 @@ Run sequentially (evidence before claiming done):
 ```bash
 docker compose -f docker-compose.dev.yml up -d --wait
 ./scripts/seed.sh
+docker compose -f docker-compose.dev.yml restart alert-service && docker compose -f docker-compose.dev.yml up -d --wait alert-service
 # Flink RUNNING? curl -sf http://localhost:8082/jobs | jq '.jobs[] | select(.status=="RUNNING")'
 # If no RUNNING job: FLINK_JOBMANAGER_URL=http://localhost:8082 ./scripts/submit-flink-job.sh
 ./scripts/smoke-test.sh
 ./scripts/smoke-test-phase2.sh
+# If code changed: cd services/alert-service && go test ./...
 ./scripts/token-efficiency.sh --strict
 ```
 
