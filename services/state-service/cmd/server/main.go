@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -44,7 +45,15 @@ func main() {
 	if err != nil {
 		outboxInterval = time.Second
 	}
-	publisher := outbox.NewPublisher(st, cfg.KafkaBrokers, cfg.ServiceSource, outboxInterval)
+	outboxBatchTimeout, err := time.ParseDuration(cfg.OutboxBatchTimeout)
+	if err != nil {
+		outboxBatchTimeout = 10 * time.Millisecond
+	}
+	outboxBatchSize := 100
+	if n, err := strconv.Atoi(cfg.OutboxBatchSize); err == nil && n > 0 {
+		outboxBatchSize = n
+	}
+	publisher := outbox.NewPublisher(st, cfg.KafkaBrokers, cfg.ServiceSource, outboxInterval, outboxBatchTimeout, outboxBatchSize)
 
 	go func() {
 		if err := runner.Run(ctx); err != nil && ctx.Err() == nil {

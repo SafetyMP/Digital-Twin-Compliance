@@ -68,5 +68,6 @@ From repo root: see [AGENTS.md](../../AGENTS.md) for Compose, seed, schema regis
 - **Instrument numeric enrichment** — `enrichInstrumentState` in `internal/consumer/enrichment.go` converts CDC string decimals (e.g. `notional_amount`) to JSON numbers in `currentState` before outbox publish; golden publisher contract: `contracts/kafka/twin.state.updated/instrument.payload.json` (`TestKafkaContract_*` in `kafka_contract_test.go`)
 - Run `./scripts/register-schemas.sh` before starting the consumer (Schema Registry must have Avro subjects)
 - Run `./scripts/register-debezium-connector.sh` after Compose stack is healthy
+- **Outbox publisher** — batch `WriteMessages` (up to `OUTBOX_BATCH_SIZE`, default 100) with explicit `OUTBOX_BATCH_TIMEOUT` (default `10ms`); per-row writes with `kafka-go` defaults stall at ~1 msg/s. After restart: `./scripts/wait-outbox-drained.sh` then `./scripts/verify-state-twin-pipeline.sh`.
 - `./scripts/smoke-test.sh` requires the full Compose stack up (`docker compose -f docker-compose.dev.yml up -d --wait`)
 - Default tenant UUID: `00000000-0000-0000-0000-000000000001` — use consistently in seed, migrations, and tests

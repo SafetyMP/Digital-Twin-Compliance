@@ -81,6 +81,9 @@ jobs:
       - name: Restart state-service after connector
         run: docker compose -f docker-compose.dev.yml restart state-service && docker compose -f docker-compose.dev.yml up -d --wait state-service
 
+      - name: Wait for outbox drain after restart
+        run: chmod +x scripts/wait-outbox-drained.sh scripts/smoke-lib-phase2.sh && ./scripts/wait-outbox-drained.sh
+
       - name: Verify state twin pipeline
         run: chmod +x scripts/verify-state-twin-pipeline.sh scripts/smoke-lib-phase2.sh && ./scripts/verify-state-twin-pipeline.sh
 

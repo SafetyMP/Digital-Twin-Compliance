@@ -144,6 +144,19 @@ wait_twin_lcr_below() {
   return 1
 }
 
+max_outbox_id() {
+  psql "${STATE_URL}" -tA -c "SELECT COALESCE(MAX(id), 0) FROM outbox;" 2>/dev/null | tr -d '[:space:]'
+}
+
+outbox_pending_after_id() {
+  local after_id="$1"
+  psql "${STATE_URL}" -tA -c "
+    SELECT COUNT(*)
+    FROM outbox
+    WHERE id > ${after_id} AND published_at IS NULL;
+  " 2>/dev/null | tr -d '[:space:]'
+}
+
 wait_outbox_drained() {
   local timeout="${1:-30}"
   for _ in $(seq 1 "$timeout"); do
@@ -156,5 +169,28 @@ wait_outbox_drained() {
     sleep 1
   done
   echo "outbox not drained within ${timeout}s (pending=${pending:-?})" >&2
+  return 1
+}
+
+# Wait until rows created after a checkpoint id are published (canary path; ignores historical backlog).
+wait_outbox_published_after_id() {
+  local after_id="$1" timeout="${2:-30}" label="${3:-outbox after id $after_id}"
+  for _ in $(seq 1 "$timeout"); do
+    local pending_new
+    pending_new="$(outbox_pending_after_id "$after_id")"
+    if [[ "${pending_new:-}" == "0" ]]; then
+      echo "${label} published"
+      return 0
+    fi
+    sleep 1
+  done
+  echo "${label} not published within ${timeout}s (pending_new=${pending_new:-?})" >&2
+  psql "${STATE_URL}" -tA -c "
+    SELECT id, topic, published_at IS NOT NULL AS published
+    FROM outbox
+    WHERE id > ${after_id} AND published_at IS NULL
+    ORDER BY id
+    LIMIT 5;
+  " 2>/dev/null >&2 || true
   return 1
 }

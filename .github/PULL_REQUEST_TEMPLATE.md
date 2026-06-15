@@ -15,7 +15,7 @@
 - [ ] `./scripts/run-live-evals.sh --full` or `./scripts/check-coverage-gates.sh` (coverage ≥35% state-service)
 - [ ] `./scripts/smoke-test.sh` (requires Compose stack)
 - [ ] `./scripts/smoke-test-phase2.sh` (Phase 2 changes; Flink RUNNING; subset: `SMOKE_PHASE2_ONLY=M002`; gates twin mirror → Redis → alert for twin-path rules)
-- [ ] `./scripts/verify-state-twin-pipeline.sh` (after state-service restart / Debezium register)
+- [ ] `./scripts/wait-outbox-drained.sh` then `./scripts/verify-state-twin-pipeline.sh` (after state-service restart / Debezium register)
 - [ ] `./scripts/run-live-evals-phase2.sh` (Phase 2 mechanical)
 
 ### Behavior (live scenarios — fresh chat)

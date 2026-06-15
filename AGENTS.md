@@ -148,6 +148,7 @@ cd services/alert-service && go test ./...
 ./scripts/smoke-test-phase2.sh
 
 # Twin-path canary (after state-service restart / Debezium register)
+./scripts/wait-outbox-drained.sh
 ./scripts/verify-state-twin-pipeline.sh
 
 # Token efficiency (latest agent transcript)
@@ -186,6 +187,7 @@ Hard-won fixes from Phase 2 — check here before rediscovering them ([capturing
 - **BASEL-M001 smoke-test localization**: requires `legal_entities.lcr` (and related columns) in core banking — enrichment no longer hard-codes liquidity. Smoke lowers Delta Independent Bank to `lcr = 0.90`; if open alerts stay empty, check core row → `twin_personas.current_state` liquidity block → `twin.state.updated` → Flink `lcr:*` Redis key. Smoke waits on twin `liquidity.lcr` mirror before Redis, then alert API.
 - **INT-M002 smoke-test localization**: needs two instruments with matching `owner_entity_id` + `counterparty_id` (see `002_phase2_exposure.sql`). After updates, Redis `exp:{tenant}:{owner}:{counterparty}` should exceed `CEP_EXPOSURE_LIMIT_EUR` (10M); if empty, check `twin_personas.current_state` mirrored notional/owner/counterparty (state-service) before Flink; smoke waits on twin mirror then Redis — if twin never updates, restart state-service after Debezium/seed.
 - **Cross-service numeric contract**: Debezium CDC decimals arrive as strings in Go; state-service `enrichInstrumentState` / `enrichInstitutionState` normalize before `twin.state.updated`. Flink must still use `JsonParsers.parseDouble` defensively. Golden fixtures live under `contracts/kafka/`; run `./scripts/check-kafka-contracts.sh`.
+- **Outbox publisher throughput**: `kafka-go` `Writer` defaults `BatchTimeout=1s` — per-row `WriteMessages` ≈ 1 msg/s. Publisher batches rows and sets explicit `BatchTimeout` (`OUTBOX_BATCH_TIMEOUT`, default `10ms`). After Debezium register + `state-service` restart, run `./scripts/wait-outbox-drained.sh` before verify — restart leaves a large `outbox` backlog unrelated to the canary.
 - **Verification after edits** (fail fast before Docker smoke):
 
 | Touch | Minimum |
@@ -194,7 +196,7 @@ Hard-won fixes from Phase 2 — check here before rediscovering them ([capturing
 | `services/alert-service/` | `cd services/alert-service && go test ./...` |
 | `jobs/compliance-cep/` | `cd jobs/compliance-cep && mvn test` |
 | CDC enrichment + CEP parsers | both `go test` and `mvn test`; `./scripts/check-kafka-contracts.sh` must pass |
-| Seeds / smoke scripts | `bash -n scripts/smoke-test-phase2.sh scripts/smoke-lib-phase2.sh scripts/verify-state-twin-pipeline.sh`; full smoke needs stack |
+| Seeds / smoke scripts | `bash -n scripts/smoke-test-phase2.sh scripts/smoke-lib-phase2.sh scripts/verify-state-twin-pipeline.sh scripts/wait-outbox-drained.sh`; full smoke needs stack |
 | Single smoke scenario | `SMOKE_PHASE2_ONLY=M002 ./scripts/smoke-test-phase2.sh` (optional `SMOKE_PHASE2_SKIP_PREREQS=1` when stack warm) |
 
 CI runs Go + `mvn test` + `check-kafka-contracts.sh` before `docker compose up`; smoke remains the integration gate.
@@ -204,7 +206,7 @@ CI runs Go + `mvn test` + `check-kafka-contracts.sh` before `docker compose up`;
   1. Unit tests + Kafka contracts (fail fast)
   2. `docker compose up -d --wait`
   3. `./scripts/seed.sh` → restart `alert-service`
-  4. Register schemas + Debezium → restart `state-service` → `./scripts/verify-state-twin-pipeline.sh`
+  4. Register schemas + Debezium → restart `state-service` → `./scripts/wait-outbox-drained.sh` → `./scripts/verify-state-twin-pipeline.sh`
   5. `mvn package -DskipTests` (host jar; Compose submitter image may be stale until this)
   6. `./scripts/submit-flink-job.sh` with fresh `CEP_CONSUMER_GROUP_SUFFIX`
   7. `./scripts/smoke-test.sh` then `./scripts/smoke-test-phase2.sh`

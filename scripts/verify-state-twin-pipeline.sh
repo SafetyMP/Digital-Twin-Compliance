@@ -12,6 +12,7 @@ REDIS_CONTAINER="${REDIS_CONTAINER:-digitaltwin-redis-1}"
 KAFKA_CONTAINER="${KAFKA_CONTAINER:-digitaltwin-kafka-1}"
 TENANT_ID="${DEFAULT_TENANT_ID:-00000000-0000-0000-0000-000000000001}"
 CANARY_WAIT_SEC="${STATE_TWIN_CANARY_WAIT_SEC:-60}"
+OUTBOX_CANARY_WAIT_SEC="${STATE_OUTBOX_CANARY_WAIT_SEC:-30}"
 
 # Delta Independent Bank — seeded institution with liquidity columns (BASEL-M001 path).
 CANARY_ENTITY="${STATE_TWIN_CANARY_ENTITY:-44444444-4444-4444-4444-444444444401}"
@@ -43,6 +44,11 @@ if [[ -z "$BEFORE_VERSION" ]]; then
   BEFORE_VERSION="0"
 fi
 
+OUTBOX_ID_BEFORE="$(max_outbox_id)"
+if [[ -z "$OUTBOX_ID_BEFORE" ]]; then
+  OUTBOX_ID_BEFORE="0"
+fi
+
 psql "$CORE_URL" -v ON_ERROR_STOP=1 -c "
   UPDATE legal_entities
   SET updated_at = now()
@@ -59,7 +65,7 @@ if ! wait_twin_state_version_gt "$CANARY_ENTITY" "$MIN_VERSION" "$CANARY_WAIT_SE
   exit 1
 fi
 
-if ! wait_outbox_drained 30; then
+if ! wait_outbox_published_after_id "$OUTBOX_ID_BEFORE" "$OUTBOX_CANARY_WAIT_SEC" "canary outbox"; then
   smoke_twin_pipeline_debug
   exit 1
 fi

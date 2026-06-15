@@ -15,6 +15,8 @@ type Config struct {
 	DebeziumTopics     []string
 	DebeziumDLQTopic   string
 	OutboxPollInterval string
+	OutboxBatchSize    string
+	OutboxBatchTimeout string
 }
 
 func Load() Config {
@@ -29,6 +31,8 @@ func Load() Config {
 			"domain.events.public.legal_entities,domain.events.public.accounts,domain.events.public.instruments"),
 		DebeziumDLQTopic:   env("STATE_CDC_DLQ_TOPIC", "domain.events.dlq"),
 		OutboxPollInterval: env("OUTBOX_POLL_INTERVAL", "1s"),
+		OutboxBatchSize:    env("OUTBOX_BATCH_SIZE", "100"),
+		OutboxBatchTimeout: env("OUTBOX_BATCH_TIMEOUT", "10ms"),
 	}
 }
 

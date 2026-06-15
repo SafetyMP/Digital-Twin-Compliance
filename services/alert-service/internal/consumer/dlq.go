@@ -21,9 +21,10 @@ type kafkaDLQ struct {
 func newKafkaDLQ(brokers []string, topic string) *kafkaDLQ {
 	return &kafkaDLQ{
 		writer: &kafka.Writer{
-			Addr:     kafka.TCP(brokers...),
-			Topic:    topic,
-			Balancer: &kafka.LeastBytes{},
+			Addr:         kafka.TCP(brokers...),
+			Topic:        topic,
+			Balancer:     &kafka.LeastBytes{},
+			BatchTimeout: 10 * time.Millisecond,
 		},
 	}
 }
