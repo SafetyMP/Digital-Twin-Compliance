@@ -16,6 +16,21 @@ class PatternLogicTest {
     }
 
     @Test
+    void exposureParsesStringNotionalFromTwinState() throws Exception {
+        String raw = """
+                {
+                  "owner_entity_id": "11111111-1111-1111-1111-111111111102",
+                  "counterparty_id": "22222222-2222-2222-2222-222222222202",
+                  "notional_amount": "6000000.00",
+                  "currency": "EUR"
+                }
+                """;
+        com.fasterxml.jackson.databind.JsonNode state =
+                new com.fasterxml.jackson.databind.ObjectMapper().readTree(raw);
+        assertEquals(6000000.0, ExposureChecker.parseDouble(state, "notional_amount"), 0.01);
+    }
+
+    @Test
     void exposureShouldAlertAboveLimit() {
         ExposureChecker checker = new ExposureChecker(
                 new com.digitaltwin.jobs.cep.JobConfig(java.util.Map.of("exposureLimit", "10000000")),

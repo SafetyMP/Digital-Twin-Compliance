@@ -78,8 +78,22 @@ public final class ExposureChecker {
         return v == null || v.isNull() ? "" : v.asText();
     }
 
-    private static double parseDouble(JsonNode node, String field) {
+    static double parseDouble(JsonNode node, String field) {
         JsonNode v = node.get(field);
-        return v == null || v.isNull() ? 0.0 : v.asDouble();
+        if (v == null || v.isNull()) {
+            return 0.0;
+        }
+        if (v.isNumber()) {
+            return v.asDouble();
+        }
+        String text = v.asText("");
+        if (text.isEmpty()) {
+            return 0.0;
+        }
+        try {
+            return Double.parseDouble(text);
+        } catch (NumberFormatException e) {
+            return 0.0;
+        }
     }
 }

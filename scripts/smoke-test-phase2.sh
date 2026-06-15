@@ -70,6 +70,22 @@ dump_basel_m001_debug() {
   curl -sf "$ALERT_URL/api/v1/alerts?status=Open" 2>/dev/null | jq '[.[] | select(.ruleCode=="BASEL-M001")]' >&2 || true
 }
 
+dump_int_m002_debug() {
+  local owner_id="${1:-11111111-1111-1111-1111-111111111102}"
+  local cp_id="${2:-22222222-2222-2222-2222-222222222202}"
+  echo "--- INT-M002 debug ---" >&2
+  psql "$CORE_URL" -c "SELECT instrument_id, owner_entity_id, counterparty_id, notional_amount, currency FROM instruments WHERE owner_entity_id = '$owner_id' AND counterparty_id = '$cp_id' ORDER BY instrument_id LIMIT 5;" 2>/dev/null >&2 || true
+  if docker ps --format '{{.Names}}' | grep -qx "$REDIS_CONTAINER"; then
+    echo "redis exp aggregate: $(docker exec "$REDIS_CONTAINER" redis-cli GET "exp:${TENANT_ID}:${owner_id}:${cp_id}" 2>/dev/null || echo '?')" >&2
+    docker exec "$REDIS_CONTAINER" redis-cli KEYS "exp:${TENANT_ID}:*" 2>/dev/null | head -8 >&2 || true
+  fi
+  if docker ps --format '{{.Names}}' | grep -qx "$KAFKA_CONTAINER"; then
+    docker exec "$KAFKA_CONTAINER" /opt/kafka/bin/kafka-get-offsets.sh \
+      --bootstrap-server localhost:9092 --topic twin.state.updated 2>/dev/null | head -5 >&2 || true
+  fi
+  curl -sf "$ALERT_URL/api/v1/alerts?status=Open" 2>/dev/null | jq '[.[] | select(.ruleCode=="INT-M002")]' >&2 || true
+}
+
 echo "==> Phase 2 smoke test"
 
 echo "==> 1. Flink job RUNNING"
@@ -161,7 +177,6 @@ fi
 EXPOSURE_OWNER="11111111-1111-1111-1111-111111111102"
 EXPOSURE_CP="22222222-2222-2222-2222-222222222202"
 BEFORE_M002=$(curl -sf "$ALERT_URL/api/v1/alerts?status=Open" | jq '[.[] | select(.ruleCode=="INT-M002")] | length')
-# Two sequential updates aggregate to >10M EUR against the same counterparty.
 EXPOSURE_IDS=$(psql "$CORE_URL" -tA -c "
   SELECT instrument_id FROM instruments
   WHERE owner_entity_id = '$EXPOSURE_OWNER' AND counterparty_id = '$EXPOSURE_CP'
@@ -170,15 +185,21 @@ EXPOSURE_IDS=$(psql "$CORE_URL" -tA -c "
 EXPOSURE_COUNT=$(printf '%s\n' "$EXPOSURE_IDS" | sed '/^$/d' | wc -l | tr -d ' ')
 if [[ "${EXPOSURE_COUNT:-0}" -lt 2 ]]; then
   echo "Need at least 2 exposure seed instruments for INT-M002 (found ${EXPOSURE_COUNT:-0})" >&2
+  dump_int_m002_debug "$EXPOSURE_OWNER" "$EXPOSURE_CP"
   exit 1
 fi
+# Two sequential updates aggregate to >10M EUR against the same counterparty.
+IDX=0
 while IFS= read -r id; do
   [[ -z "$id" ]] && continue
+  IDX=$((IDX + 1))
   psql "$CORE_URL" -v ON_ERROR_STOP=1 -c "UPDATE instruments SET notional_amount = 6000000.00, updated_at = now() WHERE instrument_id = '$id';" >/dev/null
-  sleep 1
+  if [[ "$IDX" -eq 1 ]]; then
+    sleep 2
+  fi
 done <<< "$EXPOSURE_IDS"
 M002_FOUND=""
-for i in $(seq 1 30); do
+for i in $(seq 1 45); do
   COUNT=$(curl -sf "$ALERT_URL/api/v1/alerts?status=Open" | jq '[.[] | select(.ruleCode=="INT-M002")] | length')
   if [[ "$COUNT" -gt "$BEFORE_M002" ]]; then
     M002_FOUND=1
@@ -188,7 +209,8 @@ for i in $(seq 1 30); do
   sleep 1
 done
 if [[ -z "$M002_FOUND" ]]; then
-  echo "INT-M002 alert not detected within 30s" >&2
+  echo "INT-M002 alert not detected within 45s" >&2
+  dump_int_m002_debug "$EXPOSURE_OWNER" "$EXPOSURE_CP"
   exit 1
 fi
 

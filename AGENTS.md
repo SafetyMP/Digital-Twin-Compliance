@@ -144,6 +144,7 @@ Hard-won fixes from Phase 2 — check here before rediscovering them ([capturing
 - **INT-M001 smoke-test localization**: Redis `vel:{tenant}:{account}:1h` > 50 means Debezium → Flink velocity logic succeeded; if open alerts stay empty, debug Flink → `compliance.alerts` → alert-service (not payment CDC or parsers). `./scripts/smoke-test-phase2.sh` dumps offsets/DB rows on failure.
 - **Alert consumer must not stall on DLQ failure**: `services/alert-service/internal/consumer` commits after handler errors (DLQ publish failure included); `continue` without commit blocks the partition and `/api/v1/health` stays green.
 - **BASEL-M001 smoke-test localization**: requires `legal_entities.lcr` (and related columns) in core banking — enrichment no longer hard-codes liquidity. Smoke lowers Delta Independent Bank to `lcr = 0.90`; if open alerts stay empty, check core row → `twin_personas.current_state` liquidity block → `twin.state.updated` → Flink `lcr:*` Redis key.
+- **INT-M002 smoke-test localization**: needs two instruments with matching `owner_entity_id` + `counterparty_id` (see `002_phase2_exposure.sql`). After updates, Redis `exp:{tenant}:{owner}:{counterparty}` should exceed `CEP_EXPOSURE_LIMIT_EUR` (10M); if empty, re-run seed or check `twin.state.updated` instrument payloads include `notional_amount` as a parseable string.
 
 ## Layout
 
