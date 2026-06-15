@@ -37,6 +37,24 @@ func institutionLiquidityFromRow(row map[string]any) (map[string]any, bool) {
 	}, true
 }
 
+var instrumentNumericColumns = map[string]struct{}{
+	"notional_amount": {},
+}
+
+func enrichInstrumentState(row map[string]any) map[string]any {
+	out := make(map[string]any, len(row))
+	for k, v := range row {
+		if _, numeric := instrumentNumericColumns[k]; numeric {
+			if f, ok := floatField(row, k); ok {
+				out[k] = f
+				continue
+			}
+		}
+		out[k] = v
+	}
+	return out
+}
+
 func enrichInstitutionState(row map[string]any) map[string]any {
 	out := make(map[string]any, len(row)+1)
 	for k, v := range row {
@@ -52,11 +70,14 @@ func enrichInstitutionState(row map[string]any) map[string]any {
 }
 
 func enrichStateBytes(table, pk string, row map[string]any) ([]byte, error) {
-	if table == "legal_entities" {
-		enriched := enrichInstitutionState(row)
-		return json.Marshal(enriched)
+	switch table {
+	case "legal_entities":
+		return json.Marshal(enrichInstitutionState(row))
+	case "instruments":
+		return json.Marshal(enrichInstrumentState(row))
+	default:
+		return json.Marshal(row)
 	}
-	return json.Marshal(row)
 }
 
 func floatField(row map[string]any, key string) (float64, bool) {

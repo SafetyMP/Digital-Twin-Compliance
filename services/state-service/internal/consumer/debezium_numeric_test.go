@@ -1,7 +1,7 @@
 package consumer
 
 import (
-	"strings"
+	"encoding/json"
 	"testing"
 )
 
@@ -95,7 +95,12 @@ func TestMapDebeziumToCDCInputInstrumentNumeric(t *testing.T) {
 	if input.PersonaType != "Instrument" {
 		t.Fatalf("personaType = %q", input.PersonaType)
 	}
-	if !strings.Contains(string(input.CurrentState), "6000000.00") {
-		t.Fatalf("currentState missing decoded notional: %s", string(input.CurrentState))
+	var state map[string]any
+	if err := json.Unmarshal(input.CurrentState, &state); err != nil {
+		t.Fatal(err)
+	}
+	notional, ok := state["notional_amount"].(float64)
+	if !ok || notional != 6000000.0 {
+		t.Fatalf("notional_amount = %v, want 6000000.0 in %s", state["notional_amount"], string(input.CurrentState))
 	}
 }

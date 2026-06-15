@@ -27,7 +27,7 @@ class PatternLogicTest {
                 """;
         com.fasterxml.jackson.databind.JsonNode state =
                 new com.fasterxml.jackson.databind.ObjectMapper().readTree(raw);
-        assertEquals(6000000.0, ExposureChecker.parseDouble(state, "notional_amount"), 0.01);
+        assertEquals(6000000.0, com.digitaltwin.jobs.cep.JsonParsers.parseDouble(state, "notional_amount"), 0.01);
     }
 
     @Test
@@ -38,6 +38,23 @@ class PatternLogicTest {
         );
         assertTrue(checker.shouldAlert(10_000_001, 10_000_000));
         assertFalse(checker.shouldAlert(9_000_000, 10_000_000));
+    }
+
+    @Test
+    void lcrParsesStringLiquidityFromTwinState() throws Exception {
+        String raw = """
+                {
+                  "liquidity": {
+                    "lcr": "0.90",
+                    "hqla": 450000000,
+                    "netCashOutflows30d": 473684211,
+                    "currency": "EUR"
+                  }
+                }
+                """;
+        com.fasterxml.jackson.databind.JsonNode state =
+                new com.fasterxml.jackson.databind.ObjectMapper().readTree(raw);
+        assertEquals(0.90, com.digitaltwin.jobs.cep.JsonParsers.parseDouble(state.get("liquidity"), "lcr"), 0.001);
     }
 
     @Test

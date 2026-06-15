@@ -32,6 +32,22 @@ jobs:
           sudo apt-get install -y jq postgresql-client curl ripgrep
           python3 -m pip install --user pytest
 
+      - name: Go vet (state-service)
+        working-directory: services/state-service
+        run: go vet ./...
+
+      - name: Go tests (state-service)
+        working-directory: services/state-service
+        run: go test ./...
+
+      - name: Go tests (alert-service)
+        working-directory: services/alert-service
+        run: go mod tidy && go test ./...
+
+      - name: Maven tests (compliance-cep)
+        working-directory: jobs/compliance-cep
+        run: mvn -q test
+
       - name: Live evals (mechanical)
         run: ./scripts/run-live-evals.sh
 
@@ -62,24 +78,12 @@ jobs:
       - name: Restart state-service after connector
         run: docker compose -f docker-compose.dev.yml restart state-service && docker compose -f docker-compose.dev.yml up -d --wait state-service
 
-      - name: Go vet (state-service)
-        working-directory: services/state-service
-        run: go vet ./...
-
-      - name: Go tests (state-service)
-        working-directory: services/state-service
-        run: go test ./...
-
-      - name: Go tests (alert-service)
-        working-directory: services/alert-service
-        run: go mod tidy && go test ./...
-
       - name: Maven package (compliance-cep)
         working-directory: jobs/compliance-cep
         run: |
           # flink-job-submitter builds inside Docker as root; reset before host mvn package.
           sudo rm -rf target
-          mvn -q package
+          mvn -q package -DskipTests
 
       - name: Build alert-console
         working-directory: apps/alert-console

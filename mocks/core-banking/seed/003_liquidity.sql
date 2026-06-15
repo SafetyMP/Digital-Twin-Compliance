@@ -8,7 +8,7 @@ SET
   net_cash_outflows_30d = 476190476.00,
   liquidity_currency = 'EUR',
   updated_at = now()
-WHERE lcr IS NULL;
+WHERE entity_id <> '44444444-4444-4444-4444-444444444401';
 
 UPDATE legal_entities
 SET

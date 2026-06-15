@@ -29,7 +29,7 @@ public final class ExposureChecker {
         if (ownerId.isEmpty() || counterpartyId.isEmpty()) {
             return Optional.empty();
         }
-        double notional = parseDouble(state, "notional_amount");
+        double notional = JsonParsers.parseDouble(state, "notional_amount");
         String currency = text(state, "currency");
         double notionalEur = toEur(notional, currency);
         double total = redis.applyExposureDelta(
@@ -76,24 +76,5 @@ public final class ExposureChecker {
     private static String text(JsonNode node, String field) {
         JsonNode v = node.get(field);
         return v == null || v.isNull() ? "" : v.asText();
-    }
-
-    static double parseDouble(JsonNode node, String field) {
-        JsonNode v = node.get(field);
-        if (v == null || v.isNull()) {
-            return 0.0;
-        }
-        if (v.isNumber()) {
-            return v.asDouble();
-        }
-        String text = v.asText("");
-        if (text.isEmpty()) {
-            return 0.0;
-        }
-        try {
-            return Double.parseDouble(text);
-        } catch (NumberFormatException e) {
-            return 0.0;
-        }
     }
 }

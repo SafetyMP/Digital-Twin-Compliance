@@ -107,3 +107,69 @@ func TestMapDebeziumToCDCInputLegalEntityLiquidity(t *testing.T) {
 		t.Fatalf("lcr = %v", liq["lcr"])
 	}
 }
+
+func TestEnrichInstrumentStateStringNotional(t *testing.T) {
+	row := map[string]any{
+		"instrument_id":    "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+		"owner_entity_id":  "11111111-1111-1111-1111-111111111102",
+		"counterparty_id":  "22222222-2222-2222-2222-222222222202",
+		"notional_amount":  "6000000.00",
+		"currency":         "EUR",
+		"instrument_type":  "Loan",
+		"regulatory_class": "F0610",
+	}
+	out := enrichInstrumentState(row)
+	if out["notional_amount"].(float64) != 6000000.0 {
+		t.Fatalf("notional_amount = %v", out["notional_amount"])
+	}
+}
+
+func TestEnrichStateBytesInstrument(t *testing.T) {
+	row := map[string]any{
+		"instrument_id":   "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+		"notional_amount": "6000000.00",
+		"currency":        "EUR",
+	}
+	b, err := enrichStateBytes("instruments", "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", row)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var parsed map[string]any
+	if err := json.Unmarshal(b, &parsed); err != nil {
+		t.Fatal(err)
+	}
+	if parsed["notional_amount"].(float64) != 6000000.0 {
+		t.Fatalf("notional_amount = %v", parsed["notional_amount"])
+	}
+}
+
+func TestMapDebeziumToCDCInputInstrumentEnrichedNumeric(t *testing.T) {
+	t.Parallel()
+
+	payload := DebeziumPayload{
+		After: map[string]any{
+			"instrument_id":    "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+			"owner_entity_id":  "11111111-1111-1111-1111-111111111102",
+			"counterparty_id":  "22222222-2222-2222-2222-222222222202",
+			"notional_amount":  "6000000.00",
+			"currency":         "EUR",
+			"instrument_type":  "Loan",
+			"regulatory_class": "F0610",
+			"updated_at":       "2026-06-14T01:00:00Z",
+		},
+		Op: "u",
+	}
+	payload.Source.Table = "instruments"
+
+	input, _, err := MapDebeziumToCDCInput(payload)
+	if err != nil {
+		t.Fatalf("MapDebeziumToCDCInput: %v", err)
+	}
+	var state map[string]any
+	if err := json.Unmarshal(input.CurrentState, &state); err != nil {
+		t.Fatal(err)
+	}
+	if state["notional_amount"].(float64) != 6000000.0 {
+		t.Fatalf("notional_amount = %v", state["notional_amount"])
+	}
+}
