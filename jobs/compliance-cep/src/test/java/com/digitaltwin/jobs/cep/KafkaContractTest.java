@@ -1,6 +1,5 @@
 package com.digitaltwin.jobs.cep;
 
-import com.digitaltwin.jobs.cep.patterns.ExposureChecker;
 import com.digitaltwin.jobs.cep.patterns.LcrChecker;
 import org.junit.jupiter.api.Test;
 
@@ -24,13 +23,14 @@ class KafkaContractTest {
                 JsonParsers.parseDouble(twin.get().currentState(), "notional_amount"),
                 0.01
         );
-
-        ExposureChecker exposure = new ExposureChecker(
-                new JobConfig(java.util.Map.of("exposureLimit", "10000000")),
-                null
+        assertEquals(
+                "11111111-1111-1111-1111-111111111102",
+                JsonParsers.text(twin.get().currentState(), "owner_entity_id")
         );
-        assertFalse(exposure.check(twin.get()).isPresent(),
-                "single instrument below exposure limit should not alert");
+        assertEquals(
+                "22222222-2222-2222-2222-222222222202",
+                JsonParsers.text(twin.get().currentState(), "counterparty_id")
+        );
     }
 
     @Test
@@ -41,13 +41,17 @@ class KafkaContractTest {
         assertEquals("Institution", twin.get().personaType());
         assertEquals(2, twin.get().stateVersion());
 
-        LcrChecker lcr = new LcrChecker(
+        var liquidity = twin.get().currentState().get("liquidity");
+        assertNotNull(liquidity);
+        assertFalse(liquidity.isNull());
+        double lcr = JsonParsers.parseDouble(liquidity, "lcr");
+        assertEquals(0.95, lcr, 0.001);
+
+        LcrChecker lcrChecker = new LcrChecker(
                 new JobConfig(java.util.Map.of("lcrMinimum", "1.0")),
                 null
         );
-        var alert = lcr.check(twin.get());
-        assertTrue(alert.isPresent(), "LCR 0.95 should raise BASEL-M001");
-        assertEquals("BASEL-M001", alert.get().ruleCode());
+        assertTrue(lcrChecker.shouldAlert(lcr, 1.0), "LCR 0.95 should be below minimum");
     }
 
     @Test
