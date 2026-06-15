@@ -82,7 +82,17 @@ Mark done only when scripts/smoke-test.sh and go test ./... pass.
 
 ## Verification before handback to planning agent
 
-When implementation is complete, ask the planning agent to review using [docs/review/phase1-review-checklist.md](./review/phase1-review-checklist.md).
+When implementation is complete, use a **separate fresh chat** and [handoff-verification-agent.md](./handoff-verification-agent.md) (or `/verify-phase2`) before handback. Do not verify in the same long implementation thread.
+
+## Three-chat workflow
+
+| Chat | Load | Run |
+|------|------|-----|
+| **Implement** (this handoff) | Phase spec + service `AGENTS.md` | Code + `go test` |
+| **Verify** | `AGENTS.md` + smoke scripts | `./scripts/smoke-test.sh` (+ phase2) + `token-efficiency.sh --strict` |
+| **Eval / metrics** | Scripts only | `./scripts/report-eval-scorecard.sh` |
+
+Ask the planning agent to review using [docs/review/phase1-review-checklist.md](./review/phase1-review-checklist.md).
 
 Provide:
 
@@ -113,4 +123,5 @@ Do **not** ask the planning agent to write application code — only specs, ADRs
 | [docs/phase1-implementation-spec.md](./phase1-implementation-spec.md) | Full implementation spec |
 | [AGENTS.md](../AGENTS.md) | Repo contract |
 | [docs/handoff-parallel-agent.md](./handoff-parallel-agent.md) | This document |
+| [docs/handoff-verification-agent.md](./handoff-verification-agent.md) | Phase 2 verification handoff |
 | [docs/review/phase1-review-checklist.md](./review/phase1-review-checklist.md) | Post-implementation review |

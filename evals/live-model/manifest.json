@@ -2,15 +2,20 @@
   "version": 1,
   "project": "digital-twin-phase1",
   "description": "Minimal live-model evals for Phase 1 agent effectiveness",
+  "harness_gates": "evals/harness/gates.json",
   "pass_threshold": {
     "mechanical": 1.0,
-    "live_scenarios": 0.8
+    "live_scenarios": {
+      "min_pass_rate": 0.8,
+      "runs_per_scenario": 3
+    }
   },
   "efficiency": {
     "enabled": true,
     "baseline": "results/efficiency-baseline.json",
     "thresholds": {
-      "duplicate_read_count_investigate": 5,
+      "duplicate_read_count_investigate": 3,
+      "duplicate_read_count_max_strict": 3,
       "harness_reread_count_max": 0,
       "scope_refusal_tool_calls_investigate": 40,
       "implementation_transcript_bytes_investigate": 768000
@@ -58,6 +63,8 @@
     "tenant-id-columns",
     "outbox-only-kafka-writer",
     "required-scripts-present",
-    "avro-schemas-present"
+    "avro-schemas-present",
+    "state-service-package-tests",
+    "state-service-coverage-floor"
   ]
 }

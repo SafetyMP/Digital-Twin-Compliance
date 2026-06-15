@@ -1,0 +1,4 @@
+# Behavioral eval harness — keep out of agent context during live eval sessions
+evals/harness/
+evals/fixtures/
+scripts/calibrate-harness.py

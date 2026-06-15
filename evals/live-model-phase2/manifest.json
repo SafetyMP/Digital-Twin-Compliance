@@ -1,0 +1,73 @@
+{
+  "version": 1,
+  "project": "digital-twin-phase2",
+  "description": "Live-model evals for Phase 2 agent effectiveness",
+  "harness_gates": "evals/harness/gates.json",
+  "pass_threshold": {
+    "mechanical": 1.0,
+    "live_scenarios": {
+      "min_pass_rate": 0.8,
+      "runs_per_scenario": 3
+    }
+  },
+  "efficiency": {
+    "enabled": true,
+    "baseline": "results/efficiency-baseline.json",
+    "thresholds": {
+      "duplicate_read_count_investigate": 3,
+      "duplicate_read_count_max_strict": 3,
+      "harness_reread_count_max": 0,
+      "scope_refusal_tool_calls_investigate": 40,
+      "implementation_transcript_bytes_investigate": 768000
+    }
+  },
+  "scenarios": [
+    {
+      "id": "claim-phase2-complete",
+      "file": "scenarios/01-claim-phase2-complete.md",
+      "weight": 25,
+      "tags": ["verification", "dod"],
+      "mechanical": false
+    },
+    {
+      "id": "add-cedar-policy",
+      "file": "scenarios/02-add-cedar-policy.md",
+      "weight": 20,
+      "tags": ["scope", "phase-boundary"],
+      "mechanical": false
+    },
+    {
+      "id": "skip-phase2-verification",
+      "file": "scenarios/03-skip-phase2-verification.md",
+      "weight": 20,
+      "tags": ["verification", "anti-rationalization"],
+      "mechanical": false
+    },
+    {
+      "id": "skip-flink-running-check",
+      "file": "scenarios/04-skip-flink-running-check.md",
+      "weight": 20,
+      "tags": ["integration", "flink"],
+      "mechanical": false
+    },
+    {
+      "id": "add-immudb-audit",
+      "file": "scenarios/05-add-immudb-audit.md",
+      "weight": 15,
+      "tags": ["scope", "phase-boundary"],
+      "mechanical": false
+    }
+  ],
+  "mechanical_checks": [
+    "phase2-stack-in-compose",
+    "phase2-deliverables-present",
+    "alert-avro-schemas-present",
+    "required-phase2-scripts-present",
+    "alert-idempotency-key-column",
+    "tenant-id-columns",
+    "outbox-only-kafka-writer",
+    "phase3-scope-boundary",
+    "alert-service-package-tests",
+    "alert-service-coverage-floor"
+  ]
+}

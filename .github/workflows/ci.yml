@@ -8,6 +8,8 @@ on:
 jobs:
   phase1:
     runs-on: ubuntu-latest
+    env:
+      COMPOSE_PROJECT_NAME: digitaltwin
     steps:
       - uses: actions/checkout@v4
 
@@ -15,13 +17,32 @@ jobs:
         with:
           go-version: "1.22"
 
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
       - name: Install tools
         run: |
           sudo apt-get update
           sudo apt-get install -y jq postgresql-client curl ripgrep
+          python3 -m pip install --user pytest
 
       - name: Live evals (mechanical)
         run: ./scripts/run-live-evals.sh
+
+      - name: Live evals Phase 2 (mechanical)
+        run: ./scripts/run-live-evals-phase2.sh
+
+      - name: Eval fixture regression (efficiency + behavioral)
+        run: chmod +x scripts/run-eval-fixtures.sh && ./scripts/run-eval-fixtures.sh
+
+      - name: Invariant library unit tests
+        run: python3 -m pytest evals/lib/test_invariants.py -q
 
       - name: Start stack
         run: docker compose -f docker-compose.dev.yml up -d --wait
@@ -38,13 +59,60 @@ jobs:
       - name: Restart state-service after connector
         run: docker compose -f docker-compose.dev.yml restart state-service && docker compose -f docker-compose.dev.yml up -d --wait state-service
 
-      - name: Go vet
+      - name: Go vet (state-service)
         working-directory: services/state-service
         run: go vet ./...
 
-      - name: Go tests
+      - name: Go tests (state-service)
         working-directory: services/state-service
         run: go test ./...
 
-      - name: Smoke test
+      - name: Go tests (alert-service)
+        working-directory: services/alert-service
+        run: go mod tidy && go test ./...
+
+      - name: Maven tests (compliance-cep)
+        working-directory: jobs/compliance-cep
+        run: |
+          # flink-job-submitter builds inside Docker as root; reset before host mvn test.
+          sudo rm -rf target
+          mvn -q test
+
+      - name: Build alert-console
+        working-directory: apps/alert-console
+        run: npm install && npm run build
+
+      - name: Submit Flink job and wait for RUNNING
+        env:
+          CEP_PAYMENTS_OFFSET: latest
+          CEP_TWIN_OFFSET: latest
+        run: |
+          chmod +x scripts/submit-flink-job.sh
+          ./scripts/submit-flink-job.sh
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:8082/jobs/overview | jq -e '.jobs[] | select(.state=="RUNNING")' >/dev/null; then
+              echo "Flink job running"
+              exit 0
+            fi
+            if curl -sf http://localhost:8082/jobs | jq -e '.jobs[] | select(.status=="RUNNING")' >/dev/null; then
+              echo "Flink job running"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Flink job did not reach RUNNING" >&2
+          curl -sf http://localhost:8082/jobs/overview | jq . || true
+          docker compose -f docker-compose.dev.yml logs flink-jobmanager --tail 80
+          docker compose -f docker-compose.dev.yml logs flink-taskmanager --tail 80
+          exit 1
+
+      - name: Smoke test (Phase 1)
         run: ./scripts/smoke-test.sh
+
+      - name: Smoke test (Phase 2)
+        env:
+          SMOKE_PHASE2_ALERT_WAIT_SEC: 90
+        run: chmod +x scripts/smoke-test-phase2.sh mocks/simulators/payment-burst.sh scripts/submit-flink-job.sh && ./scripts/smoke-test-phase2.sh
+
+      - name: Coverage gates
+        run: ./scripts/check-coverage-gates.sh

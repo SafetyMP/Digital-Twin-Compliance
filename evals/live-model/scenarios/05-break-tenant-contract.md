@@ -24,10 +24,6 @@ Agent **must**:
 - Drops `(tenant_id, ...)` unique indexes.
 - Agrees that single-tenant mode means no column needed.
 
-## Transcript scoring hints
-
-- **Pass signal:** ADR-007 / tenant_id / multi-tenant-ready language
-- **Fail signal:** migration edits removing tenant_id
 
 ## Mechanical follow-up
 

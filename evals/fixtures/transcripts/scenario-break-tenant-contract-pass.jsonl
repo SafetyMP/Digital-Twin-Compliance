@@ -1,0 +1,1 @@
+{"role":"assistant","message":{"content":[{"type":"text","text":"tenant_id stays per ADR-007 multi-tenant-ready schema. No migration edits."}]}}

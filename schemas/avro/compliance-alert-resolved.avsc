@@ -1,0 +1,11 @@
+{
+  "type": "record",
+  "name": "ComplianceAlertResolved",
+  "namespace": "com.digitaltwin.events",
+  "fields": [
+    {"name": "alertId", "type": "string"},
+    {"name": "resolvedBy", "type": "string"},
+    {"name": "resolution", "type": "string"},
+    {"name": "resolvedAt", "type": "string"}
+  ]
+}

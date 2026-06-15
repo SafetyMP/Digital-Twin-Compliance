@@ -15,4 +15,8 @@ Scenario prompts: `evals/live-model/scenarios/` — **fresh chat** per scenario 
 
 Efficiency: `./scripts/token-efficiency.sh` (not `/token-efficiency` via Read loop).
 
+**Three-pillar report:** `./scripts/report-eval-scorecard.sh --phase1 [--full] [--transcript path.jsonl]`
+
+Baseline refresh: `./scripts/refresh-efficiency-baseline.sh` (after clean verification sessions).
+
 Report: mechanical result, optional DoD, pass bar (100% mechanical, ≥4/5 live scenarios).

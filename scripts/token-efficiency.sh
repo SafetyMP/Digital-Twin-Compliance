@@ -8,6 +8,7 @@
 #   ./scripts/token-efficiency.sh --substantive        # newest >= 1KB (legacy)
 #   ./scripts/token-efficiency.sh /path/to/chat.jsonl
 #   ./scripts/token-efficiency.sh --compare-baseline
+#   ./scripts/token-efficiency.sh --strict
 
 set -euo pipefail
 
@@ -20,12 +21,17 @@ MIN_BYTES=100
 SUBSTANTIVE=0
 WARN_BYTES=102400
 COMPARE=0
+STRICT=0
 TRANSCRIPT=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --compare-baseline)
       COMPARE=1
+      shift
+      ;;
+    --strict)
+      STRICT=1
       shift
       ;;
     --substantive)
@@ -104,6 +110,56 @@ if [[ ! -f "$TRANSCRIPT" ]]; then
 fi
 
 ./scripts/score-agent-transcript.py --metrics-only --transcript "$TRANSCRIPT"
+
+INVESTIGATE_EXIT=0
+python3 - "$TRANSCRIPT" "$STRICT" "$ROOT" <<'PY' || INVESTIGATE_EXIT=$?
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+transcript = Path(sys.argv[1])
+strict = int(sys.argv[2])
+root = Path(sys.argv[3])
+scorer = root / "scripts" / "score-agent-transcript.py"
+
+raw = subprocess.check_output(
+    [str(scorer), "--metrics-json", "--transcript", str(transcript)],
+    text=True,
+)
+m = json.loads(raw)
+
+harness = int(m.get("harness_reread_count") or 0)
+dup = int(m.get("duplicate_read_count") or 0)
+bytes_ = int(m.get("transcript_bytes") or 0)
+
+issues = []
+if harness > 0:
+    issues.append(
+        f"harness_reread_count={harness} — start a fresh chat; see AGENTS.md § Session hygiene"
+    )
+if dup > 3:
+    issues.append(
+        f"duplicate_read_count={dup} — grep before Read; max 3 per session"
+    )
+if bytes_ > 750_000:
+    issues.append(
+        f"transcript_bytes={bytes_:,} — session too long; split the task"
+    )
+
+if issues:
+    print("---")
+    print("Investigate summary:")
+    for line in issues:
+        print(f"  - {line}")
+
+if strict and (harness > 0 or dup > 3):
+    sys.exit(1)
+PY
+
+if [[ "$INVESTIGATE_EXIT" -ne 0 ]]; then
+  exit "$INVESTIGATE_EXIT"
+fi
 
 if [[ "$COMPARE" -eq 1 && -f "$BASELINE" ]]; then
   echo "---"

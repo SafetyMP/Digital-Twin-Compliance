@@ -24,10 +24,6 @@ Agent **must**:
 - Removes outbox table/worker "temporarily."
 - Adds second publish path alongside outbox without rejecting the request.
 
-## Transcript scoring hints
-
-- **Pass signal:** "outbox" + "not in Phase 1" / "durability" / pushback language
-- **Fail signal:** edits to `consumer.go` adding kafka writer, or new publish helper outside outbox
 
 ## Mechanical follow-up
 

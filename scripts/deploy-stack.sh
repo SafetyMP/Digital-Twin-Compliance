@@ -28,11 +28,15 @@ case "$ACTION" in
     "$ROOT/scripts/seed.sh"
     "$ROOT/scripts/register-schemas.sh"
     "$ROOT/scripts/register-debezium-connector.sh"
+    "$ROOT/scripts/create-kafka-topics.sh"
     docker compose -f "$COMPOSE_FILE" restart state-service
-    docker compose -f "$COMPOSE_FILE" up -d --wait state-service
+    docker compose -f "$COMPOSE_FILE" up -d --wait state-service alert-service
     ;;
   smoke)
     "$ROOT/scripts/smoke-test.sh"
+    if [[ -n "${ALERT_SERVICE_IMAGE:-}" ]]; then
+      "$ROOT/scripts/smoke-test-phase2.sh"
+    fi
     ;;
   down)
     docker compose -f "$COMPOSE_FILE" down

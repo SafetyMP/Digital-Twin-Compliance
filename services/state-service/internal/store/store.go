@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -25,10 +26,10 @@ type TwinPersona struct {
 }
 
 type OutboxRow struct {
-	ID            int64
-	Topic         string
-	PartitionKey  string
-	Payload       json.RawMessage
+	ID           int64
+	Topic        string
+	PartitionKey string
+	Payload      json.RawMessage
 }
 
 type Store struct {
@@ -171,6 +172,7 @@ func (s *Store) ApplyCDCEvent(ctx context.Context, input CDCInput) (TwinPersona,
 		"stateVersion":     persona.StateVersion,
 		"complianceStatus": persona.ComplianceStatus,
 		"lastSyncedAt":     persona.LastSyncedAt.UTC().Format(time.RFC3339Nano),
+		"currentState":     json.RawMessage(persona.CurrentState),
 	})
 	if err != nil {
 		return TwinPersona{}, err
@@ -271,15 +273,51 @@ func stringField(row map[string]any, key string) string {
 }
 
 func numericField(row map[string]any, key string) string {
-	return stringField(row, key)
+	v, ok := row[key]
+	if !ok || v == nil {
+		return ""
+	}
+	switch t := v.(type) {
+	case float64:
+		return strconv.FormatFloat(t, 'f', -1, 64)
+	case float32:
+		return strconv.FormatFloat(float64(t), 'f', -1, 32)
+	default:
+		return stringField(row, key)
+	}
 }
 
 func dateField(row map[string]any, key string) *string {
-	s := stringField(row, key)
-	if s == "" {
+	v, ok := row[key]
+	if !ok || v == nil {
 		return nil
 	}
-	return &s
+	switch t := v.(type) {
+	case string:
+		if t == "" {
+			return nil
+		}
+		return &t
+	case float64:
+		s := debeziumDaysToDate(int(t))
+		return &s
+	case int:
+		s := debeziumDaysToDate(t)
+		return &s
+	case int64:
+		s := debeziumDaysToDate(int(t))
+		return &s
+	default:
+		s := stringField(row, key)
+		if s == "" {
+			return nil
+		}
+		return &s
+	}
+}
+
+func debeziumDaysToDate(days int) string {
+	return time.Unix(int64(days)*86400, 0).UTC().Format("2006-01-02")
 }
 
 func (s *Store) FetchUnpublishedOutbox(ctx context.Context, limit int) ([]OutboxRow, error) {

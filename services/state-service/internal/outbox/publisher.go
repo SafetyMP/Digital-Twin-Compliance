@@ -9,14 +9,24 @@ import (
 	"github.com/segmentio/kafka-go"
 )
 
+type kafkaMessageWriter interface {
+	WriteMessages(ctx context.Context, msgs ...kafka.Message) error
+	Close() error
+}
+
+type OutboxStore interface {
+	FetchUnpublishedOutbox(ctx context.Context, limit int) ([]store.OutboxRow, error)
+	MarkOutboxPublished(ctx context.Context, id int64) error
+}
+
 type Publisher struct {
-	store   *store.Store
-	writer  *kafka.Writer
-	source  string
+	store    OutboxStore
+	writer   kafkaMessageWriter
+	source   string
 	interval time.Duration
 }
 
-func NewPublisher(s *store.Store, brokers []string, source string, interval time.Duration) *Publisher {
+func NewPublisher(s OutboxStore, brokers []string, source string, interval time.Duration) *Publisher {
 	return &Publisher{
 		store: s,
 		writer: &kafka.Writer{

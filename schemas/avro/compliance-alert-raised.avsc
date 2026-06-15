@@ -1,0 +1,18 @@
+{
+  "type": "record",
+  "name": "ComplianceAlertRaised",
+  "namespace": "com.digitaltwin.events",
+  "fields": [
+    {"name": "alertId", "type": "string"},
+    {"name": "ruleCode", "type": "string"},
+    {"name": "regime", "type": "string"},
+    {"name": "severity", "type": "string"},
+    {"name": "status", "type": "string"},
+    {"name": "personaId", "type": "string"},
+    {"name": "personaType", "type": "string"},
+    {"name": "summary", "type": "string"},
+    {"name": "details", "type": {"type": "map", "values": "string"}},
+    {"name": "detectedAt", "type": "string"},
+    {"name": "evidenceRef", "type": ["null", "string"], "default": null}
+  ]
+}

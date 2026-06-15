@@ -18,7 +18,7 @@ CONFIG=$(cat <<'EOF'
     "plugin.name": "pgoutput",
     "publication.name": "dbz_publication",
     "slot.name": "debezium_core_banking",
-    "table.include.list": "public.legal_entities,public.accounts,public.instruments",
+    "table.include.list": "public.legal_entities,public.accounts,public.instruments,public.payments",
     "topic.prefix": "domain.events",
     "key.converter": "org.apache.kafka.connect.json.JsonConverter",
     "value.converter": "org.apache.kafka.connect.json.JsonConverter",
