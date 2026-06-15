@@ -130,6 +130,12 @@ Hard-won fixes from Phase 2 — check here before rediscovering them ([capturing
 - **Pre-create Kafka topics**: `domain.events.public.payments`, `domain.events.dlq`, `compliance.alerts`, `compliance.alerts.dlq`, and `twin.state.updated` must exist before the Flink job/consumers start — run `./scripts/create-kafka-topics.sh` (invoked by `seed.sh`).
 - **Flink `JobConfig` must implement `Serializable`**: otherwise job submission fails. Submit with `./scripts/submit-flink-job.sh` (uses `basename(jar)` and a Docker Maven fallback).
 - **`mvn` is not assumed on host**: `./scripts/run-live-evals-phase2.sh --full` fails locally without Maven. Run CEP tests via Docker: `docker run --rm -v "$PWD/jobs/compliance-cep:/app" -w /app maven:3.9-eclipse-temurin-17 mvn -q test` (CI uses Maven directly).
+- **CEP jar staleness in CI**: `flink-job-submitter` in Compose builds `jobs/compliance-cep/target/*.jar` at stack bring-up; host/CI changes are not in that jar until `mvn package` runs again before `./scripts/submit-flink-job.sh` (`mvn test` alone is insufficient).
+- **Flink `latest` offsets need a fresh consumer group**: `OffsetsInitializer.latest()` does not override committed offsets for an existing group. CI passes `CEP_CONSUMER_GROUP_SUFFIX` to `submit-flink-job.sh`; local resubmits after seed should cancel the old job and use a new suffix or `earliest` when debugging replay.
+- **Restart `alert-service` after `./scripts/seed.sh`**: same pattern as state-service after Debezium — long-running consumers started before topics/seed are wired can miss the smoke-test window (CI restarts alert-service post-seed).
+- **INT-M001 smoke-test localization**: Redis `vel:{tenant}:{account}:1h` > 50 means Debezium → Flink velocity logic succeeded; if open alerts stay empty, debug Flink → `compliance.alerts` → alert-service (not payment CDC or parsers). `./scripts/smoke-test-phase2.sh` dumps offsets/DB rows on failure.
+- **Alert consumer must not stall on DLQ failure**: `services/alert-service/internal/consumer` commits after handler errors (DLQ publish failure included); `continue` without commit blocks the partition and `/api/v1/health` stays green.
+- **BASEL-M001 smoke-test localization**: requires `legal_entities.lcr` (and related columns) in core banking — enrichment no longer hard-codes liquidity. Smoke lowers Delta Independent Bank to `lcr = 0.90`; if open alerts stay empty, check core row → `twin_personas.current_state` liquidity block → `twin.state.updated` → Flink `lcr:*` Redis key.
 
 ## Layout
 

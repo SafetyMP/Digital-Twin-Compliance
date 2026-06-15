@@ -10,6 +10,7 @@ FLINK_URL="${FLINK_JOBMANAGER_URL:-http://localhost:8082}"
 GRAFANA_URL="${GRAFANA_URL:-http://localhost:3001}"
 WS_URL="${NEXT_PUBLIC_WS_URL:-ws://localhost:8085/ws/alerts}"
 CORE_URL="${CORE_BANKING_DB_URL:-postgres://core:core@localhost:5433/core_banking?sslmode=disable}"
+STATE_URL="${STATE_DB_URL:-postgres://state:state@localhost:5434/twin_state?sslmode=disable}"
 ALERT_DB_URL="${ALERT_DB_URL:-postgres://alert:alert@localhost:5435/alerts?sslmode=disable}"
 REDIS_CONTAINER="${REDIS_CONTAINER:-digitaltwin-redis-1}"
 ALERT_WAIT_SEC="${SMOKE_PHASE2_ALERT_WAIT_SEC:-30}"
@@ -50,6 +51,23 @@ dump_int_m001_debug() {
   fi
   curl -sf "$ALERT_URL/api/v1/alerts?status=Open" 2>/dev/null | jq '[.[] | {ruleCode, idempotencyKey}]' >&2 || true
   psql "$ALERT_DB_URL" -tA -c "SELECT rule_code, status, idempotency_key FROM compliance_alerts ORDER BY detected_at DESC LIMIT 5;" 2>/dev/null >&2 || true
+}
+
+dump_basel_m001_debug() {
+  local delta_id="${1:-44444444-4444-4444-4444-444444444401}"
+  echo "--- BASEL-M001 debug ---" >&2
+  psql "$CORE_URL" -tA -c "SELECT entity_id, lcr, hqla, net_cash_outflows_30d FROM legal_entities WHERE entity_id = '$delta_id';" 2>/dev/null >&2 || true
+  psql "$STATE_URL" -tA -c "SELECT persona_id, state_version, current_state::text FROM twin_personas WHERE persona_id = '$delta_id';" 2>/dev/null | head -c 500 >&2 || true
+  if docker ps --format '{{.Names}}' | grep -qx "$KAFKA_CONTAINER"; then
+    docker exec "$KAFKA_CONTAINER" /opt/kafka/bin/kafka-get-offsets.sh \
+      --bootstrap-server localhost:9092 --topic twin.state.updated 2>/dev/null | head -5 >&2 || true
+    docker exec "$KAFKA_CONTAINER" /opt/kafka/bin/kafka-get-offsets.sh \
+      --bootstrap-server localhost:9092 --topic compliance.alerts 2>/dev/null | head -5 >&2 || true
+  fi
+  if docker ps --format '{{.Names}}' | grep -qx "$REDIS_CONTAINER"; then
+    echo "redis lcr for delta: $(docker exec "$REDIS_CONTAINER" redis-cli GET "lcr:${TENANT_ID}:${delta_id}" 2>/dev/null || echo '?')" >&2
+  fi
+  curl -sf "$ALERT_URL/api/v1/alerts?status=Open" 2>/dev/null | jq '[.[] | select(.ruleCode=="BASEL-M001")]' >&2 || true
 }
 
 echo "==> Phase 2 smoke test"
@@ -177,9 +195,19 @@ fi
 echo "==> 5. BASEL-M001 LCR breach"
 psql "$ALERT_DB_URL" -v ON_ERROR_STOP=1 -c "DELETE FROM compliance_alerts WHERE rule_code = 'BASEL-M001';" >/dev/null
 DELTA_ID="44444444-4444-4444-4444-444444444401"
-psql "$CORE_URL" -v ON_ERROR_STOP=1 -c "UPDATE legal_entities SET legal_name = legal_name || ' ', updated_at = now() WHERE entity_id = '$DELTA_ID';" >/dev/null
+# Phase 2 spec: lower institution LCR below CEP minimum (default 1.0) so enrichment + twin.state.updated fire BASEL-M001.
+psql "$CORE_URL" -v ON_ERROR_STOP=1 -c "
+  UPDATE legal_entities
+  SET
+    lcr = 0.90,
+    hqla = COALESCE(hqla, 450000000.00),
+    net_cash_outflows_30d = COALESCE(net_cash_outflows_30d, 473684211.00),
+    liquidity_currency = COALESCE(liquidity_currency, 'EUR'),
+    updated_at = now()
+  WHERE entity_id = '$DELTA_ID';
+" >/dev/null
 BASEL_FOUND=""
-for i in $(seq 1 30); do
+for i in $(seq 1 45); do
   COUNT=$(curl -sf "$ALERT_URL/api/v1/alerts?status=Open" | jq '[.[] | select(.ruleCode=="BASEL-M001")] | length')
   if [[ "$COUNT" -gt 0 ]]; then
     BASEL_FOUND=1
@@ -189,7 +217,8 @@ for i in $(seq 1 30); do
   sleep 1
 done
 if [[ -z "$BASEL_FOUND" ]]; then
-  echo "BASEL-M001 alert not detected within 30s" >&2
+  echo "BASEL-M001 alert not detected within 45s" >&2
+  dump_basel_m001_debug "$DELTA_ID"
   exit 1
 fi
 
