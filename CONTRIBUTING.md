@@ -27,20 +27,34 @@ docker compose -f docker-compose.dev.yml up -d --wait state-service
 
 cd services/state-service && go test ./...
 ./scripts/smoke-test.sh
+
+# Phase 2 (monitoring + alerts)
+./scripts/submit-flink-job.sh
+cd services/alert-service && go test ./...
+./scripts/smoke-test-phase2.sh
 ```
 
 Optional mechanical checks:
 
 ```bash
 ./scripts/run-live-evals.sh
+./scripts/run-live-evals-phase2.sh
+```
+
+Flink CEP unit tests (no local Maven required):
+
+```bash
+docker run --rm -v "$PWD/jobs/compliance-cep:/app" -w /app maven:3.9-eclipse-temurin-17 mvn -q test
 ```
 
 ## Pull requests
 
 - Keep PRs focused on a single purpose.
-- Ensure CI passes (Compose, tests, smoke test, schema compatibility).
+- Ensure CI passes (Compose, tests, both smoke tests, schema compatibility).
 - Fill in the PR template checklist and test plan.
-- Self-review against [docs/review/phase1-review-checklist.md](docs/review/phase1-review-checklist.md) for Phase 1 changes.
+- Self-review against:
+  - [docs/review/phase1-review-checklist.md](docs/review/phase1-review-checklist.md) for State Service / Phase 1 paths
+  - [docs/review/phase2-exit-checklist.md](docs/review/phase2-exit-checklist.md) for Flink, alert-service, alert-console, Grafana, or Phase 2 smoke/CI changes
 
 ### Commit messages
 
@@ -53,30 +67,48 @@ Use [Conventional Commits](https://www.conventionalcommits.org/) when practical:
 - `ci:` CI/workflow changes
 - `refactor:` behavior-preserving refactor
 
-## Scope (Phase 1)
+## Scope by phase
 
-Unless a PR explicitly targets a later phase, stay within Phase 1 scope. Do **not** add:
+### Phase 1 (ingestion + twin)
 
-- Apache Flink / CEP jobs
+For PRs that touch only Phase 1 components, do **not** add Phase 2+ capabilities unless the PR explicitly targets a later phase.
+
+### Phase 2 (monitoring + alerts)
+
+**In scope** for current work:
+
+- Flink CEP job (`jobs/compliance-cep/`)
+- Redis feature store integration
+- Alert Service (`services/alert-service/`)
+- Alert Console (`apps/alert-console/`)
+- Grafana dashboards (`infra/grafana/`)
+- Phase 2 smoke test and CI extensions
+
+### Out of scope (Phase 3+)
+
+Do **not** add unless the PR explicitly targets a later phase:
+
 - Cedar Policy Service / GoRules Zen
 - immudb audit ledger
 - Neo4j / Graph Service
-- Next.js UI / WebSocket alert console
-- Keycloak / auth middleware
+- Keycloak / full auth middleware
 - Regulatory reporting (XBRL)
 
-See [AGENTS.md § Out of scope](AGENTS.md#out-of-scope-phase-1) and [docs/roadmap.md](docs/roadmap.md).
+See [AGENTS.md](AGENTS.md) and [docs/roadmap.md](docs/roadmap.md).
 
 ## Coding guidelines
 
 - Match event envelope and idempotency patterns in [docs/data-flow.md](docs/data-flow.md).
 - Include `tenant_id` on all entity tables (default single-tenant UUID per [ADR-007](docs/adr/007-phase1-foundation-decisions.md)).
-- Publish to Kafka **only** via the transactional outbox (`internal/outbox/`).
+- Publish to Kafka **only** via the transactional outbox in State Service (`services/state-service/internal/outbox/`).
 - Use parameterized SQL (no string concatenation for queries).
 - Never commit secrets, credentials, or `.env` files.
 - Avro schema changes must remain **BACKWARD** compatible; update baseline only with intent.
 
-For Go work in the State Service, see [services/state-service/AGENTS.md](services/state-service/AGENTS.md).
+Service-specific contracts:
+
+- State Service: [services/state-service/AGENTS.md](services/state-service/AGENTS.md)
+- Alert Service: [services/alert-service/AGENTS.md](services/alert-service/AGENTS.md)
 
 ## Architecture decisions
 
@@ -84,7 +116,7 @@ Significant design changes should be documented as ADRs under [docs/adr/](docs/a
 
 ## Deployment
 
-- Images are published to GHCR on merge to `main` ([docker-publish.yml](.github/workflows/docker-publish.yml)).
+- Images are published to GHCR on merge to `main` ([docker-publish.yml](.github/workflows/docker-publish.yml)): `state-service`, `alert-service`, `alert-console`, `compliance-cep`.
 - Staging deploy is manual via the **Deploy Staging** workflow; configure the `staging` environment secrets first.
 - See [docs/deployment.md](docs/deployment.md) for host setup, releases, and troubleshooting.
 

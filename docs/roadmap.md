@@ -100,28 +100,32 @@ gantt
 
 **Duration**: 4 weeks  
 **Dependencies**: Phase 1 complete  
-**Status**: Spec ready — implementation not started
+**Status**: Implemented — mechanical & behavior evals pending
 
-**Implementation handoff**: [phase2-implementation-spec.md](./phase2-implementation-spec.md) · [handoff-phase2-agent.md](./handoff-phase2-agent.md) · [ADR-008](./adr/008-phase2-foundation-decisions.md)
+**Handoff**: [phase2-implementation-spec.md](./phase2-implementation-spec.md) · [handoff-phase2-agent.md](./handoff-phase2-agent.md) · [ADR-008](./adr/008-phase2-foundation-decisions.md) · [review/phase2-exit-checklist.md](./review/phase2-exit-checklist.md)
 
-### Scope
+### Scope (as built)
 
-- Apache Flink deployment (Kubernetes Operator)
-- 3 initial CEP patterns: velocity (INT-M001), exposure limit (INT-M002), LCR threshold (BASEL-M001)
-- Redis online feature store
-- Alert publishing to `compliance.alerts` topic
+- Flink CEP job in local Compose (K8s Operator deferred to later phases)
+- 3 CEP patterns: velocity (INT-M001), exposure limit (INT-M002), LCR threshold (BASEL-M001)
+- Redis online feature store (`vel:*`, `exp:*`, `lcr:*` keys)
+- Alert publishing to `compliance.alerts` and consumption by Alert Service
 - WebSocket hub for real-time alert streaming
-- Basic alert console in Next.js UI
+- Alert console (Next.js) with acknowledge action
+- Grafana dashboards for Kafka lag and Flink checkpoint health
+- Extended CI and `./scripts/smoke-test-phase2.sh`
 
 ### Deliverables
 
-| Component | Technology | Acceptance Criteria |
-|-----------|------------|---------------------|
-| Flink CEP job | Java | 3 patterns detecting breaches from seed data |
-| Redis feature store | Redis 7 | Rolling counters updated by Flink |
-| Alert Service | Go | Alerts persisted + streamed via WebSocket |
-| Alert Console UI | Next.js | Live alert feed with acknowledge action |
-| Monitoring dashboard | Grafana | Kafka lag, Flink checkpoint metrics |
+| Component | Technology | Status |
+|-----------|------------|--------|
+| Flink CEP job | Java (Flink 1.18) | Implemented — `jobs/compliance-cep/` |
+| Redis feature store | Redis 7 | Implemented — Compose service |
+| Alert Service | Go | Implemented — `services/alert-service/` |
+| Alert Console UI | Next.js | Implemented — `apps/alert-console/` |
+| Monitoring dashboard | Grafana 10 | Implemented — `infra/grafana/` |
+| Mechanical exit checklist | Smoke + unit tests | [phase2-exit-checklist.md](./review/phase2-exit-checklist.md) |
+| Behavior eval pillar | Live agent scenarios | Pending — see [AGENTS.md](../AGENTS.md#behavior-evals-phase-2) |
 
 ### Risks
 
@@ -402,4 +406,5 @@ These must be resolved before or during Phase 0 exit:
 | ADR-003: immudb | [adr/003-immudb-audit-ledger.md](./adr/003-immudb-audit-ledger.md) | Accepted |
 | ADR-004: Datastores | [adr/004-datastore-selection.md](./adr/004-datastore-selection.md) | Accepted |
 | ADR-005: Zen vs Drools | [adr/005-gorules-zen-vs-drools.md](./adr/005-gorules-zen-vs-drools.md) | Accepted |
-| ADR-006: Polyglot | [adr/006-polyglot-language-strategy.md](./adr/006-polyglot-language-strategy.md) | Accepted |
+| Phase 2 Implementation Spec | [phase2-implementation-spec.md](./phase2-implementation-spec.md) | Implemented — evals pending |
+| Phase 2 Exit Checklist | [review/phase2-exit-checklist.md](./review/phase2-exit-checklist.md) | Mechanical criteria met |
