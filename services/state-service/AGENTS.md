@@ -65,7 +65,7 @@ From repo root: see [AGENTS.md](../../AGENTS.md) for Compose, seed, schema regis
 
 ## Gotchas
 
-- **Instrument numeric enrichment** — `enrichInstrumentState` in `internal/consumer/enrichment.go` converts CDC string decimals (e.g. `notional_amount`) to JSON numbers in `currentState` before outbox publish; keep in sync with `jobs/compliance-cep` contract test `TwinStateContractTest`
+- **Instrument numeric enrichment** — `enrichInstrumentState` in `internal/consumer/enrichment.go` converts CDC string decimals (e.g. `notional_amount`) to JSON numbers in `currentState` before outbox publish; golden publisher contract: `contracts/kafka/twin.state.updated/instrument.payload.json` (`TestKafkaContract_*` in `kafka_contract_test.go`)
 - Run `./scripts/register-schemas.sh` before starting the consumer (Schema Registry must have Avro subjects)
 - Run `./scripts/register-debezium-connector.sh` after Compose stack is healthy
 - `./scripts/smoke-test.sh` requires the full Compose stack up (`docker compose -f docker-compose.dev.yml up -d --wait`)

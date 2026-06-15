@@ -1,0 +1,12 @@
+{
+  "entity_id": "44444444-4444-4444-4444-444444444401",
+  "legal_name": "Delta Independent Bank",
+  "entity_type": "Bank",
+  "jurisdiction": "IE",
+  "consolidation_scope": "Solo",
+  "lcr": "0.9500",
+  "hqla": "450000000.00",
+  "net_cash_outflows_30d": "473684211.00",
+  "liquidity_currency": "EUR",
+  "updated_at": "2026-06-14T01:00:00Z"
+}

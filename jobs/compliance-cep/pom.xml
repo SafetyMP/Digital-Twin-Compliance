@@ -58,6 +58,15 @@
   </dependencies>
 
   <build>
+    <testResources>
+      <testResource>
+        <directory>${project.basedir}/../../contracts/kafka</directory>
+        <targetPath>kafka-contracts</targetPath>
+        <includes>
+          <include>**/*.json</include>
+        </includes>
+      </testResource>
+    </testResources>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

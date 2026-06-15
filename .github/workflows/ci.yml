@@ -48,6 +48,9 @@ jobs:
         working-directory: jobs/compliance-cep
         run: mvn -q test
 
+      - name: Kafka payload contracts
+        run: chmod +x scripts/check-kafka-contracts.sh && ./scripts/check-kafka-contracts.sh
+
       - name: Live evals (mechanical)
         run: ./scripts/run-live-evals.sh
 

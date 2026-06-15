@@ -145,7 +145,7 @@ Hard-won fixes from Phase 2 — check here before rediscovering them ([capturing
 - **Alert consumer must not stall on DLQ failure**: `services/alert-service/internal/consumer` commits after handler errors (DLQ publish failure included); `continue` without commit blocks the partition and `/api/v1/health` stays green.
 - **BASEL-M001 smoke-test localization**: requires `legal_entities.lcr` (and related columns) in core banking — enrichment no longer hard-codes liquidity. Smoke lowers Delta Independent Bank to `lcr = 0.90`; if open alerts stay empty, check core row → `twin_personas.current_state` liquidity block → `twin.state.updated` → Flink `lcr:*` Redis key.
 - **INT-M002 smoke-test localization**: needs two instruments with matching `owner_entity_id` + `counterparty_id` (see `002_phase2_exposure.sql`). After updates, Redis `exp:{tenant}:{owner}:{counterparty}` should exceed `CEP_EXPOSURE_LIMIT_EUR` (10M); if empty, re-run seed or check `twin.state.updated` instrument payloads include `notional_amount` as a parseable number (state-service enriches string CDC decimals to JSON numbers).
-- **Cross-service numeric contract**: Debezium CDC decimals arrive as strings in Go; state-service `enrichInstrumentState` / `enrichInstitutionState` normalize before `twin.state.updated`. Flink must still use `JsonParsers.parseDouble` defensively. Golden fixture: `jobs/compliance-cep/src/test/resources/contract/instrument-twin-state.json` + `TwinStateContractTest`.
+- **Cross-service numeric contract**: Debezium CDC decimals arrive as strings in Go; state-service `enrichInstrumentState` / `enrichInstitutionState` normalize before `twin.state.updated`. Flink must still use `JsonParsers.parseDouble` defensively. Golden fixtures live under `contracts/kafka/`; run `./scripts/check-kafka-contracts.sh`.
 - **Verification after edits** (fail fast before Docker smoke):
 
 | Touch | Minimum |
@@ -153,7 +153,7 @@ Hard-won fixes from Phase 2 — check here before rediscovering them ([capturing
 | `services/state-service/` | `cd services/state-service && go test ./...` |
 | `services/alert-service/` | `cd services/alert-service && go test ./...` |
 | `jobs/compliance-cep/` | `cd jobs/compliance-cep && mvn test` |
-| CDC enrichment + CEP parsers | both `go test` and `mvn test`; contract test must pass |
+| CDC enrichment + CEP parsers | both `go test` and `mvn test`; `./scripts/check-kafka-contracts.sh` must pass |
 | Seeds / smoke scripts | `bash -n scripts/smoke-test-phase2.sh`; full smoke needs stack |
 
 CI runs Go + `mvn test` before `docker compose up`; smoke remains the integration gate.
@@ -169,11 +169,13 @@ CI runs Go + `mvn test` before `docker compose up`; smoke remains the integratio
 | `jobs/compliance-cep/` | Flink CEP job (Java) |
 | `apps/alert-console/` | Next.js alert UI |
 | `mocks/core-banking/` | CDC source DB migrations and seed |
+| `contracts/kafka/` | Golden Kafka payload fixtures (cross-service API contract) |
 | `scripts/` | Seed, smoke test, schema registration |
 | `.github/workflows/` | CI and schema compatibility |
 
 ## Coding rules
 
+- **Kafka payloads are published APIs** — any shape on `twin.state.updated`, `domain.events.public.*`, or `compliance.alerts` that crosses a service boundary must have a golden fixture in [`contracts/kafka/`](contracts/kafka/README.md), a publisher test (producer side), and a consumer test (parser side). Run `./scripts/check-kafka-contracts.sh` before claiming cross-service work done. Do not duplicate fixtures under `services/` or `jobs/`.
 - Match patterns in [docs/data-flow.md](docs/data-flow.md) for event envelopes and idempotency keys.
 - All entity tables include `tenant_id` (default single tenant per [ADR-007](docs/adr/007-phase1-foundation-decisions.md)).
 - Legal entity hierarchy max depth: 3 levels (parent → subsidiary → sub-subsidiary).
