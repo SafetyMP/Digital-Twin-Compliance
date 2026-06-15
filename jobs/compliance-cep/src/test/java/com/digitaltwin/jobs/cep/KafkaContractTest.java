@@ -34,6 +34,18 @@ class KafkaContractTest {
     }
 
     @Test
+    void twinStateUpdatedInstrumentEnvelopeConsumer() throws Exception {
+        String raw = readContract("twin.state.updated/instrument.envelope.json");
+        Optional<JsonParsers.TwinStateEvent> twin = JsonParsers.parseTwinState(raw);
+        assertTrue(twin.isPresent());
+        assertEquals("Instrument", twin.get().personaType());
+        assertEquals(
+                "11111111-1111-1111-1111-111111111102",
+                JsonParsers.text(twin.get().currentState(), "owner_entity_id")
+        );
+    }
+
+    @Test
     void twinStateUpdatedInstitutionConsumer() throws Exception {
         String raw = readContract("twin.state.updated/institution.payload.json");
         Optional<JsonParsers.TwinStateEvent> twin = JsonParsers.parseTwinState(raw);

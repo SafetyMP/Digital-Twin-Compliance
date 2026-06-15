@@ -75,6 +75,7 @@ dump_int_m002_debug() {
   local cp_id="${2:-22222222-2222-2222-2222-222222222202}"
   echo "--- INT-M002 debug ---" >&2
   psql "$CORE_URL" -c "SELECT instrument_id, owner_entity_id, counterparty_id, notional_amount, currency FROM instruments WHERE owner_entity_id = '$owner_id' AND counterparty_id = '$cp_id' ORDER BY instrument_id LIMIT 5;" 2>/dev/null >&2 || true
+  psql "$STATE_URL" -tA -c "SELECT persona_id, state_version, left(current_state::text, 400) FROM twin_personas WHERE persona_type = 'Instrument' AND current_state::text LIKE '%$owner_id%' ORDER BY updated_at DESC LIMIT 3;" 2>/dev/null >&2 || true
   if docker ps --format '{{.Names}}' | grep -qx "$REDIS_CONTAINER"; then
     echo "redis exp aggregate: $(docker exec "$REDIS_CONTAINER" redis-cli GET "exp:${TENANT_ID}:${owner_id}:${cp_id}" 2>/dev/null || echo '?')" >&2
     docker exec "$REDIS_CONTAINER" redis-cli KEYS "exp:${TENANT_ID}:*" 2>/dev/null | head -8 >&2 || true
@@ -188,6 +189,17 @@ if [[ "${EXPOSURE_COUNT:-0}" -lt 2 ]]; then
   dump_int_m002_debug "$EXPOSURE_OWNER" "$EXPOSURE_CP"
   exit 1
 fi
+# Seed leaves these instruments at 6M; reset baseline so Flink exposure deltas are non-zero after Redis clear.
+psql "$CORE_URL" -v ON_ERROR_STOP=1 -c "
+  UPDATE instruments
+  SET notional_amount = 1000000.00, updated_at = now()
+  WHERE instrument_id IN (
+    SELECT instrument_id FROM instruments
+    WHERE owner_entity_id = '$EXPOSURE_OWNER' AND counterparty_id = '$EXPOSURE_CP'
+    ORDER BY instrument_id LIMIT 2
+  );
+" >/dev/null
+sleep 5
 # Two sequential updates aggregate to >10M EUR against the same counterparty.
 IDX=0
 while IFS= read -r id; do

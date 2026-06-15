@@ -108,6 +108,18 @@ func TestMapDebeziumToCDCInputLegalEntityLiquidity(t *testing.T) {
 	}
 }
 
+func TestEnrichInstrumentStateStringIDs(t *testing.T) {
+	row := map[string]any{
+		"owner_entity_id": map[string]any{"string": "11111111-1111-1111-1111-111111111102"},
+		"counterparty_id": "22222222-2222-2222-2222-222222222202",
+		"notional_amount": "6000000.00",
+	}
+	out := enrichInstrumentState(row)
+	if out["owner_entity_id"] != "11111111-1111-1111-1111-111111111102" {
+		t.Fatalf("owner_entity_id = %v", out["owner_entity_id"])
+	}
+}
+
 func TestEnrichInstrumentStateStringNotional(t *testing.T) {
 	row := map[string]any{
 		"instrument_id":    "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",

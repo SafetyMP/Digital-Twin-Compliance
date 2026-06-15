@@ -70,6 +70,11 @@ func stringField(row map[string]any, key string) string {
 		return t
 	case float64:
 		return strconv.FormatInt(int64(t), 10)
+	case map[string]any:
+		if s, ok := t["string"].(string); ok {
+			return s
+		}
+		return fmt.Sprint(v)
 	default:
 		return fmt.Sprint(v)
 	}

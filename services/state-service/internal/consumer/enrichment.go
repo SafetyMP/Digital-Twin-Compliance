@@ -41,12 +41,24 @@ var instrumentNumericColumns = map[string]struct{}{
 	"notional_amount": {},
 }
 
+var instrumentStringIDColumns = map[string]struct{}{
+	"instrument_id":   {},
+	"owner_entity_id": {},
+	"counterparty_id": {},
+}
+
 func enrichInstrumentState(row map[string]any) map[string]any {
 	out := make(map[string]any, len(row))
 	for k, v := range row {
 		if _, numeric := instrumentNumericColumns[k]; numeric {
 			if f, ok := floatField(row, k); ok {
 				out[k] = f
+				continue
+			}
+		}
+		if _, idCol := instrumentStringIDColumns[k]; idCol {
+			if s := stringField(row, k); s != "" {
+				out[k] = s
 				continue
 			}
 		}
