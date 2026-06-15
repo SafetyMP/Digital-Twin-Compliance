@@ -17,6 +17,8 @@ public final class JobConfig implements Serializable {
     public final int parallelism;
     public final String paymentsOffset;
     public final String twinOffset;
+    public final String paymentsGroupId;
+    public final String twinGroupId;
 
     public JobConfig(Map<String, String> params) {
         this.kafkaBrokers = params.getOrDefault("kafka", "kafka:9092");
@@ -29,6 +31,8 @@ public final class JobConfig implements Serializable {
         this.parallelism = Integer.parseInt(params.getOrDefault("parallelism", "1"));
         this.paymentsOffset = params.getOrDefault("paymentsOffset", "earliest");
         this.twinOffset = params.getOrDefault("twinOffset", "earliest");
+        this.paymentsGroupId = params.getOrDefault("paymentsGroup", "compliance-cep-payments");
+        this.twinGroupId = params.getOrDefault("twinGroup", "compliance-cep-twin");
     }
 
     public OffsetsInitializer paymentsOffsets() {

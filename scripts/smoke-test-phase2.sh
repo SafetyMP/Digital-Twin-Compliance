@@ -13,6 +13,9 @@ CORE_URL="${CORE_BANKING_DB_URL:-postgres://core:core@localhost:5433/core_bankin
 ALERT_DB_URL="${ALERT_DB_URL:-postgres://alert:alert@localhost:5435/alerts?sslmode=disable}"
 REDIS_CONTAINER="${REDIS_CONTAINER:-digitaltwin-redis-1}"
 ALERT_WAIT_SEC="${SMOKE_PHASE2_ALERT_WAIT_SEC:-30}"
+TENANT_ID="${DEFAULT_TENANT_ID:-00000000-0000-0000-0000-000000000001}"
+KAFKA_CONTAINER="${KAFKA_CONTAINER:-digitaltwin-kafka-1}"
+CONNECT_URL="${DEBEZIUM_CONNECT_URL:-http://localhost:8083}"
 
 if ! docker ps --format '{{.Names}}' | grep -qx "$REDIS_CONTAINER"; then
   DETECTED=$(docker ps --format '{{.Names}}' | grep -E 'redis-1$' | head -1 || true)
@@ -20,6 +23,31 @@ if ! docker ps --format '{{.Names}}' | grep -qx "$REDIS_CONTAINER"; then
     REDIS_CONTAINER="$DETECTED"
   fi
 fi
+
+if ! docker ps --format '{{.Names}}' | grep -qx "$KAFKA_CONTAINER"; then
+  DETECTED_KAFKA=$(docker ps --format '{{.Names}}' | grep -E 'kafka-1$' | head -1 || true)
+  if [[ -n "$DETECTED_KAFKA" ]]; then
+    KAFKA_CONTAINER="$DETECTED_KAFKA"
+  fi
+fi
+
+dump_int_m001_debug() {
+  echo "--- INT-M001 debug ---" >&2
+  curl -sf "$CONNECT_URL/connectors/core-banking-cdc/status" 2>/dev/null | jq . || echo "debezium status unavailable" >&2
+  PAYMENT_ROWS=$(psql "$CORE_URL" -tA -c "SELECT COUNT(*) FROM payments;" 2>/dev/null || echo "?")
+  echo "payments rows in core DB: $PAYMENT_ROWS" >&2
+  if docker ps --format '{{.Names}}' | grep -qx "$KAFKA_CONTAINER"; then
+    docker exec "$KAFKA_CONTAINER" kafka-run-class kafka.tools.GetOffsetShell \
+      --broker-list localhost:9092 --topic domain.events.public.payments 2>/dev/null | head -5 >&2 || true
+  fi
+  if docker ps --format '{{.Names}}' | grep -qx "$REDIS_CONTAINER"; then
+    docker exec "$REDIS_CONTAINER" redis-cli KEYS "vel:${TENANT_ID}:*" 2>/dev/null | head -5 >&2 || true
+    if [[ -n "${BURST_ACCOUNT_ID:-}" ]]; then
+      echo "redis vel for burst account: $(docker exec "$REDIS_CONTAINER" redis-cli GET "vel:${TENANT_ID}:${BURST_ACCOUNT_ID}:1h" 2>/dev/null || echo '?')" >&2
+    fi
+  fi
+  curl -sf "$ALERT_URL/api/v1/alerts?status=Open" 2>/dev/null | jq '[.[] | {ruleCode, idempotencyKey}]' >&2 || true
+}
 
 echo "==> Phase 2 smoke test"
 
@@ -66,6 +94,7 @@ curl -sf "$ALERT_URL/api/v1/alerts?status=Open" >/dev/null
 echo "==> 3. INT-M001 payment burst"
 # Idempotency keys are hourly; clear prior INT-M001 rows and Redis velocity so burst creates a fresh alert.
 psql "$ALERT_DB_URL" -v ON_ERROR_STOP=1 -c "DELETE FROM compliance_alerts WHERE rule_code = 'INT-M001';" >/dev/null
+BURST_ACCOUNT_ID=$(psql "$CORE_URL" -tA -c "SELECT account_id FROM accounts LIMIT 1;")
 if docker ps --format '{{.Names}}' | grep -qx "$REDIS_CONTAINER"; then
   docker exec "$REDIS_CONTAINER" sh -c 'redis-cli KEYS "vel:*" | while read -r k; do [ -n "$k" ] && redis-cli DEL "$k"; done' >/dev/null 2>&1 || true
 fi
@@ -87,6 +116,7 @@ for i in $(seq 1 "$ALERT_WAIT_SEC"); do
 done
 if [[ -z "$FOUND" ]]; then
   echo "INT-M001 alert not detected within ${ALERT_WAIT_SEC}s" >&2
+  dump_int_m001_debug
   exit 1
 fi
 if [[ "$CONSUME_MS" -gt 2000 ]]; then

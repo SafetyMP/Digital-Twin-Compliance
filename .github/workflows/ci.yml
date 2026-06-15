@@ -86,6 +86,7 @@ jobs:
         env:
           CEP_PAYMENTS_OFFSET: latest
           CEP_TWIN_OFFSET: latest
+          CEP_CONSUMER_GROUP_SUFFIX: "-${{ github.run_id }}"
         run: |
           chmod +x scripts/submit-flink-job.sh
           ./scripts/submit-flink-job.sh

@@ -30,7 +30,7 @@ public class ComplianceCepJob {
         KafkaSource<String> paymentsSource = KafkaSource.<String>builder()
                 .setBootstrapServers(config.kafkaBrokers)
                 .setTopics("domain.events.public.payments")
-                .setGroupId("compliance-cep-payments")
+                .setGroupId(config.paymentsGroupId)
                 .setStartingOffsets(config.paymentsOffsets())
                 .setValueOnlyDeserializer(new SimpleStringSchema())
                 .build();
@@ -38,7 +38,7 @@ public class ComplianceCepJob {
         KafkaSource<String> twinSource = KafkaSource.<String>builder()
                 .setBootstrapServers(config.kafkaBrokers)
                 .setTopics("twin.state.updated")
-                .setGroupId("compliance-cep-twin")
+                .setGroupId(config.twinGroupId)
                 .setStartingOffsets(config.twinOffsets())
                 .setValueOnlyDeserializer(new SimpleStringSchema())
                 .build();
