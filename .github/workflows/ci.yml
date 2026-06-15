@@ -81,6 +81,9 @@ jobs:
       - name: Restart state-service after connector
         run: docker compose -f docker-compose.dev.yml restart state-service && docker compose -f docker-compose.dev.yml up -d --wait state-service
 
+      - name: Verify state twin pipeline
+        run: chmod +x scripts/verify-state-twin-pipeline.sh scripts/smoke-lib-phase2.sh && ./scripts/verify-state-twin-pipeline.sh
+
       - name: Maven package (compliance-cep)
         working-directory: jobs/compliance-cep
         run: |
@@ -123,7 +126,8 @@ jobs:
       - name: Smoke test (Phase 2)
         env:
           SMOKE_PHASE2_ALERT_WAIT_SEC: 90
-        run: chmod +x scripts/smoke-test-phase2.sh mocks/simulators/payment-burst.sh scripts/submit-flink-job.sh && ./scripts/smoke-test-phase2.sh
+          SMOKE_PHASE2_REDIS_WAIT_SEC: 90
+        run: chmod +x scripts/smoke-test-phase2.sh scripts/smoke-lib-phase2.sh mocks/simulators/payment-burst.sh scripts/submit-flink-job.sh && ./scripts/smoke-test-phase2.sh
 
       - name: Coverage gates
         run: ./scripts/check-coverage-gates.sh

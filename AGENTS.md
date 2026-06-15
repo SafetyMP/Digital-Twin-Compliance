@@ -24,7 +24,7 @@ Minimize token use — load only what the task requires:
   - `evals/live-model/README.md`, `evals/live-model/manifest.json` — run scripts instead
 - **Do not re-read** once loaded in the same session:
   - Global harness: `~/.cursor/HARNESS.md`, `~/.cursor/TOOLING.md`, `~/.cursor/memory/MEMORY.md`, `~/.cursor/rules/*.mdc`, `~/.cursor/skills/**/SKILL.md`, orchestration rules — unless the task is explicitly harness/skill/meta work
-  - Repo contract: this file, `docs/phase1-implementation-spec.md`, `docs/handoff-parallel-agent.md`, `docs/handoff-verification-agent.md` — unless you or the user edited them since last read
+  - Repo contract: this file, `docs/phase1-implementation-spec.md`, `docs/handoff-parallel-agent.md`, `docs/handoff-verification-agent.md`, `docs/handoff-continuation.md` — unless you or the user edited them since last read
 - **Eval/reporting commands** (`/token-efficiency`, `/live-eval`, `/live-eval-phase2`): run `./scripts/token-efficiency.sh`, `./scripts/run-live-evals.sh`, or `./scripts/run-live-evals-phase2.sh`; do not Read scorer scripts or eval README/manifest
 
 ## Session hygiene
@@ -41,6 +41,39 @@ When the user shifts from analysis to implement / verify / assist, treat it as a
 | **Eval / metrics** | `./scripts/token-efficiency.sh`, `./scripts/run-live-evals.sh`, or `./scripts/run-live-evals-phase2.sh` only | Scorer source, `evals/live-model/README.md`, `evals/live-model-phase2/README.md` |
 
 Verification handoff: [docs/handoff-verification-agent.md](docs/handoff-verification-agent.md). Use `/verify-phase2` in Cursor.
+
+Continuation handoff (multi-session work): [docs/handoff-continuation.md](docs/handoff-continuation.md) — paste template with Done/Blocked/Next; do not read prior transcripts.
+
+## Agent learning
+
+Learning is **externalized memory**, not chat recall. Agents do not retain prior sessions unless knowledge is written to files.
+
+### First-read contract
+
+Every new session, before debugging or editing:
+
+1. This file — especially **Repo gotchas** below
+2. Phase spec ([phase2](docs/phase2-implementation-spec.md) or [phase1](docs/phase1-implementation-spec.md))
+3. Scoped `services/*/AGENTS.md` for the service you touch
+
+Then `grep` before `Read` on large files.
+
+### Capture checklist (session close-out)
+
+Capture when the user **corrects** you, states a **durable preference**, or you fix a **non-obvious gotcha**:
+
+| Learning | Write to |
+|----------|----------|
+| Repo-specific gotcha | **Repo gotchas** below (one line, lead with the rule) |
+| Service-specific pattern | `services/<svc>/AGENTS.md` |
+| Cross-project preference | `~/.cursor/memory/MEMORY.md` or user rule |
+| Repeatable workflow | Cursor skill |
+
+Do **not** capture one-off task state (use [handoff-continuation.md](docs/handoff-continuation.md)). Do **not** duplicate phase-spec content.
+
+### Retention metric
+
+Track **repeat discovery**: a new session re-fixes a gotcha already in **Repo gotchas**. If that happens, shorten or elevate the gotcha line, or add a behavioral scenario. Run `./scripts/check-agent-learning.sh` for hygiene checks.
 
 ## Parallel work
 
@@ -114,8 +147,14 @@ cd services/alert-service && go test ./...
 ./scripts/smoke-test.sh
 ./scripts/smoke-test-phase2.sh
 
+# Twin-path canary (after state-service restart / Debezium register)
+./scripts/verify-state-twin-pipeline.sh
+
 # Token efficiency (latest agent transcript)
 ./scripts/token-efficiency.sh
+
+# Agent learning hygiene (gotchas, retention scenario, fixtures)
+./scripts/check-agent-learning.sh
 
 # Tear down
 docker compose -f docker-compose.dev.yml down -v
@@ -141,10 +180,11 @@ Hard-won fixes from Phase 2 — check here before rediscovering them ([capturing
 - **CEP jar staleness in CI**: `flink-job-submitter` in Compose builds `jobs/compliance-cep/target/*.jar` at stack bring-up; host/CI changes are not in that jar until `mvn package` runs again before `./scripts/submit-flink-job.sh` (`mvn test` alone is insufficient).
 - **Flink `latest` offsets need a fresh consumer group**: `OffsetsInitializer.latest()` does not override committed offsets for an existing group. CI passes `CEP_CONSUMER_GROUP_SUFFIX` to `submit-flink-job.sh`; local resubmits after seed should cancel the old job and use a new suffix or `earliest` when debugging replay.
 - **Restart `alert-service` after `./scripts/seed.sh`**: same pattern as state-service after Debezium — long-running consumers started before topics/seed are wired can miss the smoke-test window (CI restarts alert-service post-seed).
+- **Rebuild `state-service` image after Go consumer/enrichment changes**: `docker compose -f docker-compose.dev.yml build state-service` then restart — stale container code leaves `twin_personas` with old `liquidity.lcr` / base64 CDC columns even when core banking updated.
 - **INT-M001 smoke-test localization**: Redis `vel:{tenant}:{account}:1h` > 50 means Debezium → Flink velocity logic succeeded; if open alerts stay empty, debug Flink → `compliance.alerts` → alert-service (not payment CDC or parsers). `./scripts/smoke-test-phase2.sh` dumps offsets/DB rows on failure.
 - **Alert consumer must not stall on DLQ failure**: `services/alert-service/internal/consumer` commits after handler errors (DLQ publish failure included); `continue` without commit blocks the partition and `/api/v1/health` stays green.
-- **BASEL-M001 smoke-test localization**: requires `legal_entities.lcr` (and related columns) in core banking — enrichment no longer hard-codes liquidity. Smoke lowers Delta Independent Bank to `lcr = 0.90`; if open alerts stay empty, check core row → `twin_personas.current_state` liquidity block → `twin.state.updated` → Flink `lcr:*` Redis key.
-- **INT-M002 smoke-test localization**: needs two instruments with matching `owner_entity_id` + `counterparty_id` (see `002_phase2_exposure.sql`). After updates, Redis `exp:{tenant}:{owner}:{counterparty}` should exceed `CEP_EXPOSURE_LIMIT_EUR` (10M); if empty, re-run seed or check `twin.state.updated` instrument payloads include `notional_amount` as a parseable number (state-service enriches string CDC decimals to JSON numbers).
+- **BASEL-M001 smoke-test localization**: requires `legal_entities.lcr` (and related columns) in core banking — enrichment no longer hard-codes liquidity. Smoke lowers Delta Independent Bank to `lcr = 0.90`; if open alerts stay empty, check core row → `twin_personas.current_state` liquidity block → `twin.state.updated` → Flink `lcr:*` Redis key. Smoke waits on twin `liquidity.lcr` mirror before Redis, then alert API.
+- **INT-M002 smoke-test localization**: needs two instruments with matching `owner_entity_id` + `counterparty_id` (see `002_phase2_exposure.sql`). After updates, Redis `exp:{tenant}:{owner}:{counterparty}` should exceed `CEP_EXPOSURE_LIMIT_EUR` (10M); if empty, check `twin_personas.current_state` mirrored notional/owner/counterparty (state-service) before Flink; smoke waits on twin mirror then Redis — if twin never updates, restart state-service after Debezium/seed.
 - **Cross-service numeric contract**: Debezium CDC decimals arrive as strings in Go; state-service `enrichInstrumentState` / `enrichInstitutionState` normalize before `twin.state.updated`. Flink must still use `JsonParsers.parseDouble` defensively. Golden fixtures live under `contracts/kafka/`; run `./scripts/check-kafka-contracts.sh`.
 - **Verification after edits** (fail fast before Docker smoke):
 
@@ -154,9 +194,21 @@ Hard-won fixes from Phase 2 — check here before rediscovering them ([capturing
 | `services/alert-service/` | `cd services/alert-service && go test ./...` |
 | `jobs/compliance-cep/` | `cd jobs/compliance-cep && mvn test` |
 | CDC enrichment + CEP parsers | both `go test` and `mvn test`; `./scripts/check-kafka-contracts.sh` must pass |
-| Seeds / smoke scripts | `bash -n scripts/smoke-test-phase2.sh`; full smoke needs stack |
+| Seeds / smoke scripts | `bash -n scripts/smoke-test-phase2.sh scripts/smoke-lib-phase2.sh scripts/verify-state-twin-pipeline.sh`; full smoke needs stack |
+| Single smoke scenario | `SMOKE_PHASE2_ONLY=M002 ./scripts/smoke-test-phase2.sh` (optional `SMOKE_PHASE2_SKIP_PREREQS=1` when stack warm) |
 
-CI runs Go + `mvn test` before `docker compose up`; smoke remains the integration gate.
+CI runs Go + `mvn test` + `check-kafka-contracts.sh` before `docker compose up`; smoke remains the integration gate.
+
+- **Phase 2 CI bring-up order** (`.github/workflows/ci.yml` — do not reorder without updating smoke assumptions):
+
+  1. Unit tests + Kafka contracts (fail fast)
+  2. `docker compose up -d --wait`
+  3. `./scripts/seed.sh` → restart `alert-service`
+  4. Register schemas + Debezium → restart `state-service` → `./scripts/verify-state-twin-pipeline.sh`
+  5. `mvn package -DskipTests` (host jar; Compose submitter image may be stale until this)
+  6. `./scripts/submit-flink-job.sh` with fresh `CEP_CONSUMER_GROUP_SUFFIX`
+  7. `./scripts/smoke-test.sh` then `./scripts/smoke-test-phase2.sh`
+  8. `./scripts/check-coverage-gates.sh`
 
 ## Layout
 
@@ -244,7 +296,11 @@ Done also means:
 
 ## Definition of done (Phase 2)
 
-Before claiming Phase 2 complete, all must exit 0:
+**Phase 2a (integration stable — merge bar):** two consecutive green CI runs with smoke steps 1–9, `check-kafka-contracts.sh` in CI, and PR checklist items covered by smoke (rules fire, API, WS, ack, Redis keys).
+
+**Phase 2b (repo contract complete):** Phase 2a on `main`, behavior eval pillar (≥5/6 scenarios, ≥80% pass rate), `./scripts/token-efficiency.sh --strict` on verification chat, and honest §14 checklist (defer/document soak/p99 if not measured).
+
+Before claiming Phase 2a complete, all must exit 0:
 
 ```bash
 docker compose -f docker-compose.dev.yml up -d --wait
@@ -256,9 +312,9 @@ cd services/alert-service && go test ./...
 
 Done also means:
 
-- [Phase 2 exit criteria checklist](docs/phase2-implementation-spec.md#14-phase-2-exit-criteria-checklist) in spec is satisfied
-- `./scripts/token-efficiency.sh --strict` passes on the session transcript (`harness_reread_count: 0`, `duplicate_read_count ≤ 3`); paste output in the PR
-- Behavior eval pillar populated: ≥ 4/5 live scenarios stored under `evals/live-model-phase2/results/` (see [Behavior evals](#behavior-evals-phase-2))
+- [Phase 2 exit criteria checklist](docs/phase2-implementation-spec.md#14-phase-2-exit-criteria-checklist) in spec is satisfied (Phase 2b)
+- `./scripts/token-efficiency.sh --strict` passes on the session transcript (`harness_reread_count: 0`, `duplicate_read_count ≤ 3`); paste output in the PR (Phase 2b)
+- Behavior eval pillar populated: ≥ 5/6 live scenarios stored under `evals/live-model-phase2/results/` (see [Behavior evals](#behavior-evals-phase-2)) (Phase 2b)
 
 ## Behavior evals (Phase 2)
 
@@ -281,9 +337,9 @@ To populate the pillar before claiming Phase 2 done:
   --write-result evals/live-model-phase2/results/<id>/run-$(date +%Y%m%dT%H%M%S).json
 ```
 
-Pass bar: **≥ 80% pass rate** per scenario over `runs_per_scenario` (default 3) from manifest, and **≥ 4/5** scenarios meeting that bar. An empty `evals/live-model-phase2/results/` means the behavior pillar is unmet and Phase 2 is **not** done.
+Pass bar: **≥ 80% pass rate** per scenario over `runs_per_scenario` (default 3) from manifest, and **≥ 5/6** scenarios meeting that bar. An empty `evals/live-model-phase2/results/` means the behavior pillar is unmet and Phase 2 is **not** done.
 
-The behavior pillar scores **process discipline** (verification order, scope boundaries, invariant preservation) — not code correctness. See [docs/eval-harness-scope.md](docs/eval-harness-scope.md).
+The behavior pillar scores **process discipline** (verification order, scope boundaries, invariant preservation) and **contract retention** (loads `AGENTS.md` gotchas before deep debugging) — not code correctness. Retention scenario: `debug-int-m001-retention`. See [docs/eval-harness-scope.md](docs/eval-harness-scope.md).
 
 Measure session efficiency separately with `./scripts/token-efficiency.sh --strict` (the Efficiency pillar and DoD gate); do not fold `--fail-on-harness-rereads` into the behavior score.
 
@@ -292,6 +348,7 @@ Measure session efficiency separately with `./scripts/token-efficiency.sh --stri
 - **Planning agent** produces specs and ADRs under `docs/`; does not implement services.
 - **Implementation agent** builds from [docs/phase1-implementation-spec.md](docs/phase1-implementation-spec.md) or [docs/phase2-implementation-spec.md](docs/phase2-implementation-spec.md).
 - **Verification agent** runs [docs/handoff-verification-agent.md](docs/handoff-verification-agent.md); minimal diffs only.
+- **Continuation** across sessions uses [docs/handoff-continuation.md](docs/handoff-continuation.md); outcomes only, no transcript archaeology.
 - After implementation, run review using [docs/review/phase1-review-checklist.md](docs/review/phase1-review-checklist.md).
 
 ## References

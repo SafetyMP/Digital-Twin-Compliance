@@ -10,10 +10,12 @@
 
 - [ ] `cd services/state-service && go test ./...`
 - [ ] `cd services/alert-service && go test ./...` (Phase 2 changes)
+- [ ] `./scripts/check-kafka-contracts.sh` (Kafka payload contract; required for cross-service changes)
 - [ ] `./scripts/run-live-evals.sh` (mechanical)
 - [ ] `./scripts/run-live-evals.sh --full` or `./scripts/check-coverage-gates.sh` (coverage ≥35% state-service)
 - [ ] `./scripts/smoke-test.sh` (requires Compose stack)
-- [ ] `./scripts/smoke-test-phase2.sh` (Phase 2 changes; Flink RUNNING)
+- [ ] `./scripts/smoke-test-phase2.sh` (Phase 2 changes; Flink RUNNING; subset: `SMOKE_PHASE2_ONLY=M002`; gates twin mirror → Redis → alert for twin-path rules)
+- [ ] `./scripts/verify-state-twin-pipeline.sh` (after state-service restart / Debezium register)
 - [ ] `./scripts/run-live-evals-phase2.sh` (Phase 2 mechanical)
 
 ### Behavior (live scenarios — fresh chat)
@@ -48,7 +50,7 @@ Optional report: `./scripts/report-eval-scorecard.sh --all [--full]`
 <!-- Complete for Phase 2 changes; mark N/A otherwise -->
 
 - [ ] Flink job `RUNNING` on `:8082`
-- [ ] `INT-M001` / `BASEL-M001` alerts visible via alert-service API
+- [ ] `INT-M001` / `INT-M002` / `BASEL-M001` alerts visible via alert-service API (smoke gates intermediate twin/Redis keys, not API alone)
 - [ ] Alert-service package tests present (`run-live-evals-phase2.sh` mechanical)
 
 ## Review
