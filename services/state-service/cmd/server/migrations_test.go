@@ -32,6 +32,22 @@ func TestReadMigrationSQLMissing(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for missing migration file")
 	}
+	if !os.IsNotExist(err) {
+		t.Fatalf("expected ErrNotExist, got %v", err)
+	}
+}
+
+func TestReadMigrationSQLReturnsNonNotExistError(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	_, err := readMigrationSQL([]string{dir})
+	if err == nil {
+		t.Fatal("expected error when path is a directory")
+	}
+	if os.IsNotExist(err) {
+		t.Fatalf("expected non-NotExist error, got %v", err)
+	}
 }
 
 func TestMigrationSearchPaths(t *testing.T) {

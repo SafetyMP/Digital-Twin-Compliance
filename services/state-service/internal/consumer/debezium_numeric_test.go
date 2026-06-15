@@ -32,6 +32,24 @@ func TestDecodeDebeziumDecimalFloat(t *testing.T) {
 	}
 }
 
+func TestNormalizeDebeziumRowLegalEntities(t *testing.T) {
+	t.Parallel()
+
+	row := map[string]any{
+		"entity_id":             "44444444-4444-4444-4444-444444444401",
+		"lcr":                   "0.9500",
+		"hqla":                  "450000000.00",
+		"net_cash_outflows_30d": "473684211.00",
+	}
+	out := normalizeDebeziumRow("legal_entities", row)
+	if out["lcr"] != "0.9500" {
+		t.Fatalf("lcr = %v", out["lcr"])
+	}
+	if out["hqla"] != "450000000.00" {
+		t.Fatalf("hqla = %v", out["hqla"])
+	}
+}
+
 func TestNormalizeDebeziumRowInstruments(t *testing.T) {
 	t.Parallel()
 

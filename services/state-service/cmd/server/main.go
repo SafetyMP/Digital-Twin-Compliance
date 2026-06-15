@@ -38,7 +38,7 @@ func main() {
 
 	st := store.New(pool, cfg.DefaultTenantID)
 	handler := consumer.NewHandler(st, cfg.ServiceSource)
-	runner := consumer.NewRunner(cfg.KafkaBrokers, "state-service", cfg.DebeziumTopics, handler)
+	runner := consumer.NewRunner(cfg.KafkaBrokers, "state-service", cfg.DebeziumTopics, cfg.DebeziumDLQTopic, handler)
 
 	outboxInterval, err := time.ParseDuration(cfg.OutboxPollInterval)
 	if err != nil {
@@ -90,6 +90,9 @@ func readMigrationSQL(paths []string) (string, error) {
 		sqlBytes, err := os.ReadFile(path)
 		if err == nil {
 			return string(sqlBytes), nil
+		}
+		if !os.IsNotExist(err) {
+			return "", err
 		}
 	}
 	return "", os.ErrNotExist

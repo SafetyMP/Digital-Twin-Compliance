@@ -25,6 +25,9 @@ func TestLoadDefaults(t *testing.T) {
 	if len(cfg.DebeziumTopics) != 3 {
 		t.Fatalf("DebeziumTopics = %v", cfg.DebeziumTopics)
 	}
+	if cfg.DebeziumDLQTopic != "domain.events.dlq" {
+		t.Fatalf("DebeziumDLQTopic = %q", cfg.DebeziumDLQTopic)
+	}
 }
 
 func TestLoadFromEnv(t *testing.T) {
@@ -33,6 +36,7 @@ func TestLoadFromEnv(t *testing.T) {
 	t.Setenv("DEFAULT_TENANT_ID", "tenant-abc")
 	t.Setenv("STATE_SERVICE_HTTP_ADDR", ":9090")
 	t.Setenv("DEBEZIUM_TOPICS", "a,b")
+	t.Setenv("STATE_CDC_DLQ_TOPIC", "cdc.custom.dlq")
 
 	cfg := Load()
 	if cfg.StateDBURL != "postgres://custom/db" {
@@ -49,6 +53,9 @@ func TestLoadFromEnv(t *testing.T) {
 	}
 	if len(cfg.DebeziumTopics) != 2 {
 		t.Fatalf("DebeziumTopics = %v", cfg.DebeziumTopics)
+	}
+	if cfg.DebeziumDLQTopic != "cdc.custom.dlq" {
+		t.Fatalf("DebeziumDLQTopic = %q", cfg.DebeziumDLQTopic)
 	}
 }
 

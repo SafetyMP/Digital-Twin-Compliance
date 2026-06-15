@@ -13,19 +13,21 @@ type Config struct {
 	HTTPAddr           string
 	ServiceSource      string
 	DebeziumTopics     []string
+	DebeziumDLQTopic   string
 	OutboxPollInterval string
 }
 
 func Load() Config {
 	return Config{
-		StateDBURL:         env("STATE_DB_URL", "postgres://state:state@localhost:5434/twin_state?sslmode=disable"),
-		KafkaBrokers:       splitEnv("KAFKA_BROKERS", "localhost:9092"),
-		SchemaRegistryURL:  env("SCHEMA_REGISTRY_URL", "http://localhost:8081"),
-		DefaultTenantID:    env("DEFAULT_TENANT_ID", "00000000-0000-0000-0000-000000000001"),
-		HTTPAddr:           env("STATE_SERVICE_HTTP_ADDR", ":8080"),
-		ServiceSource:      env("STATE_SERVICE_SOURCE", "state-service"),
+		StateDBURL:        env("STATE_DB_URL", "postgres://state:state@localhost:5434/twin_state?sslmode=disable"),
+		KafkaBrokers:      splitEnv("KAFKA_BROKERS", "localhost:9092"),
+		SchemaRegistryURL: env("SCHEMA_REGISTRY_URL", "http://localhost:8081"),
+		DefaultTenantID:   env("DEFAULT_TENANT_ID", "00000000-0000-0000-0000-000000000001"),
+		HTTPAddr:          env("STATE_SERVICE_HTTP_ADDR", ":8080"),
+		ServiceSource:     env("STATE_SERVICE_SOURCE", "state-service"),
 		DebeziumTopics: splitEnv("DEBEZIUM_TOPICS",
 			"domain.events.public.legal_entities,domain.events.public.accounts,domain.events.public.instruments"),
+		DebeziumDLQTopic:   env("STATE_CDC_DLQ_TOPIC", "domain.events.dlq"),
 		OutboxPollInterval: env("OUTBOX_POLL_INTERVAL", "1s"),
 	}
 }

@@ -52,9 +52,10 @@ From repo root: see [AGENTS.md](../../AGENTS.md) for Compose, seed, schema regis
 
 ## Invariants
 
-- **Outbox-only Kafka writer** — only `internal/outbox/` may use `kafka.Writer`; never publish directly from consumer or store
+- **Outbox-only Kafka writer** — only `internal/outbox/` may use `kafka.Writer` for domain publish; never publish twin events directly from consumer or store (`internal/consumer/dlq.go` is allowed for poison routing only)
 - **`tenant_id` on all entity tables** — default `00000000-0000-0000-0000-000000000001`
 - **Hierarchy depth ≤ 3** — parent → subsidiary → sub-subsidiary (ADR-007 D9)
+- **Poison CDC messages** — handler failures route to `domain.events.dlq` (env `STATE_CDC_DLQ_TOPIC`); offset committed only after DLQ write succeeds
 
 ## Key files
 

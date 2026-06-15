@@ -100,18 +100,24 @@ func parseTimestamp(v any) time.Time {
 type Runner struct {
 	reader  *kafka.Reader
 	handler *Handler
+	dlq     dlqPublisher
 }
 
-func NewRunner(brokers []string, groupID string, topics []string, handler *Handler) *Runner {
+func NewRunner(brokers []string, groupID string, topics []string, dlqTopic string, handler *Handler) *Runner {
+	var dlq dlqPublisher
+	if dlqTopic != "" {
+		dlq = newKafkaDLQ(brokers, dlqTopic)
+	}
 	return &Runner{
 		reader: kafka.NewReader(kafka.ReaderConfig{
-			Brokers:  brokers,
-			GroupID:  groupID,
+			Brokers:     brokers,
+			GroupID:     groupID,
 			GroupTopics: topics,
-			MinBytes: 1,
-			MaxBytes: 10e6,
+			MinBytes:    1,
+			MaxBytes:    10e6,
 		}),
 		handler: handler,
+		dlq:     dlq,
 	}
 }
 
@@ -125,7 +131,15 @@ func (r *Runner) Run(ctx context.Context) error {
 			return err
 		}
 		if err := r.handler.HandleMessage(ctx, msg); err != nil {
-			slog.Error("handle message failed", "topic", msg.Topic, "error", err)
+			slog.Error("handle message failed", "topic", msg.Topic, "error", err, "offset", msg.Offset)
+			if r.dlq == nil {
+				slog.Warn("dlq disabled; committing poison message to avoid consumer stall", "offset", msg.Offset)
+			} else if dlqErr := r.dlq.PublishDLQ(ctx, msg, err); dlqErr != nil {
+				slog.Error("publish dlq message", "error", dlqErr, "offset", msg.Offset)
+				continue
+			} else {
+				slog.Warn("routed poison message to dlq", "offset", msg.Offset)
+			}
 		}
 		if err := r.reader.CommitMessages(ctx, msg); err != nil {
 			return err
@@ -134,5 +148,8 @@ func (r *Runner) Run(ctx context.Context) error {
 }
 
 func (r *Runner) Close() error {
+	if dlq, ok := r.dlq.(*kafkaDLQ); ok {
+		_ = dlq.Close()
+	}
 	return r.reader.Close()
 }

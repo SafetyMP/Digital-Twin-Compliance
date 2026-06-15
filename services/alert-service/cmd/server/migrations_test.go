@@ -25,6 +25,19 @@ func TestReadMigrationSQL(t *testing.T) {
 	}
 }
 
+func TestReadMigrationSQLReturnsNonNotExistError(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	_, err := readMigrationSQL([]string{dir})
+	if err == nil {
+		t.Fatal("expected error when path is a directory")
+	}
+	if os.IsNotExist(err) {
+		t.Fatalf("expected non-NotExist error, got %v", err)
+	}
+}
+
 func TestMigrationSearchPaths(t *testing.T) {
 	t.Parallel()
 

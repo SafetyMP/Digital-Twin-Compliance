@@ -2,39 +2,85 @@ package consumer
 
 import (
 	"encoding/json"
+	"strconv"
 )
 
-// lowLCRInstitution is seeded at 0.95 LCR for BASEL-M001 smoke tests.
-const lowLCRInstitution = "44444444-4444-4444-4444-444444444401"
+var institutionLiquidityColumns = map[string]struct{}{
+	"lcr":                   {},
+	"hqla":                  {},
+	"net_cash_outflows_30d": {},
+	"liquidity_currency":    {},
+}
 
-func enrichInstitutionState(entityID string, row map[string]any) map[string]any {
-	out := make(map[string]any, len(row)+1)
-	for k, v := range row {
-		out[k] = v
+func institutionLiquidityFromRow(row map[string]any) (map[string]any, bool) {
+	lcr, ok := floatField(row, "lcr")
+	if !ok {
+		return nil, false
 	}
-
-	lcr := 1.05
-	hqla := 500000000.00
-	netOutflows := 476190476.00
-	if entityID == lowLCRInstitution {
-		lcr = 0.95
-		hqla = 450000000.00
-		netOutflows = 473684211.00
+	hqla, ok := floatField(row, "hqla")
+	if !ok {
+		return nil, false
 	}
-
-	out["liquidity"] = map[string]any{
+	netOutflows, ok := floatField(row, "net_cash_outflows_30d")
+	if !ok {
+		return nil, false
+	}
+	currency := stringField(row, "liquidity_currency")
+	if currency == "" {
+		currency = "EUR"
+	}
+	return map[string]any{
 		"lcr":                lcr,
 		"hqla":               hqla,
 		"netCashOutflows30d": netOutflows,
-		"currency":           "EUR",
+		"currency":           currency,
+	}, true
+}
+
+func enrichInstitutionState(row map[string]any) map[string]any {
+	out := make(map[string]any, len(row)+1)
+	for k, v := range row {
+		if _, skip := institutionLiquidityColumns[k]; skip {
+			continue
+		}
+		out[k] = v
+	}
+	if liq, ok := institutionLiquidityFromRow(row); ok {
+		out["liquidity"] = liq
 	}
 	return out
 }
 
 func enrichStateBytes(table, pk string, row map[string]any) ([]byte, error) {
 	if table == "legal_entities" {
-		enriched := enrichInstitutionState(pk, row)
+		enriched := enrichInstitutionState(row)
 		return json.Marshal(enriched)
 	}
 	return json.Marshal(row)
+}
+
+func floatField(row map[string]any, key string) (float64, bool) {
+	v, ok := row[key]
+	if !ok || v == nil {
+		return 0, false
+	}
+	switch t := v.(type) {
+	case float64:
+		return t, true
+	case string:
+		if t == "" {
+			return 0, false
+		}
+		f, err := strconv.ParseFloat(t, 64)
+		if err != nil {
+			return 0, false
+		}
+		return f, true
+	case int:
+		return float64(t), true
+	case int64:
+		return float64(t), true
+	default:
+		return 0, false
+	}
 }
