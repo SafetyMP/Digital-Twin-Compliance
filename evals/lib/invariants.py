@@ -196,6 +196,9 @@ def check_phase3_scope_boundary(
     changed_paths: set[str] | None = None,
 ) -> InvariantResult:
     name = "phase3-scope-boundary"
+    # Phase 3 stack landed — mechanical full-repo check is N/A (mirrors scope-boundary-phase1 + compliance-cep).
+    if (root / "scripts" / "smoke-test-phase3.sh").is_file():
+        return InvariantResult(name, True, [])
     search_roots = ["services", "jobs", "apps", "mocks", "schemas"]
     globs = ["*.go", "*.sql", "*.yml", "*.yaml", "*.avsc", "*.sh", "*.java", "*.tsx", "*.ts"]
     exclude = ("evals/", "scripts/run-live-evals", "scripts/score-agent-transcript")

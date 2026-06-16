@@ -18,10 +18,12 @@ jobs:
         with:
           go-version: "1.25"
 
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.89"
+
       - name: Install Cedar CLI
-        run: |
-          curl -fsSL https://github.com/cedar-policy/cedar/releases/download/v4.7.0/cedar-4.7.0-x86_64-unknown-linux-gnu.tar.gz | tar xz -C /tmp
-          sudo mv /tmp/cedar /usr/local/bin/cedar
+        run: chmod +x scripts/install-cedar-cli.sh && ./scripts/install-cedar-cli.sh
 
       - name: Policy CI
         run: chmod +x scripts/run-policy-ci.sh && ./scripts/run-policy-ci.sh
