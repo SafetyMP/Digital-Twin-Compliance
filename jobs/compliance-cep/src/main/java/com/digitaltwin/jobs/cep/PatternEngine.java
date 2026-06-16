@@ -12,9 +12,13 @@ public final class PatternEngine {
     private final LcrChecker lcr;
 
     public PatternEngine(JobConfig config, RedisFeatureStore redis) {
+        this(config, redis, null);
+    }
+
+    public PatternEngine(JobConfig config, RedisFeatureStore redis, DecisionServiceClient decisionClient) {
         this.velocity = new VelocityChecker(config, redis);
         this.exposure = new ExposureChecker(config, redis);
-        this.lcr = new LcrChecker(config, redis);
+        this.lcr = new LcrChecker(config, redis, decisionClient);
     }
 
     public Optional<AlertRecord> onPayment(JsonParsers.PaymentEvent payment) {

@@ -220,6 +220,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      decision-service:
+        condition: service_healthy
     command: taskmanager
     environment:
       - |
@@ -243,6 +245,8 @@ services:
         condition: service_healthy
       alert-service:
         condition: service_healthy
+      decision-service:
+        condition: service_healthy
     working_dir: /workspace
     volumes:
       - .:/workspace
@@ -251,6 +255,7 @@ services:
       CEP_VELOCITY_MAX_PER_HOUR: "50"
       CEP_EXPOSURE_LIMIT_EUR: "10000000"
       CEP_LCR_MINIMUM: "1.0"
+      CEP_DECISION_SERVICE_URL: http://decision-service:8092
       FLINK_PARALLELISM: "1"
     entrypoint: ["/bin/bash", "-c"]
     command:
