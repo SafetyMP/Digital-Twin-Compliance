@@ -17,12 +17,12 @@ This document describes the **target** architecture across all phases. Component
 | Flink CEP (INT-M001, INT-M002, BASEL-M001) | 2 | Implemented |
 | Redis online feature store | 2 | Implemented |
 | Alert Service, WebSocket, alert console, Grafana | 2 | Implemented |
-| Cedar Policy Service, GoRules Zen / Decision Service | 3+ | Planned |
-| immudb audit ledger, Audit Explorer | 3+ | Planned |
+| Cedar Policy Service, GoRules Zen / Decision Service | 3 | **In progress** — spec + ADR-009; see [phase3-implementation-spec.md](./phase3-implementation-spec.md) |
+| immudb audit ledger, Audit Explorer | 3 | **In progress** — spec + ADR-009 |
 | Neo4j / Graph Service, simulation | 4+ | Planned |
 | Regulatory reporting (XBRL/SDMX) | 5+ | Planned |
 
-Phase 2 is **implemented**; formal completion pending mechanical nightly evals and the behavior eval pillar ([AGENTS.md](../AGENTS.md#behavior-evals-phase-2), [review/phase2-exit-checklist.md](./review/phase2-exit-checklist.md)).
+Phase 2 is **complete** on `main` (PR #15 integration, PR #16 Phase 2b pillars). Phase 3 planning: [ADR-009](./adr/009-phase3-foundation-decisions.md), [phase3-implementation-spec.md](./phase3-implementation-spec.md), [handoff-phase3-agent.md](./handoff-phase3-agent.md).
 
 ---
 

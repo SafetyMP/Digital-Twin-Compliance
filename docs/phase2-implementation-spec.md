@@ -512,7 +512,7 @@ Document exact `curl` and `psql` commands in the script.
 
 Copy into PR description when Phase 2 is complete.
 
-**Status (Phase 2b, post-merge to `main` via PR #15):** verified in CI and `./scripts/report-eval-scorecard.sh --phase2`. Deferred items documented below — not blocking Phase 2a integration merge.
+**Status (Phase 2 complete on `main`):** Phase 2a merged via PR #15; Phase 2b pillars merged via PR #16. Verified in CI and `./scripts/report-eval-scorecard.sh --phase2`. Deferred items documented below.
 
 - [x] Extended `docker compose -f docker-compose.dev.yml up` starts Phase 1 + Redis + Flink + Alert Service + UI + Grafana — CI `docker compose up -d --wait`; mechanical check `phase2-stack-in-compose`
 - [ ] Flink job RUNNING; checkpoint success rate > 99% over 15 min soak — **deferred**: CI confirms job RUNNING via `submit-flink-job.sh` + smoke; 15 min soak / checkpoint metric screenshot not measured in CI (staging follow-up)
@@ -522,7 +522,7 @@ Copy into PR description when Phase 2 is complete.
 - [x] Acknowledge flow updates PostgreSQL and WebSocket clients — smoke steps 6–7 (`alert.acknowledged` WS + DB)
 - [x] Redis keys updated for velocity / exposure / LCR features — smoke waits on `vel:`, `exp:`, `lcr:` keys before alert assertions
 - [x] `./scripts/smoke-test.sh` still passes (Phase 1 regression) — CI step before Phase 2 smoke
-- [x] `./scripts/smoke-test-phase2.sh` exits 0 — CI gate (PR #15)
+- [x] `./scripts/smoke-test-phase2.sh` exits 0 — CI gate (PR #15 integration; PR #16 Phase 2b)
 - [x] `go test ./...` (alert-service) and `mvn test` (compliance-cep) pass — CI unit-test job
 - [x] New Avro schemas pass BACKWARD compat CI — `.github/workflows/schema-compat.yml` on alert schemas
 - [x] No Phase 3+ components added (Cedar, immudb, Neo4j, full auth) — mechanical `phase3-scope-boundary` + behavior evals
