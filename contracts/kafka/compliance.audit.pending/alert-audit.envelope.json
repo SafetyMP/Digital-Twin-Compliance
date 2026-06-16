@@ -1,0 +1,35 @@
+{
+  "eventId": "a1b2c3d4-e5f6-4789-a012-3456789abcde",
+  "eventType": "AuditPending",
+  "eventVersion": "1.0",
+  "source": "alert-service",
+  "correlationId": "smoke-phase3-001",
+  "causationId": "27f3c9e9-9ca7-4de9-86d4-8a3f5ad5616b",
+  "timestamp": "2026-06-15T12:00:00.000Z",
+  "idempotencyKey": "audit-alert-79ca894e-6347-474b-b602-e864c510c8e2",
+  "payload": {
+    "entryType": "Alert",
+    "correlationId": "smoke-phase3-001",
+    "subject": {
+      "subjectId": "79ca894e-6347-474b-b602-e864c510c8e2",
+      "subjectType": "ComplianceAlert"
+    },
+    "actor": {
+      "actorId": "alert-service",
+      "actorType": "Service"
+    },
+    "action": "ComplianceAlertRaised",
+    "payload": {
+      "alertId": "79ca894e-6347-474b-b602-e864c510c8e2",
+      "ruleCode": "BASEL-M001",
+      "severity": "Critical",
+      "summary": "LCR below minimum threshold"
+    },
+    "metadata": {
+      "regime": "Basel",
+      "policyVersion": "phase2-inline",
+      "sourceEventId": "27f3c9e9-9ca7-4de9-86d4-8a3f5ad5616b",
+      "retentionUntil": "2033-06-15"
+    }
+  }
+}

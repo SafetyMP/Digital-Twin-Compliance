@@ -213,6 +213,12 @@ CI runs Go + `mvn test` + `check-kafka-contracts.sh` before `docker compose up`;
   7. `./scripts/smoke-test.sh` then `./scripts/smoke-test-phase2.sh`
   8. `./scripts/check-coverage-gates.sh`
 
+- **immudb Compose healthcheck**: `codenotary/immudb` is distroless (no shell/wget) — use `["CMD", "/usr/local/bin/immuadmin", "status"]`, not `CMD-SHELL` + `wget`.
+- **immudb Go client**: use `client.NewClient()` + `OpenSession`; deprecated `NewImmuClient` already opens gRPC and makes `OpenSession` fail with `session already opened`.
+- **decision-service Docker**: zen-go needs **CGO** — build on `golang:*-bookworm`, run on `debian:bookworm-slim` (Alpine/musl link fails).
+- **cedar-service dev roles**: `"roles":[]` in JSON is explicit no-role; only omit `roles` (or use `X-Roles`) to apply `DEFAULT_ROLES`.
+- **audit ledger reset**: truncating `audit_entry_index` without wiping immudb leaves sequence gaps; audit-service resets immudb head on startup when the PG index is empty.
+
 ## Layout
 
 | Path | Purpose |

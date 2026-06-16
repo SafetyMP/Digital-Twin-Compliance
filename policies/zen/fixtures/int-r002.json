@@ -1,0 +1,37 @@
+{
+  "ruleCode": "INT-R002",
+  "cases": [
+    {
+      "name": "exposure_exceeds_limit",
+      "input": {
+        "exposureEur": 12500000,
+        "ownerEntityId": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+        "counterpartyId": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+        "tenantId": "00000000-0000-0000-0000-000000000001"
+      },
+      "expected": {
+        "ruleCode": "INT-R002",
+        "outcome": "Flag",
+        "score": 0.88,
+        "rationale": "Counterparty exposure exceeds EUR 10M approved limit",
+        "policyVersion": "1.0.0"
+      }
+    },
+    {
+      "name": "exposure_within_limit",
+      "input": {
+        "exposureEur": 8500000,
+        "ownerEntityId": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+        "counterpartyId": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+        "tenantId": "00000000-0000-0000-0000-000000000001"
+      },
+      "expected": {
+        "ruleCode": "INT-R002",
+        "outcome": "Allow",
+        "score": 0.0,
+        "rationale": "Counterparty exposure within approved limit",
+        "policyVersion": "1.0.0"
+      }
+    }
+  ]
+}

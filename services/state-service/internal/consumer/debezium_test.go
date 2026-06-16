@@ -125,3 +125,22 @@ func TestMapDebeziumToCDCInputDeleteSkipped(t *testing.T) {
 		t.Fatal("expected empty input for delete")
 	}
 }
+
+func TestMapDebeziumToCDCInputInvalidTimestamp(t *testing.T) {
+	t.Parallel()
+
+	payload := DebeziumPayload{
+		After: map[string]any{
+			"entity_id":  "11111111-1111-1111-1111-111111111101",
+			"legal_name": "Group Alpha",
+			"updated_at": "not-a-timestamp",
+		},
+		Op: "c",
+	}
+	payload.Source.Table = "legal_entities"
+
+	_, _, err := MapDebeziumToCDCInput(payload)
+	if err == nil {
+		t.Fatal("expected error for invalid updated_at")
+	}
+}

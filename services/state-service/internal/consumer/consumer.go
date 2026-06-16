@@ -80,26 +80,35 @@ func stringField(row map[string]any, key string) string {
 	}
 }
 
-func parseTimestamp(v any) time.Time {
+func parseTimestamp(v any) (time.Time, error) {
 	if v == nil {
-		return time.Now().UTC()
+		return time.Time{}, fmt.Errorf("missing updated_at")
 	}
 	switch t := v.(type) {
 	case string:
+		if strings.TrimSpace(t) == "" {
+			return time.Time{}, fmt.Errorf("empty updated_at")
+		}
 		for _, layout := range []string{time.RFC3339Nano, time.RFC3339, "2006-01-02 15:04:05.999999-07"} {
 			if parsed, err := time.Parse(layout, t); err == nil {
-				return parsed.UTC()
+				return parsed.UTC(), nil
 			}
 		}
 		if strings.Contains(t, "T") {
 			if parsed, err := time.Parse("2006-01-02T15:04:05.999999Z", t); err == nil {
-				return parsed.UTC()
+				return parsed.UTC(), nil
 			}
 		}
+		return time.Time{}, fmt.Errorf("unparseable updated_at: %q", t)
 	case float64:
-		return time.UnixMicro(int64(t)).UTC()
+		return time.UnixMicro(int64(t)).UTC(), nil
+	case int64:
+		return time.UnixMicro(t).UTC(), nil
+	case int:
+		return time.UnixMicro(int64(t)).UTC(), nil
+	default:
+		return time.Time{}, fmt.Errorf("unsupported updated_at type %T", v)
 	}
-	return time.Now().UTC()
 }
 
 type Runner struct {

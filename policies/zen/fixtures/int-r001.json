@@ -1,0 +1,35 @@
+{
+  "ruleCode": "INT-R001",
+  "cases": [
+    {
+      "name": "velocity_exceeds_threshold",
+      "input": {
+        "velocity": 55,
+        "accountId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+        "tenantId": "00000000-0000-0000-0000-000000000001"
+      },
+      "expected": {
+        "ruleCode": "INT-R001",
+        "outcome": "Flag",
+        "score": 0.75,
+        "rationale": "Transaction velocity exceeds 50 payments per account per hour",
+        "policyVersion": "1.0.0"
+      }
+    },
+    {
+      "name": "velocity_within_limit",
+      "input": {
+        "velocity": 42,
+        "accountId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+        "tenantId": "00000000-0000-0000-0000-000000000001"
+      },
+      "expected": {
+        "ruleCode": "INT-R001",
+        "outcome": "Allow",
+        "score": 0.0,
+        "rationale": "Transaction velocity within acceptable limits",
+        "policyVersion": "1.0.0"
+      }
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+name: Policy gates
+
+on:
+  pull_request:
+    paths:
+      - "policies/**"
+      - "services/cedar-service/**"
+      - "services/decision-service/**"
+      - "scripts/run-policy-ci.sh"
+
+jobs:
+  policy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.25"
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.89"
+
+      - name: Install Cedar CLI
+        run: chmod +x scripts/install-cedar-cli.sh && ./scripts/install-cedar-cli.sh
+
+      - name: Policy CI
+        run: chmod +x scripts/run-policy-ci.sh && ./scripts/run-policy-ci.sh
+
+      - name: Go tests (cedar-service)
+        working-directory: services/cedar-service
+        run: go test ./...
+
+      - name: Go tests (decision-service)
+        working-directory: services/decision-service
+        run: go test ./...

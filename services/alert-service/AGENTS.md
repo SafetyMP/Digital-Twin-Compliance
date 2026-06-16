@@ -1,6 +1,6 @@
 # Alert Service — Agent Contract
 
-Go REST API, Kafka consumer, and WebSocket hub for Phase 2 compliance alerts.
+Go REST API, Kafka consumer, and WebSocket hub for Phase 2 compliance alerts. Phase 3 adds audit publish/consume and `evidence_ref`.
 
 Parent contract: [AGENTS.md](../../AGENTS.md). Alert envelope fields: [docs/data-flow.md](../../docs/data-flow.md) §4.2.
 
@@ -15,6 +15,7 @@ Parent contract: [AGENTS.md](../../AGENTS.md). Alert envelope fields: [docs/data
 | `internal/store/` | PostgreSQL alert store + idempotency |
 | `internal/config/` | Environment configuration |
 | `internal/events/` | Envelope and alert payload parsing |
+| `internal/audit/` | `compliance.audit.pending` publish + `compliance.audit.recorded` consumer (`evidence_ref`) |
 
 ## Commands
 
@@ -47,7 +48,8 @@ From repo root: see [AGENTS.md](../../AGENTS.md) and [docs/phase2-implementation
 ## Kafka contracts
 
 - Consumer golden: `contracts/kafka/compliance.alerts/basel-alert-raised.envelope.json`
-- Tests: `internal/events/kafka_contract_test.go` — run `./scripts/check-kafka-contracts.sh` from repo root
+- Audit publisher golden: `contracts/kafka/compliance.audit.pending/alert-audit.envelope.json`
+- Tests: `internal/events/kafka_contract_test.go`, `internal/audit/kafka_contract_test.go` — run `./scripts/check-kafka-contracts.sh` from repo root
 
 ## Invariants
 
@@ -63,6 +65,7 @@ From repo root: see [AGENTS.md](../../AGENTS.md) and [docs/phase2-implementation
 - `internal/consumer/consumer.go` — Kafka consumer group `alert-service`
 - `internal/hub/hub.go` — WebSocket clients and broadcast
 - `migrations/001_alerts.sql` — alert schema
+- `migrations/002_evidence_ref.sql` — Phase 3 `evidence_ref` column
 
 ## Gotchas
 

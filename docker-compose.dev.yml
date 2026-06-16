@@ -178,6 +178,9 @@ services:
       ALERT_SERVICE_WS_PATH: /ws/alerts
       COMPLIANCE_ALERTS_TOPIC: compliance.alerts
       COMPLIANCE_ALERTS_DLQ_TOPIC: compliance.alerts.dlq
+      KAFKA_AUDIT_PENDING_TOPIC: compliance.audit.pending
+      KAFKA_AUDIT_RECORDED_TOPIC: compliance.audit.recorded
+      ALERT_SERVICE_SOURCE: alert-service
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8085/api/v1/health || exit 1"]
       interval: 10s
@@ -294,13 +297,142 @@ services:
     volumes:
       - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
 
+  immudb:
+    image: codenotary/immudb:latest
+    ports:
+      - "3322:3322"
+      - "9497:9497"
+    environment:
+      IMMUDB_ADDRESS: 0.0.0.0
+      IMMUDB_PORT: 3322
+      IMMUDB_METRICS_PORT: 9497
+    volumes:
+      - immudb_data:/var/lib/immudb
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/immuadmin", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 20s
+
+  audit-db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: audit
+      POSTGRES_PASSWORD: audit
+      POSTGRES_DB: audit
+    ports:
+      - "5436:5432"
+    volumes:
+      - audit_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U audit -d audit"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  audit-service:
+    build:
+      context: ./services/audit-service
+      dockerfile: Dockerfile
+    depends_on:
+      audit-db:
+        condition: service_healthy
+      immudb:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    ports:
+      - "8090:8090"
+    environment:
+      AUDIT_DB_URL: postgres://audit:audit@audit-db:5432/audit?sslmode=disable
+      KAFKA_BROKERS: kafka:9092
+      IMMUDB_HOST: immudb
+      IMMUDB_PORT: "3322"
+      IMMUDB_DATABASE: digitaltwin_audit
+      IMMUDB_USER: immudb
+      IMMUDB_PASSWORD: immudb
+      AUDIT_SERVICE_HTTP_ADDR: ":8090"
+      KAFKA_AUDIT_PENDING_TOPIC: compliance.audit.pending
+      KAFKA_AUDIT_RECORDED_TOPIC: compliance.audit.recorded
+      AUDIT_ARTIFACT_DIR: /data/audit-artifacts
+      DEFAULT_TENANT_ID: "00000000-0000-0000-0000-000000000001"
+    volumes:
+      - audit_artifacts:/data/audit-artifacts
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8090/api/v1/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 25s
+
+  cedar-service:
+    build:
+      context: ./services/cedar-service
+      dockerfile: Dockerfile
+    depends_on:
+      kafka:
+        condition: service_healthy
+    ports:
+      - "8091:8091"
+    environment:
+      KAFKA_BROKERS: kafka:9092
+      CEDAR_SERVICE_HTTP_ADDR: ":8091"
+      CEDAR_POLICY_DIR: /policies/cedar
+      KAFKA_AUDIT_PENDING_TOPIC: compliance.audit.pending
+      DEFAULT_PRINCIPAL: operator-dev
+      DEFAULT_ROLES: Analyst
+    volumes:
+      - ./policies/cedar:/policies/cedar:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8091/api/v1/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  decision-service:
+    build:
+      context: ./services/decision-service
+      dockerfile: Dockerfile
+    depends_on:
+      kafka:
+        condition: service_healthy
+    ports:
+      - "8092:8092"
+    environment:
+      KAFKA_BROKERS: kafka:9092
+      DECISION_SERVICE_HTTP_ADDR: ":8092"
+      ZEN_POLICY_DIR: /policies/zen
+      KAFKA_AUDIT_PENDING_TOPIC: compliance.audit.pending
+    volumes:
+      - ./policies/zen:/policies/zen:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8092/api/v1/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  audit-explorer:
+    build:
+      context: ./apps/audit-explorer
+      dockerfile: Dockerfile
+    depends_on:
+      audit-service:
+        condition: service_healthy
+    ports:
+      - "3002:3000"
+    environment:
+      AUDIT_SERVICE_URL: http://audit-service:8090
+
   grafana:
     image: grafana/grafana:10.4.0
     depends_on:
       prometheus:
         condition: service_started
     ports:
-      - "3001:3000"
+      - "3030:3000"
     environment:
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD: admin
@@ -319,4 +451,7 @@ volumes:
   core_banking_data:
   state_data:
   alert_data:
+  audit_data:
+  immudb_data:
+  audit_artifacts:
   flink_checkpoints:

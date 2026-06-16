@@ -1,0 +1,35 @@
+{
+  "ruleCode": "COREP-R001",
+  "cases": [
+    {
+      "name": "cet1_below_minimum",
+      "input": {
+        "cet1Ratio": 0.068,
+        "personaId": "44444444-4444-4444-4444-444444444401",
+        "tenantId": "00000000-0000-0000-0000-000000000001"
+      },
+      "expected": {
+        "ruleCode": "COREP-R001",
+        "outcome": "Deny",
+        "score": 0.92,
+        "rationale": "CET1 ratio below 7.0% regulatory minimum",
+        "policyVersion": "1.0.0"
+      }
+    },
+    {
+      "name": "cet1_meets_minimum",
+      "input": {
+        "cet1Ratio": 0.085,
+        "personaId": "44444444-4444-4444-4444-444444444401",
+        "tenantId": "00000000-0000-0000-0000-000000000001"
+      },
+      "expected": {
+        "ruleCode": "COREP-R001",
+        "outcome": "Allow",
+        "score": 0.0,
+        "rationale": "CET1 ratio meets regulatory minimum",
+        "policyVersion": "1.0.0"
+      }
+    }
+  ]
+}

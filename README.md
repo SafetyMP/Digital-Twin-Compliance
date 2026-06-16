@@ -15,9 +15,10 @@ Event-driven financial digital twin with embedded compliance monitoring. **Phase
 | Phase | Scope | Status |
 |-------|--------|--------|
 | **Phase 1** | Kafka, Debezium CDC, State Service, outbox, persona API, schema CI | Complete |
-| **Phase 2** | Flink CEP, Redis, Alert Service, WebSocket, alert console, Grafana | Implemented — [mechanical & behavior evals pending](docs/review/phase2-exit-checklist.md) |
+| **Phase 2** | Flink CEP, Redis, Alert Service, WebSocket, alert console, Grafana | Implemented on `main` — [mechanical smoke green](docs/review/phase2-exit-checklist.md); [behavior eval pillar](AGENTS.md#behavior-evals-phase-2) tracked separately |
+| **Phase 3** | Cedar + Zen, immudb audit ledger, Audit Explorer, `evidenceRef` on alerts | Implemented (3a) — [`smoke-test-phase3.sh`](scripts/smoke-test-phase3.sh) + [spec §13](docs/phase3-implementation-spec.md#13-phase-3-exit-criteria-checklist) |
 
-See [docs/roadmap.md](docs/roadmap.md) for the full plan. Phase 2 mechanical exit evidence: [docs/review/phase2-exit-checklist.md](docs/review/phase2-exit-checklist.md). Behavior evals: [AGENTS.md § Behavior evals](AGENTS.md#behavior-evals-phase-2).
+See [docs/roadmap.md](docs/roadmap.md) for the full plan.
 
 ## Architecture
 

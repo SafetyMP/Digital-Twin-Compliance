@@ -10,14 +10,15 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT"
 
-chmod +x mocks/simulators/payment-burst.sh 2>/dev/null || true
-chmod +x scripts/submit-flink-job.sh 2>/dev/null || true
+chmod +x "$ROOT/mocks/simulators/payment-burst.sh" 2>/dev/null || true
+chmod +x "$ROOT/scripts/submit-flink-job.sh" 2>/dev/null || true
 
 ALERT_URL="${ALERT_SERVICE_URL:-http://localhost:8085}"
 CONSOLE_URL="${ALERT_CONSOLE_URL:-http://localhost:3000}"
 FLINK_URL="${FLINK_JOBMANAGER_URL:-http://localhost:8082}"
-GRAFANA_URL="${GRAFANA_URL:-http://localhost:3001}"
+GRAFANA_URL="${GRAFANA_URL:-http://localhost:3030}"
 WS_URL="${NEXT_PUBLIC_WS_URL:-ws://localhost:8085/ws/alerts}"
 CORE_URL="${CORE_BANKING_DB_URL:-postgres://core:core@localhost:5433/core_banking?sslmode=disable}"
 STATE_URL="${STATE_DB_URL:-postgres://state:state@localhost:5434/twin_state?sslmode=disable}"
@@ -201,7 +202,7 @@ if docker ps --format '{{.Names}}' | grep -qx "$REDIS_CONTAINER"; then
   docker exec "$REDIS_CONTAINER" sh -c 'redis-cli KEYS "vel:*" | while read -r k; do [ -n "$k" ] && redis-cli DEL "$k"; done' >/dev/null 2>&1 || true
 fi
 BEFORE=$(curl -sf "$ALERT_URL/api/v1/alerts?status=Open" | jq '[.[] | select(.ruleCode=="INT-M001")] | length')
-./mocks/simulators/payment-burst.sh
+"$ROOT/mocks/simulators/payment-burst.sh"
 BURST_END=$(python3 -c "import time; print(int(time.time() * 1000))")
 VEL_MIN=$((CEP_VELOCITY_MAX + 1))
 if ! wait_redis_gte "vel:${TENANT_ID}:${BURST_ACCOUNT_ID}:1h" "$VEL_MIN" 30 "INT-M001 velocity"; then

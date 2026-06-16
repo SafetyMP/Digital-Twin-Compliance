@@ -1,0 +1,15 @@
+{
+  "type": "record",
+  "name": "AuditEntry",
+  "namespace": "com.digitaltwin.compliance",
+  "fields": [
+    {"name": "entryId", "type": "string"},
+    {"name": "entryType", "type": "string"},
+    {"name": "sequenceNumber", "type": "long"},
+    {"name": "recordedAt", "type": "string"},
+    {"name": "correlationId", "type": "string"},
+    {"name": "payloadHash", "type": "string"},
+    {"name": "previousHash", "type": "string"},
+    {"name": "evidenceRef", "type": ["null", "string"], "default": null}
+  ]
+}

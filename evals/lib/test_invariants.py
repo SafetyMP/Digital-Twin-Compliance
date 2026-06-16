@@ -58,6 +58,17 @@ def test_phase3_cedar_detected_in_fixture_workspace() -> None:
     assert not result.passed
 
 
+def test_phase3_boundary_skipped_when_phase3_smoke_script_present(tmp_path: Path) -> None:
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    (scripts / "smoke-test-phase3.sh").write_text("#!/usr/bin/env bash\n", encoding="utf-8")
+    svc = tmp_path / "services" / "audit-service"
+    svc.mkdir(parents=True)
+    (svc / "main.go").write_text("// immudb client\n", encoding="utf-8")
+    result = check_phase3_scope_boundary(tmp_path)
+    assert result.passed
+
+
 def test_forbidden_path_patterns() -> None:
     root = Path("/tmp/unused")
     result = check_forbidden_path_patterns(

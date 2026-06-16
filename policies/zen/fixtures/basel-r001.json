@@ -1,0 +1,35 @@
+{
+  "ruleCode": "BASEL-R001",
+  "cases": [
+    {
+      "name": "lcr_below_minimum_smoke",
+      "input": {
+        "lcr": 0.9,
+        "personaId": "44444444-4444-4444-4444-444444444401",
+        "tenantId": "00000000-0000-0000-0000-000000000001"
+      },
+      "expected": {
+        "ruleCode": "BASEL-R001",
+        "outcome": "Deny",
+        "score": 0.95,
+        "rationale": "LCR below 100% minimum threshold",
+        "policyVersion": "1.0.0"
+      }
+    },
+    {
+      "name": "lcr_meets_minimum",
+      "input": {
+        "lcr": 1.05,
+        "personaId": "44444444-4444-4444-4444-444444444401",
+        "tenantId": "00000000-0000-0000-0000-000000000001"
+      },
+      "expected": {
+        "ruleCode": "BASEL-R001",
+        "outcome": "Allow",
+        "score": 0.0,
+        "rationale": "LCR meets 100% minimum threshold",
+        "policyVersion": "1.0.0"
+      }
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+namespace DigitalTwin;
+
+entity Principal in Role;
+
+entity Role;
+
+entity TwinData {
+  sensitivity: String,
+  tenantId: String,
+};
+
+entity Payment {
+  amountEur: Long,
+  tenantId: String,
+};
+
+entity CapitalAdjustment {
+  tenantId: String,
+};
+
+entity TradeReport {
+  tenantId: String,
+};
+
+entity ICTContract {
+  criticality: String,
+  tenantId: String,
+};
+
+action "view" appliesTo {
+  principal: Principal,
+  resource: TwinData,
+};
+
+action "approve" appliesTo {
+  principal: Principal,
+  resource: Payment,
+};
+
+action "adjust" appliesTo {
+  principal: Principal,
+  resource: CapitalAdjustment,
+};
+
+action "report" appliesTo {
+  principal: Principal,
+  resource: TradeReport,
+};
+
+action "modify" appliesTo {
+  principal: Principal,
+  resource: ICTContract,
+};

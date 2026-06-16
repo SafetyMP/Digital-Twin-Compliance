@@ -1,0 +1,81 @@
+{
+  "nodes": [
+    {
+      "id": "input",
+      "type": "inputNode",
+      "name": "Input",
+      "position": { "x": 0, "y": 100 },
+      "content": { "schema": "" }
+    },
+    {
+      "id": "dt-int-r001",
+      "type": "decisionTableNode",
+      "name": "INT-R001 Velocity Check",
+      "position": { "x": 250, "y": 100 },
+      "content": {
+        "hitPolicy": "first",
+        "inputs": [
+          { "id": "i1", "name": "Velocity", "field": "velocity" }
+        ],
+        "outputs": [
+          { "id": "o1", "name": "Rule Code", "field": "ruleCode" },
+          { "id": "o2", "name": "Outcome", "field": "outcome" },
+          { "id": "o3", "name": "Score", "field": "score" },
+          { "id": "o4", "name": "Rationale", "field": "rationale" },
+          { "id": "o5", "name": "Policy Version", "field": "policyVersion" }
+        ],
+        "rules": [
+          {
+            "_id": "r1",
+            "i1": "> 50",
+            "o1": "\"INT-R001\"",
+            "o2": "\"Flag\"",
+            "o3": "0.75",
+            "o4": "\"Transaction velocity exceeds 50 payments per account per hour\"",
+            "o5": "\"1.0.0\""
+          },
+          {
+            "_id": "r2",
+            "i1": "",
+            "o1": "\"INT-R001\"",
+            "o2": "\"Allow\"",
+            "o3": "0.0",
+            "o4": "\"Transaction velocity within acceptable limits\"",
+            "o5": "\"1.0.0\""
+          }
+        ],
+        "passThrough": false,
+        "inputField": null,
+        "outputPath": null,
+        "executionMode": "single"
+      }
+    },
+    {
+      "id": "output",
+      "type": "outputNode",
+      "name": "Output",
+      "position": { "x": 550, "y": 100 },
+      "content": { "schema": "" }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "sourceId": "input",
+      "targetId": "dt-int-r001",
+      "sourceHandle": null,
+      "type": "edge"
+    },
+    {
+      "id": "e2",
+      "sourceId": "dt-int-r001",
+      "targetId": "output",
+      "sourceHandle": null,
+      "type": "edge"
+    }
+  ],
+  "metadata": {
+    "version": "1.0.0",
+    "description": "INT-R001 transaction velocity threshold (>50 payments/account/hour)"
+  }
+}

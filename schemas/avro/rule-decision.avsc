@@ -1,0 +1,15 @@
+{
+  "type": "record",
+  "name": "RuleDecision",
+  "namespace": "com.digitaltwin.compliance",
+  "fields": [
+    {"name": "decisionId", "type": "string"},
+    {"name": "ruleCode", "type": "string"},
+    {"name": "outcome", "type": "string"},
+    {"name": "score", "type": ["null", "double"], "default": null},
+    {"name": "rationale", "type": "string"},
+    {"name": "policyVersion", "type": "string"},
+    {"name": "evaluatedAt", "type": "string"},
+    {"name": "inputHash", "type": "string"}
+  ]
+}
