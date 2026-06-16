@@ -28,6 +28,7 @@ type Alert struct {
 	AcknowledgedAt *time.Time      `json:"acknowledgedAt,omitempty"`
 	AcknowledgedBy *string         `json:"acknowledgedBy,omitempty"`
 	IdempotencyKey string          `json:"idempotencyKey"`
+	EvidenceRef    *string         `json:"evidenceRef,omitempty"`
 }
 
 type UpsertInput struct {
@@ -65,7 +66,7 @@ func (s *Store) UpsertAlert(ctx context.Context, input UpsertInput) (Alert, bool
 		ON CONFLICT (idempotency_key) DO NOTHING
 		RETURNING alert_id, tenant_id, rule_code, regime, severity, status,
 		          persona_id, persona_type, summary, details, detected_at,
-		          acknowledged_at, acknowledged_by, idempotency_key
+		          acknowledged_at, acknowledged_by, idempotency_key, evidence_ref
 	`, input.AlertID, s.tenantID, input.RuleCode, input.Regime, input.Severity, input.Status,
 		input.PersonaID, input.PersonaType, input.Summary, input.Details, input.DetectedAt, input.IdempotencyKey)
 
@@ -88,7 +89,7 @@ func (s *Store) GetByIdempotencyKey(ctx context.Context, key string) (Alert, err
 	row := s.pool.QueryRow(ctx, `
 		SELECT alert_id, tenant_id, rule_code, regime, severity, status,
 		       persona_id, persona_type, summary, details, detected_at,
-		       acknowledged_at, acknowledged_by, idempotency_key
+		       acknowledged_at, acknowledged_by, idempotency_key, evidence_ref
 		FROM compliance_alerts WHERE idempotency_key = $1
 	`, key)
 	return scanAlert(row)
@@ -98,7 +99,7 @@ func (s *Store) GetAlert(ctx context.Context, alertID string) (Alert, error) {
 	row := s.pool.QueryRow(ctx, `
 		SELECT alert_id, tenant_id, rule_code, regime, severity, status,
 		       persona_id, persona_type, summary, details, detected_at,
-		       acknowledged_at, acknowledged_by, idempotency_key
+		       acknowledged_at, acknowledged_by, idempotency_key, evidence_ref
 		FROM compliance_alerts
 		WHERE tenant_id = $1 AND alert_id = $2
 	`, s.tenantID, alertID)
@@ -113,7 +114,7 @@ func (s *Store) ListAlerts(ctx context.Context, status, severity string, limit, 
 	query := `
 		SELECT alert_id, tenant_id, rule_code, regime, severity, status,
 		       persona_id, persona_type, summary, details, detected_at,
-		       acknowledged_at, acknowledged_by, idempotency_key
+		       acknowledged_at, acknowledged_by, idempotency_key, evidence_ref
 		FROM compliance_alerts
 		WHERE tenant_id = $1
 	`
@@ -156,7 +157,7 @@ func (s *Store) Acknowledge(ctx context.Context, alertID, acknowledgedBy string)
 		WHERE tenant_id = $1 AND alert_id = $2
 		RETURNING alert_id, tenant_id, rule_code, regime, severity, status,
 		          persona_id, persona_type, summary, details, detected_at,
-		          acknowledged_at, acknowledged_by, idempotency_key
+		          acknowledged_at, acknowledged_by, idempotency_key, evidence_ref
 	`, s.tenantID, alertID, acknowledgedBy)
 	alert, err := scanAlert(row)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -175,13 +176,22 @@ func scanAlert(row scannable) (Alert, error) {
 	err := row.Scan(
 		&a.AlertID, &a.TenantID, &a.RuleCode, &a.Regime, &a.Severity, &a.Status,
 		&a.PersonaID, &a.PersonaType, &a.Summary, &details, &a.DetectedAt,
-		&a.AcknowledgedAt, &a.AcknowledgedBy, &a.IdempotencyKey,
+		&a.AcknowledgedAt, &a.AcknowledgedBy, &a.IdempotencyKey, &a.EvidenceRef,
 	)
 	if err != nil {
 		return Alert{}, err
 	}
 	a.Details = json.RawMessage(details)
 	return a, nil
+}
+
+func (s *Store) SetEvidenceRef(ctx context.Context, alertID, evidenceRef string) error {
+	_, err := s.pool.Exec(ctx, `
+		UPDATE compliance_alerts
+		SET evidence_ref = $3, updated_at = now()
+		WHERE tenant_id = $1 AND alert_id = $2 AND (evidence_ref IS NULL OR evidence_ref = '')
+	`, s.tenantID, alertID, evidenceRef)
+	return err
 }
 
 func RunMigrations(ctx context.Context, pool *pgxpool.Pool, sql string) error {

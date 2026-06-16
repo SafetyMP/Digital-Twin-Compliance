@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/digital-twin/platform/services/alert-service/internal/audit"
 	"github.com/digital-twin/platform/services/alert-service/internal/events"
 	"github.com/digital-twin/platform/services/alert-service/internal/store"
 )
@@ -16,13 +17,20 @@ type alertHub interface {
 	Broadcast(msgType string, alert store.Alert)
 }
 
-type Handler struct {
-	store alertStore
-	hub   alertHub
+type auditPublisher interface {
+	PublishAlertRaised(ctx context.Context, in audit.AlertAuditInput) error
 }
 
-func NewHandler(st alertStore, h alertHub) *Handler {
-	return &Handler{store: st, hub: h}
+type Handler struct {
+	store     alertStore
+	hub       alertHub
+	auditPub  auditPublisher
+	source    string
+	lastEnvID string
+}
+
+func NewHandler(st alertStore, h alertHub, pub auditPublisher, source string) *Handler {
+	return &Handler{store: st, hub: h, auditPub: pub, source: source}
 }
 
 func (h *Handler) HandleMessage(ctx context.Context, data []byte) error {
@@ -67,6 +75,19 @@ func (h *Handler) HandleMessage(ctx context.Context, data []byte) error {
 	}
 	if created {
 		h.hub.Broadcast("alert.raised", saved)
+		if h.auditPub != nil {
+			sourceEventID := env.EventID
+			_ = h.auditPub.PublishAlertRaised(ctx, audit.AlertAuditInput{
+				AlertID:        saved.AlertID,
+				RuleCode:       saved.RuleCode,
+				Regime:         saved.Regime,
+				Severity:       saved.Severity,
+				Summary:        saved.Summary,
+				SourceEventID:  sourceEventID,
+				IdempotencyKey: env.IdempotencyKey,
+				CorrelationID:  env.CorrelationID,
+			})
+		}
 	}
 	return nil
 }

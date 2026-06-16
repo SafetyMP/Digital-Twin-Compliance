@@ -1,0 +1,81 @@
+{
+  "nodes": [
+    {
+      "id": "input",
+      "type": "inputNode",
+      "name": "Input",
+      "position": { "x": 0, "y": 100 },
+      "content": { "schema": "" }
+    },
+    {
+      "id": "dt-basel-r001",
+      "type": "decisionTableNode",
+      "name": "BASEL-R001 LCR Check",
+      "position": { "x": 250, "y": 100 },
+      "content": {
+        "hitPolicy": "first",
+        "inputs": [
+          { "id": "i1", "name": "LCR", "field": "lcr" }
+        ],
+        "outputs": [
+          { "id": "o1", "name": "Rule Code", "field": "ruleCode" },
+          { "id": "o2", "name": "Outcome", "field": "outcome" },
+          { "id": "o3", "name": "Score", "field": "score" },
+          { "id": "o4", "name": "Rationale", "field": "rationale" },
+          { "id": "o5", "name": "Policy Version", "field": "policyVersion" }
+        ],
+        "rules": [
+          {
+            "_id": "r1",
+            "i1": "< 1.0",
+            "o1": "\"BASEL-R001\"",
+            "o2": "\"Deny\"",
+            "o3": "0.95",
+            "o4": "\"LCR below 100% minimum threshold\"",
+            "o5": "\"1.0.0\""
+          },
+          {
+            "_id": "r2",
+            "i1": "",
+            "o1": "\"BASEL-R001\"",
+            "o2": "\"Allow\"",
+            "o3": "0.0",
+            "o4": "\"LCR meets 100% minimum threshold\"",
+            "o5": "\"1.0.0\""
+          }
+        ],
+        "passThrough": false,
+        "inputField": null,
+        "outputPath": null,
+        "executionMode": "single"
+      }
+    },
+    {
+      "id": "output",
+      "type": "outputNode",
+      "name": "Output",
+      "position": { "x": 550, "y": 100 },
+      "content": { "schema": "" }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "sourceId": "input",
+      "targetId": "dt-basel-r001",
+      "sourceHandle": null,
+      "type": "edge"
+    },
+    {
+      "id": "e2",
+      "sourceId": "dt-basel-r001",
+      "targetId": "output",
+      "sourceHandle": null,
+      "type": "edge"
+    }
+  ],
+  "metadata": {
+    "version": "1.0.0",
+    "description": "BASEL-R001 liquidity coverage ratio must be at least 100%"
+  }
+}

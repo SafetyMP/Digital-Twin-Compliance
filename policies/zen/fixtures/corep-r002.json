@@ -1,0 +1,35 @@
+{
+  "ruleCode": "COREP-R002",
+  "cases": [
+    {
+      "name": "total_capital_below_minimum",
+      "input": {
+        "totalCapitalRatio": 0.075,
+        "personaId": "44444444-4444-4444-4444-444444444401",
+        "tenantId": "00000000-0000-0000-0000-000000000001"
+      },
+      "expected": {
+        "ruleCode": "COREP-R002",
+        "outcome": "Deny",
+        "score": 0.90,
+        "rationale": "Total capital ratio below 8.0% regulatory minimum",
+        "policyVersion": "1.0.0"
+      }
+    },
+    {
+      "name": "total_capital_meets_minimum",
+      "input": {
+        "totalCapitalRatio": 0.11,
+        "personaId": "44444444-4444-4444-4444-444444444401",
+        "tenantId": "00000000-0000-0000-0000-000000000001"
+      },
+      "expected": {
+        "ruleCode": "COREP-R002",
+        "outcome": "Allow",
+        "score": 0.0,
+        "rationale": "Total capital ratio meets regulatory minimum",
+        "policyVersion": "1.0.0"
+      }
+    }
+  ]
+}

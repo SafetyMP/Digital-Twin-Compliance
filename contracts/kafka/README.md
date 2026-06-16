@@ -8,13 +8,16 @@ Changes require updating the golden fixture here and **both** sides of the bound
 | `twin.state.updated` | state-service (outbox) | Flink CEP | `twin.state.updated/*.payload.json` |
 | `domain.events.public.payments` | Debezium (core banking) | Flink CEP | `domain.events.public.payments/*.cdc.json` |
 | `compliance.alerts` | Flink CEP | alert-service | `compliance.alerts/*.envelope.json` |
+| `compliance.audit.pending` | alert-service, cedar-service, decision-service | audit-service | `compliance.audit.pending/*.envelope.json` |
+| `rule-decision` (REST/Kafka inner) | cedar-service, decision-service | audit-service, clients | `rule-decision/*.payload.json` |
 
 ## Layout
 
 - `*.payload.json` — inner twin-state body Flink parses (`personaId`, `personaType`, `stateVersion`, `currentState`)
 - `cdc/*.after.json` — Debezium `after` row used by Go publisher contract tests to **produce** the payload golden
 - `*.cdc.json` — full Debezium envelope for payment CDC
-- `*.envelope.json` — full envelope (`TwinStateUpdated` or `ComplianceAlertRaised`) for cross-service parsing tests
+- `*.envelope.json` — full envelope (`TwinStateUpdated`, `ComplianceAlertRaised`, or `AuditPending`) for cross-service parsing tests
+- `rule-decision/*.payload.json` — shared `RuleDecision` body returned by Cedar/Decision services
 
 ## When you change a payload
 

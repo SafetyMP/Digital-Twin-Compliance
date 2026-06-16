@@ -64,6 +64,9 @@ func (p *Publisher) Run(ctx context.Context) error {
 	}
 }
 
+// publishBatch writes all messages in one Kafka batch, then marks each outbox row
+// published. Delivery is at-least-once: a crash after WriteMessages can redeliver rows
+// until published_at is set (downstream consumers dedupe on idempotencyKey/stateVersion).
 func (p *Publisher) publishBatch(ctx context.Context) error {
 	rows, err := p.store.FetchUnpublishedOutbox(ctx, p.batchSize)
 	if err != nil {

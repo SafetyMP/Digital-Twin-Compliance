@@ -1,0 +1,10 @@
+{
+  "decisionId": "d4e5f6a7-b8c9-4012-d345-6789abcdef01",
+  "ruleCode": "BASEL-R001",
+  "outcome": "Deny",
+  "score": 0.95,
+  "rationale": "LCR below 100% minimum threshold",
+  "policyVersion": "1.0.0",
+  "evaluatedAt": "2026-06-15T12:00:00.000Z",
+  "inputHash": "sha256:9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
+}

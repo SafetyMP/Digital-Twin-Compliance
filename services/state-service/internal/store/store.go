@@ -208,6 +208,9 @@ type CDCInput struct {
 	SourceTimestamp time.Time
 }
 
+// upsertLegalEntityMirror is intentionally a no-op: institution CDC is mirrored only in
+// twin_personas.current_state. The state DB has mirror tables for accounts and instruments
+// (see migrations/001_init.sql) but not legal_entities.
 func upsertLegalEntityMirror(ctx context.Context, tx pgx.Tx, tenantID string, input CDCInput) error {
 	return nil
 }

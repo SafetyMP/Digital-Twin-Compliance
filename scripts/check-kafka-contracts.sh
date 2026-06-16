@@ -34,4 +34,17 @@ else
     mvn -q test -Dtest=KafkaContractTest
 fi
 
+echo "-> audit-service (compliance.audit.pending consumer)"
+(cd services/audit-service && go test ./internal/events/ -run 'TestKafkaContract_' -count=1)
+
+echo "-> alert-service (compliance.audit.pending publisher)"
+(cd services/alert-service && go test ./internal/audit/ -run 'TestKafkaContract_' -count=1)
+
+echo "-> cedar-service (rule-decision + audit envelope)"
+(cd services/cedar-service && go test ./internal/audit/ -run 'TestKafkaContract_' -count=1)
+
+echo "-> decision-service (compliance.audit.pending publisher)"
+(cd services/decision-service && go test ./internal/audit/ -run 'TestKafkaContract_' -count=1)
+
 echo "Kafka payload contracts passed"
+

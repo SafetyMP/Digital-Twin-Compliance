@@ -1,0 +1,81 @@
+{
+  "nodes": [
+    {
+      "id": "input",
+      "type": "inputNode",
+      "name": "Input",
+      "position": { "x": 0, "y": 100 },
+      "content": { "schema": "" }
+    },
+    {
+      "id": "dt-corep-r001",
+      "type": "decisionTableNode",
+      "name": "COREP-R001 CET1 Check",
+      "position": { "x": 250, "y": 100 },
+      "content": {
+        "hitPolicy": "first",
+        "inputs": [
+          { "id": "i1", "name": "CET1 Ratio", "field": "cet1Ratio" }
+        ],
+        "outputs": [
+          { "id": "o1", "name": "Rule Code", "field": "ruleCode" },
+          { "id": "o2", "name": "Outcome", "field": "outcome" },
+          { "id": "o3", "name": "Score", "field": "score" },
+          { "id": "o4", "name": "Rationale", "field": "rationale" },
+          { "id": "o5", "name": "Policy Version", "field": "policyVersion" }
+        ],
+        "rules": [
+          {
+            "_id": "r1",
+            "i1": "< 0.07",
+            "o1": "\"COREP-R001\"",
+            "o2": "\"Deny\"",
+            "o3": "0.92",
+            "o4": "\"CET1 ratio below 7.0% regulatory minimum\"",
+            "o5": "\"1.0.0\""
+          },
+          {
+            "_id": "r2",
+            "i1": "",
+            "o1": "\"COREP-R001\"",
+            "o2": "\"Allow\"",
+            "o3": "0.0",
+            "o4": "\"CET1 ratio meets regulatory minimum\"",
+            "o5": "\"1.0.0\""
+          }
+        ],
+        "passThrough": false,
+        "inputField": null,
+        "outputPath": null,
+        "executionMode": "single"
+      }
+    },
+    {
+      "id": "output",
+      "type": "outputNode",
+      "name": "Output",
+      "position": { "x": 550, "y": 100 },
+      "content": { "schema": "" }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "sourceId": "input",
+      "targetId": "dt-corep-r001",
+      "sourceHandle": null,
+      "type": "edge"
+    },
+    {
+      "id": "e2",
+      "sourceId": "dt-corep-r001",
+      "targetId": "output",
+      "sourceHandle": null,
+      "type": "edge"
+    }
+  ],
+  "metadata": {
+    "version": "1.0.0",
+    "description": "COREP-R001 CET1 ratio must be at least 7.0%"
+  }
+}

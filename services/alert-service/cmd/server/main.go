@@ -6,10 +6,12 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
 	"github.com/digital-twin/platform/services/alert-service/internal/api"
+	"github.com/digital-twin/platform/services/alert-service/internal/audit"
 	"github.com/digital-twin/platform/services/alert-service/internal/config"
 	"github.com/digital-twin/platform/services/alert-service/internal/consumer"
 	"github.com/digital-twin/platform/services/alert-service/internal/hub"
@@ -38,12 +40,23 @@ func main() {
 
 	st := store.New(pool, cfg.DefaultTenantID)
 	wsHub := hub.New()
-	handler := consumer.NewHandler(st, wsHub)
+	auditPub := audit.NewPendingPublisher(cfg.KafkaBrokers, cfg.AuditPendingTopic, cfg.ServiceSource)
+	defer auditPub.Close()
+
+	handler := consumer.NewHandler(st, wsHub, auditPub, cfg.ServiceSource)
 	runner := consumer.NewRunner(cfg.KafkaBrokers, cfg.ConsumerGroup, cfg.AlertsTopic, cfg.AlertsDLQTopic, handler)
+
+	recordedHandler := audit.NewRecordedHandler(st)
+	recordedRunner := audit.NewRecordedRunner(cfg.KafkaBrokers, cfg.AuditConsumerGroup, cfg.AuditRecordedTopic, recordedHandler)
 
 	go func() {
 		if err := runner.Run(ctx); err != nil && ctx.Err() == nil {
 			slog.Error("consumer stopped", "error", err)
+		}
+	}()
+	go func() {
+		if err := recordedRunner.Run(ctx); err != nil && ctx.Err() == nil {
+			slog.Error("audit recorded consumer stopped", "error", err)
 		}
 	}()
 
@@ -67,23 +80,38 @@ func main() {
 	defer shutdownCancel()
 	_ = httpServer.Shutdown(shutdownCtx)
 	_ = runner.Close()
+	_ = recordedRunner.Close()
 }
 
 func migrationSearchPaths() []string {
-	return []string{"migrations/001_alerts.sql", "/app/migrations/001_alerts.sql"}
+	return []string{
+		"migrations/001_alerts.sql",
+		"migrations/002_evidence_ref.sql",
+		"/app/migrations/001_alerts.sql",
+		"/app/migrations/002_evidence_ref.sql",
+	}
 }
 
 func readMigrationSQL(paths []string) (string, error) {
+	var parts []string
+	seen := map[string]bool{}
 	for _, path := range paths {
+		base := path[strings.LastIndex(path, "/")+1:]
+		if seen[base] {
+			continue
+		}
 		sqlBytes, err := os.ReadFile(path)
 		if err == nil {
-			return string(sqlBytes), nil
-		}
-		if !os.IsNotExist(err) {
+			parts = append(parts, string(sqlBytes))
+			seen[base] = true
+		} else if !os.IsNotExist(err) {
 			return "", err
 		}
 	}
-	return "", os.ErrNotExist
+	if len(parts) == 0 {
+		return "", os.ErrNotExist
+	}
+	return strings.Join(parts, "\n"), nil
 }
 
 func runMigrations(ctx context.Context, pool *pgxpool.Pool, paths []string) error {

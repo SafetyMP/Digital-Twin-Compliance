@@ -560,6 +560,7 @@ service AuditService {
 | **Ordering** | Partition by entityId; single consumer per partition |
 | **Out-of-order events** | Event-time processing in Flink with watermarks; `stateVersion` optimistic concurrency in PostgreSQL |
 | **At-least-once delivery** | Kafka consumer offset commit after processing; idempotent writes |
+| **Outbox publisher (State Service)** | Batch `WriteMessages` then per-row `published_at` — **not** transactional with Kafka. Crash between write and mark redelivers rows; safe because `twin.state.updated` consumers use `idempotencyKey` / `stateVersion` |
 | **Exactly-once (Flink)** | Two-phase commit protocol coordinating Kafka offsets + state + producer transactions |
 
 ---

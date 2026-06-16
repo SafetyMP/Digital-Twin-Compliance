@@ -191,11 +191,17 @@ func applyMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 	if !ok {
 		return os.ErrInvalid
 	}
-	sqlBytes, err := os.ReadFile(filepath.Join(filepath.Dir(filename), "..", "..", "migrations", "001_alerts.sql"))
-	if err != nil {
-		return err
+	migDir := filepath.Join(filepath.Dir(filename), "..", "..", "migrations")
+	var sql strings.Builder
+	for _, name := range []string{"001_alerts.sql", "002_evidence_ref.sql"} {
+		sqlBytes, err := os.ReadFile(filepath.Join(migDir, name))
+		if err != nil {
+			return err
+		}
+		sql.Write(sqlBytes)
+		sql.WriteString("\n")
 	}
-	return RunMigrations(ctx, pool, string(sqlBytes))
+	return RunMigrations(ctx, pool, sql.String())
 }
 
 func resetSchema(ctx context.Context, pool *pgxpool.Pool) error {

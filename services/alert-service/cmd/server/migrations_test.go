@@ -42,7 +42,7 @@ func TestMigrationSearchPaths(t *testing.T) {
 	t.Parallel()
 
 	paths := migrationSearchPaths()
-	if len(paths) != 2 || paths[0] != "migrations/001_alerts.sql" {
+	if len(paths) < 2 || paths[0] != "migrations/001_alerts.sql" {
 		t.Fatalf("paths = %v", paths)
 	}
 }

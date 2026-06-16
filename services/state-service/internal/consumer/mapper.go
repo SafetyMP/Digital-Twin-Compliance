@@ -25,7 +25,10 @@ func MapDebeziumToCDCInput(p DebeziumPayload) (store.CDCInput, string, error) {
 		return store.CDCInput{}, "", nil
 	}
 
-	updatedAt := parseTimestamp(row["updated_at"])
+	updatedAt, err := parseTimestamp(row["updated_at"])
+	if err != nil {
+		return store.CDCInput{}, "", fmt.Errorf("%s/%s: %w", p.Source.Table, pk, err)
+	}
 	idempotencyKey := fmt.Sprintf("%s-%s-%d", p.Source.Table, pk, updatedAt.UnixNano())
 
 	stateBytes, err := enrichStateBytes(p.Source.Table, pk, row)
