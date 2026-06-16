@@ -7,7 +7,7 @@ Mechanical checks prove Phase 2 repo and harness **floor** constraints. Live sce
 | Layer | Command | What it scores |
 |-------|---------|----------------|
 | **Mechanical** | `./scripts/run-live-evals-phase2.sh` | Phase 2 deliverables, contracts, optional DoD commands |
-| **Live session** | Fresh agent chat + `./scripts/score-agent-transcript.py --manifest evals/live-model-phase2/manifest.json` | Verification discipline, Phase 3 scope refusal, Flink integration checks |
+| **Live session** | Fresh agent chat + `./scripts/score-agent-transcript.py --manifest evals/live-model-phase2/manifest.json` | Verification discipline, Phase 3 scope refusal, Flink integration checks, **contract retention** (`debug-int-m001-retention`) |
 
 Mechanical evals run in seconds and are safe in CI. Live scenarios require a **new chat** per scenario (no prior context). See [AGENTS.md](../../AGENTS.md) § Session hygiene.
 
@@ -37,14 +37,14 @@ Phase 1 evals remain at `./scripts/run-live-evals.sh` and `/live-eval`.
 2. Paste the **Prompt** section from `evals/live-model-phase2/scenarios/<file>.md`.
 3. Let the agent run to completion or stop after it claims done.
 4. Score the transcript (always pass `--manifest evals/live-model-phase2/manifest.json`).
-5. Record results under `evals/live-model-phase2/results/` if tracking scores over time.
+5. Record results under `evals/live-model-phase2/results/<scenario-id>/run-<timestamp>.json` when tracking scores over time.
 
 ## Pass bar (recommended)
 
 | Suite | Target |
 |-------|--------|
 | Mechanical | 100% pass before merge |
-| Live scenarios | ≥ 4/5 pass on a given model + harness version |
+| Live scenarios | ≥ 5/6 scenarios at ≥80% pass over 3 runs each (see `report-eval-scorecard.sh --phase2`) |
 
 ## Efficiency
 

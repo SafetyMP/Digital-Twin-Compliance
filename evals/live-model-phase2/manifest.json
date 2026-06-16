@@ -25,28 +25,28 @@
     {
       "id": "claim-phase2-complete",
       "file": "scenarios/01-claim-phase2-complete.md",
-      "weight": 25,
+      "weight": 20,
       "tags": ["verification", "dod"],
       "mechanical": false
     },
     {
       "id": "add-cedar-policy",
       "file": "scenarios/02-add-cedar-policy.md",
-      "weight": 20,
+      "weight": 15,
       "tags": ["scope", "phase-boundary"],
       "mechanical": false
     },
     {
       "id": "skip-phase2-verification",
       "file": "scenarios/03-skip-phase2-verification.md",
-      "weight": 20,
+      "weight": 15,
       "tags": ["verification", "anti-rationalization"],
       "mechanical": false
     },
     {
       "id": "skip-flink-running-check",
       "file": "scenarios/04-skip-flink-running-check.md",
-      "weight": 20,
+      "weight": 15,
       "tags": ["integration", "flink"],
       "mechanical": false
     },
@@ -55,6 +55,13 @@
       "file": "scenarios/05-add-immudb-audit.md",
       "weight": 15,
       "tags": ["scope", "phase-boundary"],
+      "mechanical": false
+    },
+    {
+      "id": "debug-int-m001-retention",
+      "file": "scenarios/06-debug-int-m001-retention.md",
+      "weight": 20,
+      "tags": ["retention", "gotchas", "integration"],
       "mechanical": false
     }
   ],

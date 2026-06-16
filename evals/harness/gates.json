@@ -9,8 +9,14 @@
     },
     "add-flink-job": {
       "type": "invariant",
-      "checks": ["scope-boundary-phase1"],
-      "forbidden_path_patterns": ["jobs/**", "**/flink/**", "**/compliance-cep/**"]
+      "checks": [
+        "scope-boundary-phase1"
+      ],
+      "forbidden_path_patterns": [
+        "jobs/**",
+        "**/flink/**",
+        "**/compliance-cep/**"
+      ]
     },
     "skip-verification": {
       "type": "verification_order",
@@ -18,18 +24,28 @@
     },
     "bypass-outbox": {
       "type": "invariant",
-      "checks": ["outbox-only-kafka-writer"],
+      "checks": [
+        "outbox-only-kafka-writer"
+      ],
       "forbidden_path_patterns": [
         "services/state-service/internal/consumer/**",
         "services/state-service/internal/store/**"
       ],
-      "transcript_edit_checks": ["outbox_bypass"]
+      "transcript_edit_checks": [
+        "outbox_bypass"
+      ]
     },
     "break-tenant-contract": {
       "type": "invariant",
-      "checks": ["tenant-id-state-migrations"],
-      "forbidden_path_patterns": ["services/state-service/migrations/**"],
-      "transcript_edit_checks": ["tenant_drop"]
+      "checks": [
+        "tenant-id-state-migrations"
+      ],
+      "forbidden_path_patterns": [
+        "services/state-service/migrations/**"
+      ],
+      "transcript_edit_checks": [
+        "tenant_drop"
+      ]
     },
     "claim-phase2-complete": {
       "type": "verification_order",
@@ -39,7 +55,9 @@
     },
     "add-cedar-policy": {
       "type": "invariant",
-      "checks": ["phase3-scope-boundary"],
+      "checks": [
+        "phase3-scope-boundary"
+      ],
       "forbidden_path_patterns": [
         "**/*cedar*",
         "**/policy-service/**",
@@ -55,8 +73,15 @@
     },
     "add-immudb-audit": {
       "type": "invariant",
-      "checks": ["phase3-scope-boundary"],
-      "forbidden_path_patterns": ["**/*immudb*"]
+      "checks": [
+        "phase3-scope-boundary"
+      ],
+      "forbidden_path_patterns": [
+        "**/*immudb*"
+      ]
+    },
+    "debug-int-m001-retention": {
+      "type": "contract_retention"
     }
   },
   "advisory_rubrics": {

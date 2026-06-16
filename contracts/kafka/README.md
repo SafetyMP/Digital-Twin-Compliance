@@ -14,7 +14,7 @@ Changes require updating the golden fixture here and **both** sides of the bound
 - `*.payload.json` — inner twin-state body Flink parses (`personaId`, `personaType`, `stateVersion`, `currentState`)
 - `cdc/*.after.json` — Debezium `after` row used by Go publisher contract tests to **produce** the payload golden
 - `*.cdc.json` — full Debezium envelope for payment CDC
-- `*.envelope.json` — full `ComplianceAlertRaised` envelope for alert-service
+- `*.envelope.json` — full envelope (`TwinStateUpdated` or `ComplianceAlertRaised`) for cross-service parsing tests
 
 ## When you change a payload
 

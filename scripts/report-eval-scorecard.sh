@@ -77,7 +77,7 @@ phase2 = int(sys.argv[3])
 
 
 def load_manifest(results_dir: Path) -> dict:
-    if "phase2" in results_dir.parts:
+    if results_dir.name == "results" and results_dir.parent.name == "live-model-phase2":
         path = root / "evals/live-model-phase2/manifest.json"
     else:
         path = root / "evals/live-model/manifest.json"

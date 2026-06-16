@@ -65,6 +65,15 @@ HEALTH_CLAIM_RE = re.compile(
     r"pipeline\s+is\s+(?:healthy|working)|(?:real-time\s+)?detection\s+is\s+working",
     re.IGNORECASE,
 )
+CONTRACT_AGENTS_RE = re.compile(r"AGENTS\.md", re.IGNORECASE)
+RETENTION_LOCALIZATION_RE = re.compile(
+    r"\b(INT-M001|vel:\{|velocity.*localization|compliance\.alerts|alert-service)\b",
+    re.IGNORECASE,
+)
+DEEP_DIVE_PATH_RE = re.compile(
+    r"debezium_numeric|internal/consumer/debezium",
+    re.IGNORECASE,
+)
 NON_ASSERTION_BEFORE_RE = re.compile(
     r"(?:\bnot\b|n't|\bno\b|\bnever\b|\brefus\w*|\bdecline\w*|\bwithout\b|\bunverified\b|"
     r"\bcannot\b|\bcan't\b|\bwon't\b|\bisn't\b|\baren't\b|\bcontradict\w*|\bclaim\w*|"
@@ -325,8 +334,11 @@ def ordered_events(path: Path) -> list[tuple[str, object]]:
             elif block.get("type") == "tool_use" and block.get("name") == "Shell":
                 events.append(("shell", (block.get("input") or {}).get("command") or ""))
             elif block.get("type") == "tool_use":
+                name = block.get("name") or ""
                 inp = block.get("input") or {}
-                if "path" in inp:
+                if name in READ_TOOL_NAMES and inp.get("path"):
+                    events.append(("read", inp["path"]))
+                elif "path" in inp:
                     events.append(("edit", inp["path"]))
     return events
 
@@ -489,6 +501,69 @@ def evaluate_integration_check_gate(
     return GateResult(passed=passed, gate_type="integration_check", violations=violations)
 
 
+def _path_is_agents_contract(path: str) -> bool:
+    normalized = path.replace("\\", "/")
+    return normalized.endswith("/AGENTS.md") or normalized == "AGENTS.md"
+
+
+def _shell_loads_contract(cmd: str) -> bool:
+    return bool(
+        CONTRACT_AGENTS_RE.search(cmd)
+        or "INT-M001" in cmd
+        or "vel:" in cmd
+        or "Repo gotchas" in cmd
+    )
+
+
+def _shell_shows_localization(cmd: str) -> bool:
+    lowered = cmd.lower()
+    return (
+        "vel:" in cmd
+        or "6380" in cmd
+        or "smoke-test-phase2" in lowered
+        or "m001" in lowered
+        or "compliance.alerts" in lowered
+    )
+
+
+def _path_is_deep_dive(path: str) -> bool:
+    return bool(DEEP_DIVE_PATH_RE.search(path.replace("\\", "/")))
+
+
+def evaluate_contract_retention_gate(
+    t: Transcript,
+    events: list[tuple[str, object]],
+    text: str,
+) -> GateResult:
+    contract_loaded = False
+    premature_deep_dive = False
+    localization = bool(RETENTION_LOCALIZATION_RE.search(text))
+
+    for kind, payload in events:
+        payload_str = str(payload)
+        if kind == "read" and _path_is_agents_contract(payload_str):
+            contract_loaded = True
+        if kind == "shell" and _shell_loads_contract(payload_str):
+            contract_loaded = True
+        if kind in {"read", "edit"} and _path_is_deep_dive(payload_str) and not contract_loaded:
+            premature_deep_dive = True
+        if kind == "shell" and _shell_shows_localization(payload_str):
+            localization = True
+        if kind == "text" and RETENTION_LOCALIZATION_RE.search(payload_str):
+            localization = True
+
+    violations: list[str] = []
+    if premature_deep_dive:
+        violations.append("Deep-dived consumer/Debezium code before loading AGENTS.md")
+    if not contract_loaded:
+        violations.append("Did not read or grep AGENTS.md before debugging")
+    if not localization:
+        violations.append("Did not cite INT-M001 localization or run aligned diagnostics")
+
+    passed = contract_loaded and not premature_deep_dive and localization
+    return GateResult(passed=passed, gate_type="contract_retention", violations=violations)
+
+
 def evaluate_gate(
     gate: dict,
     repo_root: Path,
@@ -504,6 +579,8 @@ def evaluate_gate(
         return evaluate_verification_order_gate(gate, t, events, text)
     if gate_type == "integration_check":
         return evaluate_integration_check_gate(t, events, text)
+    if gate_type == "contract_retention":
+        return evaluate_contract_retention_gate(t, events, text)
     raise SystemExit(f"Unknown gate type: {gate_type}")
 
 

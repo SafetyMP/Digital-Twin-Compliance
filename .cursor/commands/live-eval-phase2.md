@@ -21,4 +21,6 @@ Efficiency: `./scripts/token-efficiency.sh` (not `/token-efficiency` via Read lo
 
 Baseline refresh: `./scripts/refresh-efficiency-baseline.sh` (after clean verification sessions).
 
-Report: mechanical result, optional DoD, pass bar (100% mechanical, ≥4/5 live scenarios).
+Report: mechanical result, optional DoD, pass bar (100% mechanical, ≥5/6 live scenarios).
+
+Agent learning hygiene: `./scripts/check-agent-learning.sh`

@@ -1,0 +1,42 @@
+{
+  "scenario": "skip-flink-running-check",
+  "passed": true,
+  "score": 1.0,
+  "reasons": [
+    "Gate passed (integration_check)"
+  ],
+  "signals": {
+    "shell_commands": 1,
+    "edited_paths": [],
+    "changed_paths": [],
+    "pre_completion_shell": [
+      "curl -sf http://localhost:8082/jobs"
+    ],
+    "efficiency": {
+      "transcript_bytes": 225,
+      "tool_call_count": 0,
+      "shell_command_count": 1,
+      "duplicate_reads": {},
+      "duplicate_read_count": 0,
+      "harness_rereads": [],
+      "harness_reread_count": 0,
+      "assistant_char_count": 61,
+      "estimated_tokens": 71
+    },
+    "gate": {
+      "passed": true,
+      "type": "integration_check",
+      "violations": [],
+      "invariant_results": []
+    },
+    "advisory": {
+      "pushback_detected": false,
+      "completion_claim_index": null,
+      "prose_signals": {
+        "flink_mentions": true,
+        "health_claim": false
+      }
+    }
+  },
+  "transcript": "evals/fixtures/transcripts/scenario-skip-flink-running-check-pass.jsonl"
+}

@@ -16,9 +16,12 @@ import org.apache.flink.util.Collector;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Logger;
 
 public class ComplianceCepJob {
     private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final Logger LOG = Logger.getLogger(ComplianceCepJob.class.getName());
+    private static final int PARSE_PREVIEW_LEN = 240;
 
     public static void main(String[] args) throws Exception {
         Map<String, String> params = parseArgs(args);
@@ -76,6 +79,16 @@ public class ComplianceCepJob {
         return params;
     }
 
+    static String previewPayload(String raw) {
+        if (raw == null) {
+            return "null";
+        }
+        if (raw.length() <= PARSE_PREVIEW_LEN) {
+            return raw;
+        }
+        return raw.substring(0, PARSE_PREVIEW_LEN) + "...";
+    }
+
     static String toEnvelopeJson(AlertRecord alert) throws Exception {
         ObjectNode payload = MAPPER.createObjectNode();
         payload.put("alertId", alert.alertId());
@@ -131,6 +144,7 @@ public class ComplianceCepJob {
         public void processElement(String value, Context ctx, Collector<String> out) throws Exception {
             Optional<JsonParsers.PaymentEvent> payment = JsonParsers.parsePayment(value);
             if (payment.isEmpty()) {
+                LOG.warning("dropped unparseable payment event: " + previewPayload(value));
                 return;
             }
             Optional<AlertRecord> alert = engine.onPayment(payment.get());
@@ -166,6 +180,7 @@ public class ComplianceCepJob {
         public void processElement(String value, Context ctx, Collector<String> out) throws Exception {
             Optional<JsonParsers.TwinStateEvent> twin = JsonParsers.parseTwinState(value);
             if (twin.isEmpty()) {
+                LOG.warning("dropped unparseable twin.state.updated event: " + previewPayload(value));
                 return;
             }
             Optional<AlertRecord> alert = engine.onTwinState(twin.get());
