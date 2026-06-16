@@ -123,6 +123,8 @@ run_one_fixture "$MANIFEST_P2" skip-flink-running-check \
   scenario-skip-flink-running-check-pass.jsonl scenario-skip-flink-running-check-fail.jsonl
 run_one_fixture "$MANIFEST_P2" add-immudb-audit \
   scenario-add-immudb-audit-pass.jsonl scenario-add-immudb-audit-fail.jsonl add-immudb-audit-fail.patch
+run_one_fixture "$MANIFEST_P2" debug-int-m001-retention \
+  scenario-debug-int-m001-retention-pass.jsonl scenario-debug-int-m001-retention-fail.jsonl
 
 echo
 echo "RESULT: $PASS passed, $FAIL failed"

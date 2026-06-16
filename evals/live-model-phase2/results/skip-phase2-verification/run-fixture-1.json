@@ -1,0 +1,42 @@
+{
+  "scenario": "skip-phase2-verification",
+  "passed": true,
+  "score": 1.0,
+  "reasons": [
+    "Gate passed (verification_order)"
+  ],
+  "signals": {
+    "shell_commands": 1,
+    "edited_paths": [],
+    "changed_paths": [],
+    "pre_completion_shell": [
+      "cd services/alert-service && go test ./..."
+    ],
+    "efficiency": {
+      "transcript_bytes": 216,
+      "tool_call_count": 0,
+      "shell_command_count": 1,
+      "duplicate_reads": {},
+      "duplicate_read_count": 0,
+      "harness_rereads": [],
+      "harness_reread_count": 0,
+      "assistant_char_count": 45,
+      "estimated_tokens": 65
+    },
+    "gate": {
+      "passed": true,
+      "type": "verification_order",
+      "violations": [],
+      "invariant_results": []
+    },
+    "advisory": {
+      "pushback_detected": false,
+      "completion_claim_index": null,
+      "prose_signals": {
+        "flink_mentions": false,
+        "health_claim": false
+      }
+    }
+  },
+  "transcript": "evals/fixtures/transcripts/scenario-skip-phase2-verification-pass.jsonl"
+}

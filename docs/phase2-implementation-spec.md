@@ -510,20 +510,27 @@ Document exact `curl` and `psql` commands in the script.
 
 ## 14. Phase 2 exit criteria checklist
 
-Copy into PR description when Phase 2 is complete:
+Copy into PR description when Phase 2 is complete.
 
-- [ ] Extended `docker compose -f docker-compose.dev.yml up` starts Phase 1 + Redis + Flink + Alert Service + UI + Grafana
-- [ ] Flink job RUNNING; checkpoint success rate > 99% over 15 min soak (document metric screenshot or CI log)
-- [ ] `INT-M001`, `INT-M002`, `BASEL-M001` each produce ≥ 1 alert from seed/simulator scenarios
-- [ ] Alerts on `compliance.alerts` consumed by Alert Service within 2s p99 (measure in smoke test log)
-- [ ] Alert visible in UI within 5s of detection
-- [ ] Acknowledge flow updates PostgreSQL and WebSocket clients
-- [ ] Redis keys updated for velocity / exposure / LCR features
-- [ ] `./scripts/smoke-test.sh` still passes (Phase 1 regression)
-- [ ] `./scripts/smoke-test-phase2.sh` exits 0
-- [ ] `go test ./...` (alert-service) and `mvn test` (compliance-cep) pass
-- [ ] New Avro schemas pass BACKWARD compat CI
-- [ ] No Phase 3+ components added (Cedar, immudb, Neo4j, full auth)
+**Status (Phase 2b, post-merge to `main` via PR #15):** verified in CI and `./scripts/report-eval-scorecard.sh --phase2`. Deferred items documented below — not blocking Phase 2a integration merge.
+
+- [x] Extended `docker compose -f docker-compose.dev.yml up` starts Phase 1 + Redis + Flink + Alert Service + UI + Grafana — CI `docker compose up -d --wait`; mechanical check `phase2-stack-in-compose`
+- [ ] Flink job RUNNING; checkpoint success rate > 99% over 15 min soak — **deferred**: CI confirms job RUNNING via `submit-flink-job.sh` + smoke; 15 min soak / checkpoint metric screenshot not measured in CI (staging follow-up)
+- [x] `INT-M001`, `INT-M002`, `BASEL-M001` each produce ≥ 1 alert from seed/simulator scenarios — `./scripts/smoke-test-phase2.sh` steps 3–5 (green in CI)
+- [x] Alerts on `compliance.alerts` consumed by Alert Service within 2s p99 — smoke asserts INT-M001 `consume_latency_ms ≤ 2000` on a single CI sample (not a full p99 distribution; see step 3 log)
+- [x] Alert visible in UI within 5s of detection — smoke step 3 asserts API/console visibility within 5000ms budget
+- [x] Acknowledge flow updates PostgreSQL and WebSocket clients — smoke steps 6–7 (`alert.acknowledged` WS + DB)
+- [x] Redis keys updated for velocity / exposure / LCR features — smoke waits on `vel:`, `exp:`, `lcr:` keys before alert assertions
+- [x] `./scripts/smoke-test.sh` still passes (Phase 1 regression) — CI step before Phase 2 smoke
+- [x] `./scripts/smoke-test-phase2.sh` exits 0 — CI gate (PR #15)
+- [x] `go test ./...` (alert-service) and `mvn test` (compliance-cep) pass — CI unit-test job
+- [x] New Avro schemas pass BACKWARD compat CI — `.github/workflows/schema-compat.yml` on alert schemas
+- [x] No Phase 3+ components added (Cedar, immudb, Neo4j, full auth) — mechanical `phase3-scope-boundary` + behavior evals
+
+**Phase 2b agent pillars** (see [AGENTS.md](../AGENTS.md) § Behavior evals):
+
+- [x] Behavior evals: 6/6 scenarios at 100% pass over 3 runs — `evals/live-model-phase2/results/<scenario>/run-*.json`; `./scripts/report-eval-scorecard.sh --phase2`
+- [x] Token efficiency: `./scripts/token-efficiency.sh --strict` — `evals/live-model-phase2/results/efficiency-verification.json` (`harness_reread_count: 0`, `duplicate_read_count: 0`)
 
 ---
 

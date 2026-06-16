@@ -1,0 +1,25 @@
+{
+  "verified_at": "2026-06-16T01:18:08+00:00",
+  "command": "./scripts/token-efficiency.sh --strict <transcript>",
+  "strict_thresholds": {
+    "harness_reread_count_max": 0,
+    "duplicate_read_count_max": 3
+  },
+  "passed": true,
+  "sessions": [
+    {
+      "transcript": "evals/fixtures/transcripts/efficiency-pass.jsonl",
+      "harness_reread_count": 0,
+      "duplicate_read_count": 0,
+      "transcript_bytes": 193,
+      "estimated_tokens": 53
+    },
+    {
+      "transcript": "/Users/sagehart/.cursor/projects/Users-sagehart-Downloads-Digital-Twin/agent-transcripts/ec9ac9fe-41f0-4ebe-b2c6-18eafd3cd5c4/ec9ac9fe-41f0-4ebe-b2c6-18eafd3cd5c4.jsonl",
+      "harness_reread_count": 0,
+      "duplicate_read_count": 0,
+      "transcript_bytes": 7586,
+      "estimated_tokens": 3355
+    }
+  ]
+}

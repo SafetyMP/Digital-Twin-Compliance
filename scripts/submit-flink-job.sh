@@ -2,19 +2,46 @@
 set -euo pipefail
 
 FLINK_URL="${FLINK_JOBMANAGER_URL:-http://localhost:8082}"
-JAR_PATH="${FLINK_JAR_PATH:-jobs/compliance-cep/target/compliance-cep-0.1.0-SNAPSHOT.jar}"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+JAR_REL="${FLINK_JAR_PATH:-jobs/compliance-cep/target/compliance-cep-0.1.0-SNAPSHOT.jar}"
 
-if [[ ! -f "$ROOT/$JAR_PATH" ]]; then
+rebuild_if_stale() {
+  local jar_path="$1"
+  if ! python3 - "$jar_path" <<'PY'
+import pathlib
+import sys
+
+jar = pathlib.Path(sys.argv[1])
+src_root = jar.parent.parent / "src"
+sources = list(src_root.rglob("*.java"))
+if not sources or not jar.is_file():
+    sys.exit(1)
+newest_src = max(s.stat().st_mtime for s in sources)
+sys.exit(0 if newest_src > jar.stat().st_mtime else 1)
+PY
+  then
+    return 0
+  fi
+  echo "CEP sources newer than JAR; rebuilding with mvn package -DskipTests"
+  if command -v mvn >/dev/null 2>&1; then
+    (cd "$ROOT/jobs/compliance-cep" && mvn -q package -DskipTests)
+  else
+    docker run --rm -v "$ROOT/jobs/compliance-cep:/app" -w /app maven:3.9-eclipse-temurin-17 mvn -q package -DskipTests
+  fi
+}
+
+if [[ ! -f "$ROOT/$JAR_REL" ]]; then
   echo "Building Flink job..."
   if command -v mvn >/dev/null 2>&1; then
     (cd "$ROOT/jobs/compliance-cep" && mvn -q package -DskipTests)
   else
     docker run --rm -v "$ROOT/jobs/compliance-cep:/app" -w /app maven:3.9-eclipse-temurin-17 mvn -q package -DskipTests
   fi
+else
+  rebuild_if_stale "$ROOT/$JAR_REL"
 fi
 
-JAR_PATH="$ROOT/$JAR_PATH"
+JAR_PATH="$ROOT/$JAR_REL"
 
 echo "Waiting for Flink JobManager at $FLINK_URL..."
 for i in $(seq 1 60); do
