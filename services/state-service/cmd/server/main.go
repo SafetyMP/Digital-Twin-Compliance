@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -38,13 +39,21 @@ func main() {
 
 	st := store.New(pool, cfg.DefaultTenantID)
 	handler := consumer.NewHandler(st, cfg.ServiceSource)
-	runner := consumer.NewRunner(cfg.KafkaBrokers, "state-service", cfg.DebeziumTopics, handler)
+	runner := consumer.NewRunner(cfg.KafkaBrokers, "state-service", cfg.DebeziumTopics, cfg.DebeziumDLQTopic, handler)
 
 	outboxInterval, err := time.ParseDuration(cfg.OutboxPollInterval)
 	if err != nil {
 		outboxInterval = time.Second
 	}
-	publisher := outbox.NewPublisher(st, cfg.KafkaBrokers, cfg.ServiceSource, outboxInterval)
+	outboxBatchTimeout, err := time.ParseDuration(cfg.OutboxBatchTimeout)
+	if err != nil {
+		outboxBatchTimeout = 10 * time.Millisecond
+	}
+	outboxBatchSize := 100
+	if n, err := strconv.Atoi(cfg.OutboxBatchSize); err == nil && n > 0 {
+		outboxBatchSize = n
+	}
+	publisher := outbox.NewPublisher(st, cfg.KafkaBrokers, cfg.ServiceSource, outboxInterval, outboxBatchTimeout, outboxBatchSize)
 
 	go func() {
 		if err := runner.Run(ctx); err != nil && ctx.Err() == nil {
@@ -90,6 +99,9 @@ func readMigrationSQL(paths []string) (string, error) {
 		sqlBytes, err := os.ReadFile(path)
 		if err == nil {
 			return string(sqlBytes), nil
+		}
+		if !os.IsNotExist(err) {
+			return "", err
 		}
 	}
 	return "", os.ErrNotExist

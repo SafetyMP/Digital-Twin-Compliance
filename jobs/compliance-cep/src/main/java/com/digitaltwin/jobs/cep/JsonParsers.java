@@ -62,16 +62,11 @@ public final class JsonParsers {
             if (personaType.isEmpty()) {
                 return Optional.empty();
             }
-            int stateVersion = 0;
-            JsonNode versionNode = payload.get("stateVersion");
-            if (versionNode != null && versionNode.isNumber()) {
-                stateVersion = versionNode.asInt();
-            }
             return Optional.of(new TwinStateEvent(
                     text(payload, "personaId"),
                     personaType,
                     text(payload, "sourceEntityId"),
-                    stateVersion,
+                    parseInt(payload, "stateVersion"),
                     payload.get("currentState")
             ));
         } catch (Exception e) {
@@ -79,12 +74,12 @@ public final class JsonParsers {
         }
     }
 
-    private static String text(JsonNode node, String field) {
+    public static String text(JsonNode node, String field) {
         JsonNode v = node.get(field);
         return v == null || v.isNull() ? "" : v.asText();
     }
 
-    private static double parseDouble(JsonNode node, String field) {
+    public static double parseDouble(JsonNode node, String field) {
         JsonNode v = node.get(field);
         if (v == null || v.isNull()) {
             return 0.0;
@@ -92,11 +87,34 @@ public final class JsonParsers {
         if (v.isNumber()) {
             return v.asDouble();
         }
+        String raw = v.asText("");
+        if (raw.isEmpty()) {
+            return 0.0;
+        }
         try {
-            return Double.parseDouble(v.asText());
+            return Double.parseDouble(raw);
         } catch (NumberFormatException e) {
             // Debezium JSON converter may emit NUMERIC as base64; velocity rules ignore amount.
             return 0.0;
+        }
+    }
+
+    public static int parseInt(JsonNode node, String field) {
+        JsonNode v = node.get(field);
+        if (v == null || v.isNull()) {
+            return 0;
+        }
+        if (v.isNumber()) {
+            return v.asInt();
+        }
+        String raw = v.asText("").trim();
+        if (raw.isEmpty()) {
+            return 0;
+        }
+        try {
+            return Integer.parseInt(raw);
+        } catch (NumberFormatException e) {
+            return 0;
         }
     }
 

@@ -1,5 +1,7 @@
 # Phase 2 Exit Criteria Checklist
 
+**Mechanical exit** — smoke tests, unit tests, and stack checklist below. **Formal Phase 2 completion** also requires mechanical nightly evals and the behavior eval pillar ([AGENTS.md](../../AGENTS.md#behavior-evals-phase-2)).
+
 Verified: 2026-06-14 (local stack, branch `feat/phase2-monitoring`)
 
 Copy into PR description when opening Phase 2 PR.

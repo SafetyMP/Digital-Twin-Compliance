@@ -14,11 +14,11 @@ if [[ -z "$ACCOUNT_ID" || -z "$DEST_ID" ]]; then
 fi
 
 echo "Bursting $BURST_COUNT payments from account $ACCOUNT_ID..."
-for i in $(seq 1 "$BURST_COUNT"); do
-  psql "$CORE_URL" -v ON_ERROR_STOP=1 -c "
-    INSERT INTO payments (source_account_id, destination_account_id, amount, currency, status, initiated_at, updated_at)
-    VALUES ('$ACCOUNT_ID', '$DEST_ID', 100.00, 'EUR', 'Pending', now() - interval '30 minutes', now());
-  " >/dev/null
-done
+psql "$CORE_URL" -v ON_ERROR_STOP=1 -c "
+  INSERT INTO payments (source_account_id, destination_account_id, amount, currency, status, initiated_at, updated_at)
+  SELECT '$ACCOUNT_ID', '$DEST_ID', 100.00, 'EUR', 'Pending', now() - interval '30 minutes', now()
+  FROM generate_series(1, $BURST_COUNT);
+" >/dev/null
 
-echo "Payment burst complete."
+INSERTED=$(psql "$CORE_URL" -tA -c "SELECT COUNT(*) FROM payments WHERE source_account_id = '$ACCOUNT_ID';")
+echo "Payment burst complete (source_account=$ACCOUNT_ID, total_payments_for_account=$INSERTED)."

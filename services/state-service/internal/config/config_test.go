@@ -25,6 +25,15 @@ func TestLoadDefaults(t *testing.T) {
 	if len(cfg.DebeziumTopics) != 3 {
 		t.Fatalf("DebeziumTopics = %v", cfg.DebeziumTopics)
 	}
+	if cfg.DebeziumDLQTopic != "domain.events.dlq" {
+		t.Fatalf("DebeziumDLQTopic = %q", cfg.DebeziumDLQTopic)
+	}
+	if cfg.OutboxBatchSize != "100" {
+		t.Fatalf("OutboxBatchSize = %q", cfg.OutboxBatchSize)
+	}
+	if cfg.OutboxBatchTimeout != "10ms" {
+		t.Fatalf("OutboxBatchTimeout = %q", cfg.OutboxBatchTimeout)
+	}
 }
 
 func TestLoadFromEnv(t *testing.T) {
@@ -33,6 +42,9 @@ func TestLoadFromEnv(t *testing.T) {
 	t.Setenv("DEFAULT_TENANT_ID", "tenant-abc")
 	t.Setenv("STATE_SERVICE_HTTP_ADDR", ":9090")
 	t.Setenv("DEBEZIUM_TOPICS", "a,b")
+	t.Setenv("STATE_CDC_DLQ_TOPIC", "cdc.custom.dlq")
+	t.Setenv("OUTBOX_BATCH_SIZE", "50")
+	t.Setenv("OUTBOX_BATCH_TIMEOUT", "25ms")
 
 	cfg := Load()
 	if cfg.StateDBURL != "postgres://custom/db" {
@@ -49,6 +61,15 @@ func TestLoadFromEnv(t *testing.T) {
 	}
 	if len(cfg.DebeziumTopics) != 2 {
 		t.Fatalf("DebeziumTopics = %v", cfg.DebeziumTopics)
+	}
+	if cfg.DebeziumDLQTopic != "cdc.custom.dlq" {
+		t.Fatalf("DebeziumDLQTopic = %q", cfg.DebeziumDLQTopic)
+	}
+	if cfg.OutboxBatchSize != "50" {
+		t.Fatalf("OutboxBatchSize = %q", cfg.OutboxBatchSize)
+	}
+	if cfg.OutboxBatchTimeout != "25ms" {
+		t.Fatalf("OutboxBatchTimeout = %q", cfg.OutboxBatchTimeout)
 	}
 }
 

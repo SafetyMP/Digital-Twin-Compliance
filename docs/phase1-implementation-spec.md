@@ -446,7 +446,7 @@ Copy into PR description when Phase 1 is complete:
 - [ ] `scripts/smoke-test.sh` exits 0
 - [ ] `go test ./...` passes in `services/state-service`
 - [ ] Schema compat CI gate passes on PR
-- [ ] No Phase 2+ components added ([AGENTS.md § Out of scope](../AGENTS.md#out-of-scope-phase-1))
+- [ ] No Phase 3+ components added ([AGENTS.md § Scope by phase](../AGENTS.md#scope-by-phase))
 
 ---
 

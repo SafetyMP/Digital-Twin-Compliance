@@ -1,7 +1,7 @@
 package consumer
 
 import (
-	"strings"
+	"encoding/json"
 	"testing"
 )
 
@@ -29,6 +29,76 @@ func TestDecodeDebeziumDecimalFloat(t *testing.T) {
 	got := decodeDebeziumDecimal(float64(99.5), 2)
 	if got != float64(99.5) {
 		t.Fatalf("decode float = %v", got)
+	}
+}
+
+func TestNormalizeDebeziumRowLegalEntitiesBase64LCR(t *testing.T) {
+	t.Parallel()
+
+	row := map[string]any{
+		"entity_id":             "44444444-4444-4444-4444-444444444401",
+		"lcr":                   "Ifw=",
+		"hqla":                  "Cno1ggA=",
+		"net_cash_outflows_30d": "Cwdgvuw=",
+	}
+	out := normalizeDebeziumRow("legal_entities", row)
+	if out["lcr"] != "0.8700" {
+		t.Fatalf("lcr = %v, want 0.8700", out["lcr"])
+	}
+}
+
+func TestMapDebeziumToCDCInputLegalEntityLiquidityBase64(t *testing.T) {
+	t.Parallel()
+
+	payload := DebeziumPayload{
+		After: map[string]any{
+			"entity_id":             "44444444-4444-4444-4444-444444444401",
+			"legal_name":            "Delta Independent Bank",
+			"lcr":                   "Ifw=",
+			"hqla":                  "Cno1ggA=",
+			"net_cash_outflows_30d": "Cwdgvuw=",
+			"liquidity_currency":    "EUR",
+			"updated_at":            "2026-06-15T05:23:48.010267Z",
+		},
+		Op: "u",
+	}
+	payload.Source.Table = "legal_entities"
+
+	input, _, err := MapDebeziumToCDCInput(payload)
+	if err != nil {
+		t.Fatalf("MapDebeziumToCDCInput: %v", err)
+	}
+	var state map[string]any
+	if err := json.Unmarshal(input.CurrentState, &state); err != nil {
+		t.Fatal(err)
+	}
+	liq, ok := state["liquidity"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected liquidity in state: %s", string(input.CurrentState))
+	}
+	if liq["lcr"].(float64) != 0.87 {
+		t.Fatalf("lcr = %v", liq["lcr"])
+	}
+	if _, exists := state["lcr"]; exists {
+		t.Fatal("expected flat lcr column to be omitted from currentState")
+	}
+}
+
+func TestNormalizeDebeziumRowLegalEntities(t *testing.T) {
+	t.Parallel()
+
+	row := map[string]any{
+		"entity_id":             "44444444-4444-4444-4444-444444444401",
+		"lcr":                   "0.9500",
+		"hqla":                  "450000000.00",
+		"net_cash_outflows_30d": "473684211.00",
+	}
+	out := normalizeDebeziumRow("legal_entities", row)
+	if out["lcr"] != "0.9500" {
+		t.Fatalf("lcr = %v", out["lcr"])
+	}
+	if out["hqla"] != "450000000.00" {
+		t.Fatalf("hqla = %v", out["hqla"])
 	}
 }
 
@@ -77,7 +147,12 @@ func TestMapDebeziumToCDCInputInstrumentNumeric(t *testing.T) {
 	if input.PersonaType != "Instrument" {
 		t.Fatalf("personaType = %q", input.PersonaType)
 	}
-	if !strings.Contains(string(input.CurrentState), "6000000.00") {
-		t.Fatalf("currentState missing decoded notional: %s", string(input.CurrentState))
+	var state map[string]any
+	if err := json.Unmarshal(input.CurrentState, &state); err != nil {
+		t.Fatal(err)
+	}
+	notional, ok := state["notional_amount"].(float64)
+	if !ok || notional != 6000000.0 {
+		t.Fatalf("notional_amount = %v, want 6000000.0 in %s", state["notional_amount"], string(input.CurrentState))
 	}
 }

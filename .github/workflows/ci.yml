@@ -15,7 +15,7 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version: "1.22"
+          go-version: "1.25"
 
       - uses: actions/setup-java@v4
         with:
@@ -31,6 +31,25 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y jq postgresql-client curl ripgrep
           python3 -m pip install --user pytest
+
+      - name: Go vet (state-service)
+        working-directory: services/state-service
+        run: go vet ./...
+
+      - name: Go tests (state-service)
+        working-directory: services/state-service
+        run: go test ./...
+
+      - name: Go tests (alert-service)
+        working-directory: services/alert-service
+        run: go mod tidy && go test ./...
+
+      - name: Maven tests (compliance-cep)
+        working-directory: jobs/compliance-cep
+        run: mvn -q test
+
+      - name: Kafka payload contracts
+        run: chmod +x scripts/check-kafka-contracts.sh && ./scripts/check-kafka-contracts.sh
 
       - name: Live evals (mechanical)
         run: ./scripts/run-live-evals.sh
@@ -50,6 +69,9 @@ jobs:
       - name: Seed databases
         run: ./scripts/seed.sh
 
+      - name: Restart alert-service after seed
+        run: docker compose -f docker-compose.dev.yml restart alert-service && docker compose -f docker-compose.dev.yml up -d --wait alert-service
+
       - name: Register schemas
         run: ./scripts/register-schemas.sh
 
@@ -59,24 +81,18 @@ jobs:
       - name: Restart state-service after connector
         run: docker compose -f docker-compose.dev.yml restart state-service && docker compose -f docker-compose.dev.yml up -d --wait state-service
 
-      - name: Go vet (state-service)
-        working-directory: services/state-service
-        run: go vet ./...
+      - name: Wait for outbox drain after restart
+        run: chmod +x scripts/wait-outbox-drained.sh scripts/smoke-lib-phase2.sh && ./scripts/wait-outbox-drained.sh
 
-      - name: Go tests (state-service)
-        working-directory: services/state-service
-        run: go test ./...
+      - name: Verify state twin pipeline
+        run: chmod +x scripts/verify-state-twin-pipeline.sh scripts/smoke-lib-phase2.sh && ./scripts/verify-state-twin-pipeline.sh
 
-      - name: Go tests (alert-service)
-        working-directory: services/alert-service
-        run: go mod tidy && go test ./...
-
-      - name: Maven tests (compliance-cep)
+      - name: Maven package (compliance-cep)
         working-directory: jobs/compliance-cep
         run: |
-          # flink-job-submitter builds inside Docker as root; reset before host mvn test.
+          # flink-job-submitter builds inside Docker as root; reset before host mvn package.
           sudo rm -rf target
-          mvn -q test
+          mvn -q package -DskipTests
 
       - name: Build alert-console
         working-directory: apps/alert-console
@@ -86,6 +102,7 @@ jobs:
         env:
           CEP_PAYMENTS_OFFSET: latest
           CEP_TWIN_OFFSET: latest
+          CEP_CONSUMER_GROUP_SUFFIX: "-${{ github.run_id }}"
         run: |
           chmod +x scripts/submit-flink-job.sh
           ./scripts/submit-flink-job.sh
@@ -112,7 +129,8 @@ jobs:
       - name: Smoke test (Phase 2)
         env:
           SMOKE_PHASE2_ALERT_WAIT_SEC: 90
-        run: chmod +x scripts/smoke-test-phase2.sh mocks/simulators/payment-burst.sh scripts/submit-flink-job.sh && ./scripts/smoke-test-phase2.sh
+          SMOKE_PHASE2_REDIS_WAIT_SEC: 90
+        run: chmod +x scripts/smoke-test-phase2.sh scripts/smoke-lib-phase2.sh mocks/simulators/payment-burst.sh scripts/submit-flink-job.sh && ./scripts/smoke-test-phase2.sh
 
       - name: Coverage gates
         run: ./scripts/check-coverage-gates.sh

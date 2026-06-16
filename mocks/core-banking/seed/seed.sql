@@ -58,23 +58,27 @@ BEGIN
   END LOOP;
 END $$;
 
--- 500 instruments
+-- 500 instruments (deterministic owner/counterparty/notional for repeatable smoke)
 DO $$
 DECLARE
   inst_types TEXT[] := ARRAY['Loan','Bond','Deposit','Derivative','Repo'];
+  entities UUID[];
   i INT;
-  owner UUID;
+  owner_idx INT;
+  cp_idx INT;
 BEGIN
+  SELECT array_agg(entity_id ORDER BY entity_id) INTO entities FROM legal_entities;
   FOR i IN 1..500 LOOP
-    SELECT entity_id INTO owner FROM legal_entities ORDER BY random() LIMIT 1;
+    owner_idx := 1 + ((i - 1) % array_length(entities, 1));
+    cp_idx := 1 + ((i + 4) % array_length(entities, 1));
     INSERT INTO instruments (isin, instrument_type, counterparty_id, notional_amount, currency, maturity_date, regulatory_class)
     VALUES (
       'XS' || lpad(i::text, 10, '0'),
       inst_types[1 + (i % array_length(inst_types, 1))],
-      owner,
-      (random() * 10000000 + 10000)::numeric(20,2),
+      entities[cp_idx],
+      (10000 + (i * 10000))::numeric(20,2),
       CASE (i % 3) WHEN 0 THEN 'EUR' WHEN 1 THEN 'USD' ELSE 'GBP' END,
-      (CURRENT_DATE + (random() * 3650)::int),
+      (CURRENT_DATE + ((i % 3650) || ' days')::interval),
       'F0610'
     );
   END LOOP;

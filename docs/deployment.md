@@ -2,7 +2,7 @@
 
 Guide for publishing and running the Digital Twin Compliance Platform outside local development.
 
-**Phase 1 scope:** Docker Compose on a single host (VM or bare metal). Kubernetes and managed Kafka are future phases — see [roadmap.md](./roadmap.md) and [ADR-007](./adr/007-phase1-foundation-decisions.md).
+**Scope:** Docker Compose on a single host (VM or bare metal) for Phase 1 and Phase 2 services. Kubernetes, Flink Kubernetes Operator, and managed Kafka are future phases — see [roadmap.md](./roadmap.md), [ADR-007](./adr/007-phase1-foundation-decisions.md), and [ADR-008](./adr/008-phase2-foundation-decisions.md).
 
 ---
 
@@ -12,7 +12,7 @@ Guide for publishing and running the Digital Twin Compliance Platform outside lo
 |----------|---------|---------|
 | [CI](../.github/workflows/ci.yml) | Push, PR | Full stack tests + smoke test |
 | [Schema Compatibility](../.github/workflows/schema-compat.yml) | Push, PR | Avro BACKWARD compatibility |
-| [Docker Publish](../.github/workflows/docker-publish.yml) | Push to `main`, version tags, manual | Build and push State Service to GHCR |
+| [Docker Publish](../.github/workflows/docker-publish.yml) | Push to `main`, version tags, manual | Build and push `state-service`, `alert-service`, `alert-console`, `compliance-cep` to GHCR |
 | [Release](../.github/workflows/release.yml) | Tag `v*.*.*` | GitHub Release with generated notes |
 | [Deploy Staging](../.github/workflows/deploy-staging.yml) | Manual | SSH deploy to staging host |
 
@@ -22,10 +22,19 @@ Dependabot opens weekly PRs for Go modules, GitHub Actions, and Docker base imag
 
 ## Container registry (GHCR)
 
-State Service images are published to:
+Images are published under `ghcr.io/safetymp/digital-twin-compliance/`:
+
+| Image | Path |
+|-------|------|
+| `state-service` | Phase 1 REST + consumer |
+| `alert-service` | Phase 2 alerts REST + WebSocket |
+| `alert-console` | Phase 2 Next.js UI |
+| `compliance-cep` | Phase 2 Flink job runtime |
+
+Example pull:
 
 ```text
-ghcr.io/safetymp/digital-twin-compliance/state-service
+ghcr.io/safetymp/digital-twin-compliance/state-service:main
 ```
 
 | Event | Tags |
@@ -54,8 +63,8 @@ Make the package **public** under GitHub → Packages → Package settings if st
 
 | File | Use case |
 |------|----------|
-| [docker-compose.dev.yml](../docker-compose.dev.yml) | Local development; builds State Service from source |
-| [docker-compose.deploy.yml](../docker-compose.deploy.yml) | Staging/production-like; pulls State Service from GHCR |
+| [docker-compose.dev.yml](../docker-compose.dev.yml) | Local development; builds services from source |
+| [docker-compose.deploy.yml](../docker-compose.deploy.yml) | Staging/production-like; pulls images from GHCR |
 
 Deploy Compose requires image variables:
 
@@ -72,8 +81,8 @@ Or use the helper script:
 ```bash
 export STATE_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/state-service:main
 ./scripts/deploy-stack.sh bootstrap   # first-time: up + seed + schemas + debezium
-./scripts/deploy-stack.sh pull        # rolling update of state-service only
-./scripts/deploy-stack.sh smoke       # run smoke test against running stack
+./scripts/deploy-stack.sh pull        # rolling update of deployed images
+./scripts/deploy-stack.sh smoke       # run Phase 1 + Phase 2 smoke tests against running stack
 ```
 
 ---
@@ -156,17 +165,17 @@ export STATE_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/state-servic
 
 | Concern | Where it runs |
 |---------|----------------|
-| Unit + integration smoke | GitHub Actions CI on every PR |
-| Image build | Docker Publish on merge to `main` |
+| Unit + integration smoke | GitHub Actions CI on every PR (`smoke-test.sh` + `smoke-test-phase2.sh`) |
+| Image build | Docker Publish on merge to `main` (all four service images) |
 | Staging deploy | Manual Deploy Staging workflow |
-| Production | Not defined in Phase 1 — extend with environments + approval gates in Phase 2+ |
+| Production | Not defined — extend with environments + approval gates in a later phase |
 
 ---
 
 ## Security notes
 
-- Phase 1 deploy stacks use **default dev credentials** in Compose — not production-safe.
-- Do not expose ports 5433, 5434, 9092, 8080–8083 to the public internet without TLS, auth, and secret rotation.
+- Deploy stacks use **default dev credentials** in Compose — not production-safe.
+- Do not expose ports 5433–5435, 6380, 9092, 8080–8085, 3000–3001 to the public internet without TLS, auth, and secret rotation.
 - Store real credentials in GitHub Environment secrets or a secrets manager; never commit `.env`.
 - Review [SECURITY.md](../SECURITY.md) before exposing any environment.
 
@@ -180,5 +189,9 @@ export STATE_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/state-servic
 | Image pull 401/403 | `docker login ghcr.io` or make GHCR package public |
 | Personas not syncing | Re-run `./scripts/register-debezium-connector.sh` and restart `state-service` |
 | Smoke test timeout | Wait for initial CDC snapshot; check Debezium connector status at `:8083/connectors` |
+| Phase 2 smoke fails on Flink | Confirm job RUNNING at `:8082`; re-run `./scripts/submit-flink-job.sh` |
+| No alerts on `compliance.alerts` | Check Flink logs; verify Redis at `localhost:6380`; confirm payment seed / burst simulator |
+| WebSocket ack not received | Check `NEXT_PUBLIC_WS_URL` matches Alert Service; verify `alert-service` health at `:8085` |
+| `ALERT_*` or `COMPLIANCE_CEP_*` image unset | Export all four image variables before `docker compose -f docker-compose.deploy.yml` |
 
 For local development issues, see [README.md](../README.md#quick-start).

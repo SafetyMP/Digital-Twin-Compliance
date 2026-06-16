@@ -7,7 +7,7 @@ body:
     attributes:
       value: |
         Check [docs/roadmap.md](https://github.com/SafetyMP/Digital-Twin-Compliance/blob/main/docs/roadmap.md)
-        and [AGENTS.md out-of-scope](https://github.com/SafetyMP/Digital-Twin-Compliance/blob/main/AGENTS.md#out-of-scope-phase-1)
+        and [AGENTS.md scope by phase](https://github.com/SafetyMP/Digital-Twin-Compliance/blob/main/AGENTS.md#scope-by-phase)
         before filing. Phase 2+ items may be deferred intentionally.
 
   - type: dropdown

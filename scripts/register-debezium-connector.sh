@@ -45,3 +45,8 @@ else
 fi
 
 echo "Debezium connector registered."
+
+# Ensure streaming picks up tables added by migrations after an existing connector.
+if curl -sf -X POST "$CONNECT_URL/connectors/$CONNECTOR_NAME/restart" >/dev/null 2>&1; then
+  echo "Debezium connector restarted."
+fi

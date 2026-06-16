@@ -64,7 +64,7 @@ Measure sessions with:
 # Wrapper — finds latest substantive transcript (agents: run this, do not Read scorer source)
 ./scripts/token-efficiency.sh
 ./scripts/token-efficiency.sh --compare-baseline
-./scripts/token-efficiency.sh --strict   # exit 1 if harness_reread_count > 0 or duplicate_read_count > 5
+./scripts/token-efficiency.sh --strict   # exit 1 if harness_reread_count > 0 or duplicate_read_count > 3
 
 # Baseline all parent transcripts in the Cursor project folder
 ./scripts/score-agent-transcript.py \
@@ -82,7 +82,7 @@ Live eval scoring with efficiency gate:
 
 | Signal | Healthy | Investigate |
 |--------|---------|-------------|
-| duplicate_read_count | 0–3 | >5 |
+| duplicate_read_count | 0–3 | >3 |
 | harness_reread_count | 0 | any |
 | tool_call_count (scope-refusal scenario) | <20 | >40 |
 | transcript_bytes (implementation session) | <500KB | >750KB |

@@ -27,10 +27,12 @@ func (f *fakeOutboxStore) MarkOutboxPublished(ctx context.Context, id int64) err
 }
 
 type fakeKafkaWriter struct {
-	err error
+	err       error
+	batchLens []int
 }
 
 func (f *fakeKafkaWriter) WriteMessages(ctx context.Context, msgs ...kafka.Message) error {
+	f.batchLens = append(f.batchLens, len(msgs))
 	return f.err
 }
 
@@ -73,5 +75,33 @@ func TestPublishBatch_PublishesRow(t *testing.T) {
 	}
 	if err := p.publishBatch(context.Background()); err != nil {
 		t.Fatalf("publishBatch: %v", err)
+	}
+}
+
+func TestPublishBatch_SingleWriteForMultipleRows(t *testing.T) {
+	t.Parallel()
+
+	payload, _ := json.Marshal(map[string]any{"personaId": "abc"})
+	writer := &fakeKafkaWriter{}
+	p := &Publisher{
+		store: &fakeOutboxStore{
+			rows: []store.OutboxRow{
+				{ID: 1, Topic: "twin.state.updated", PartitionKey: "abc", Payload: payload},
+				{ID: 2, Topic: "twin.state.updated", PartitionKey: "def", Payload: payload},
+				{ID: 3, Topic: "twin.state.updated", PartitionKey: "ghi", Payload: payload},
+			},
+		},
+		writer:    writer,
+		source:    "state-service",
+		batchSize: 100,
+	}
+	if err := p.publishBatch(context.Background()); err != nil {
+		t.Fatalf("publishBatch: %v", err)
+	}
+	if len(writer.batchLens) != 1 {
+		t.Fatalf("WriteMessages calls = %d, want 1", len(writer.batchLens))
+	}
+	if writer.batchLens[0] != 3 {
+		t.Fatalf("batch size = %d, want 3", writer.batchLens[0])
 	}
 }

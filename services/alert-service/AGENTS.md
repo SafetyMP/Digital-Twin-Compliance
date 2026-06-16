@@ -44,6 +44,11 @@ Repo gate: `./scripts/run-live-evals-phase2.sh --full` requires **≥25%** total
 
 From repo root: see [AGENTS.md](../../AGENTS.md) and [docs/phase2-implementation-spec.md](../../docs/phase2-implementation-spec.md).
 
+## Kafka contracts
+
+- Consumer golden: `contracts/kafka/compliance.alerts/basel-alert-raised.envelope.json`
+- Tests: `internal/events/kafka_contract_test.go` — run `./scripts/check-kafka-contracts.sh` from repo root
+
 ## Invariants
 
 - **Dedup by `idempotencyKey`** — envelope key is unique in `compliance_alerts.idempotency_key`

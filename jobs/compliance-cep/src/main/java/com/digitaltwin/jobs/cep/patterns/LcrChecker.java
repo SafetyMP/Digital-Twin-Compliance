@@ -27,7 +27,11 @@ public final class LcrChecker {
         if (liquidity == null || liquidity.isNull()) {
             return Optional.empty();
         }
-        double lcr = liquidity.get("lcr").asDouble();
+        JsonNode lcrNode = liquidity.get("lcr");
+        if (lcrNode == null || lcrNode.isNull()) {
+            return Optional.empty();
+        }
+        double lcr = JsonParsers.parseDouble(liquidity, "lcr");
         redis.setLcr(twin.personaId(), lcr);
         if (lcr >= config.lcrMinimum) {
             return Optional.empty();

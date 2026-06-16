@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
+import org.apache.flink.connector.base.DeliveryGuarantee;
 import org.apache.flink.connector.kafka.sink.KafkaRecordSerializationSchema;
 import org.apache.flink.connector.kafka.sink.KafkaSink;
 import org.apache.flink.connector.kafka.source.KafkaSource;
@@ -25,12 +26,11 @@ public class ComplianceCepJob {
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(config.parallelism);
-        env.enableCheckpointing(30_000);
 
         KafkaSource<String> paymentsSource = KafkaSource.<String>builder()
                 .setBootstrapServers(config.kafkaBrokers)
                 .setTopics("domain.events.public.payments")
-                .setGroupId("compliance-cep-payments")
+                .setGroupId(config.paymentsGroupId)
                 .setStartingOffsets(config.paymentsOffsets())
                 .setValueOnlyDeserializer(new SimpleStringSchema())
                 .build();
@@ -38,7 +38,7 @@ public class ComplianceCepJob {
         KafkaSource<String> twinSource = KafkaSource.<String>builder()
                 .setBootstrapServers(config.kafkaBrokers)
                 .setTopics("twin.state.updated")
-                .setGroupId("compliance-cep-twin")
+                .setGroupId(config.twinGroupId)
                 .setStartingOffsets(config.twinOffsets())
                 .setValueOnlyDeserializer(new SimpleStringSchema())
                 .build();
@@ -49,17 +49,21 @@ public class ComplianceCepJob {
         DataStream<String> twinAlerts = env.fromSource(twinSource, WatermarkStrategy.noWatermarks(), "twin-state")
                 .process(new TwinAlertProcess(config));
 
-        KafkaSink<String> sink = KafkaSink.<String>builder()
+        paymentAlerts.sinkTo(buildAlertSink(config)).name("payment-alerts-sink");
+        twinAlerts.sinkTo(buildAlertSink(config)).name("twin-alerts-sink");
+
+        env.execute("compliance-cep");
+    }
+
+    static KafkaSink<String> buildAlertSink(JobConfig config) {
+        return KafkaSink.<String>builder()
                 .setBootstrapServers(config.kafkaBrokers)
+                .setDeliveryGuarantee(DeliveryGuarantee.AT_LEAST_ONCE)
                 .setRecordSerializer(KafkaRecordSerializationSchema.builder()
                         .setTopic("compliance.alerts")
                         .setValueSerializationSchema(new SimpleStringSchema())
                         .build())
                 .build();
-
-        paymentAlerts.union(twinAlerts).sinkTo(sink).name("compliance-alerts-sink");
-
-        env.execute("compliance-cep");
     }
 
     static Map<String, String> parseArgs(String[] args) {
@@ -95,7 +99,7 @@ public class ComplianceCepJob {
         envelope.putNull("causationId");
         envelope.put("timestamp", alert.detectedAt());
         envelope.put("idempotencyKey", alert.idempotencyKey());
-        envelope.put("payload", payload);
+        envelope.set("payload", payload);
 
         return MAPPER.writeValueAsString(envelope);
     }

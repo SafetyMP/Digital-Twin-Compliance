@@ -52,9 +52,10 @@ From repo root: see [AGENTS.md](../../AGENTS.md) for Compose, seed, schema regis
 
 ## Invariants
 
-- **Outbox-only Kafka writer** — only `internal/outbox/` may use `kafka.Writer`; never publish directly from consumer or store
+- **Outbox-only Kafka writer** — only `internal/outbox/` may use `kafka.Writer` for domain publish; never publish twin events directly from consumer or store (`internal/consumer/dlq.go` is allowed for poison routing only)
 - **`tenant_id` on all entity tables** — default `00000000-0000-0000-0000-000000000001`
 - **Hierarchy depth ≤ 3** — parent → subsidiary → sub-subsidiary (ADR-007 D9)
+- **Poison CDC messages** — handler failures route to `domain.events.dlq` (env `STATE_CDC_DLQ_TOPIC`); offset committed only after DLQ write succeeds
 
 ## Key files
 
@@ -64,7 +65,9 @@ From repo root: see [AGENTS.md](../../AGENTS.md) for Compose, seed, schema regis
 
 ## Gotchas
 
+- **Instrument numeric enrichment** — `enrichInstrumentState` in `internal/consumer/enrichment.go` converts CDC string decimals (e.g. `notional_amount`) to JSON numbers in `currentState` before outbox publish; golden publisher contract: `contracts/kafka/twin.state.updated/instrument.payload.json` (`TestKafkaContract_*` in `kafka_contract_test.go`)
 - Run `./scripts/register-schemas.sh` before starting the consumer (Schema Registry must have Avro subjects)
 - Run `./scripts/register-debezium-connector.sh` after Compose stack is healthy
+- **Outbox publisher** — batch `WriteMessages` (up to `OUTBOX_BATCH_SIZE`, default 100) with explicit `OUTBOX_BATCH_TIMEOUT` (default `10ms`); per-row writes with `kafka-go` defaults stall at ~1 msg/s. After restart: `./scripts/wait-outbox-drained.sh` then `./scripts/verify-state-twin-pipeline.sh`.
 - `./scripts/smoke-test.sh` requires the full Compose stack up (`docker compose -f docker-compose.dev.yml up -d --wait`)
 - Default tenant UUID: `00000000-0000-0000-0000-000000000001` — use consistently in seed, migrations, and tests

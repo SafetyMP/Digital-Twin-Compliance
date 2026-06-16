@@ -1,0 +1,11 @@
+{
+  "eventId": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+  "eventType": "TwinStateUpdated",
+  "eventVersion": "1.0",
+  "source": "state-service",
+  "correlationId": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+  "causationId": null,
+  "timestamp": "2026-06-14T01:00:00Z",
+  "idempotencyKey": "outbox-42",
+  "payload": "{\"personaId\":\"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa\",\"personaType\":\"Instrument\",\"sourceEntityId\":\"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa\",\"stateVersion\":2,\"complianceStatus\":\"Unknown\",\"lastSyncedAt\":\"2026-06-14T01:00:00Z\",\"currentState\":{\"instrument_id\":\"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa\",\"owner_entity_id\":\"11111111-1111-1111-1111-111111111102\",\"counterparty_id\":\"22222222-2222-2222-2222-222222222202\",\"notional_amount\":6000000,\"currency\":\"EUR\",\"instrument_type\":\"Loan\"}}"
+}

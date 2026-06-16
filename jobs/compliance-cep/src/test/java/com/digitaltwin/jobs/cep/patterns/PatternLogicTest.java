@@ -16,6 +16,21 @@ class PatternLogicTest {
     }
 
     @Test
+    void exposureParsesStringNotionalFromTwinState() throws Exception {
+        String raw = """
+                {
+                  "owner_entity_id": "11111111-1111-1111-1111-111111111102",
+                  "counterparty_id": "22222222-2222-2222-2222-222222222202",
+                  "notional_amount": "6000000.00",
+                  "currency": "EUR"
+                }
+                """;
+        com.fasterxml.jackson.databind.JsonNode state =
+                new com.fasterxml.jackson.databind.ObjectMapper().readTree(raw);
+        assertEquals(6000000.0, com.digitaltwin.jobs.cep.JsonParsers.parseDouble(state, "notional_amount"), 0.01);
+    }
+
+    @Test
     void exposureShouldAlertAboveLimit() {
         ExposureChecker checker = new ExposureChecker(
                 new com.digitaltwin.jobs.cep.JobConfig(java.util.Map.of("exposureLimit", "10000000")),
@@ -23,6 +38,23 @@ class PatternLogicTest {
         );
         assertTrue(checker.shouldAlert(10_000_001, 10_000_000));
         assertFalse(checker.shouldAlert(9_000_000, 10_000_000));
+    }
+
+    @Test
+    void lcrParsesStringLiquidityFromTwinState() throws Exception {
+        String raw = """
+                {
+                  "liquidity": {
+                    "lcr": "0.90",
+                    "hqla": 450000000,
+                    "netCashOutflows30d": 473684211,
+                    "currency": "EUR"
+                  }
+                }
+                """;
+        com.fasterxml.jackson.databind.JsonNode state =
+                new com.fasterxml.jackson.databind.ObjectMapper().readTree(raw);
+        assertEquals(0.90, com.digitaltwin.jobs.cep.JsonParsers.parseDouble(state.get("liquidity"), "lcr"), 0.001);
     }
 
     @Test

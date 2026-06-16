@@ -20,21 +20,31 @@ type OutboxStore interface {
 }
 
 type Publisher struct {
-	store    OutboxStore
-	writer   kafkaMessageWriter
-	source   string
-	interval time.Duration
+	store     OutboxStore
+	writer    kafkaMessageWriter
+	source    string
+	interval  time.Duration
+	batchSize int
 }
 
-func NewPublisher(s OutboxStore, brokers []string, source string, interval time.Duration) *Publisher {
+func NewPublisher(s OutboxStore, brokers []string, source string, interval, batchTimeout time.Duration, batchSize int) *Publisher {
+	if batchSize <= 0 {
+		batchSize = 100
+	}
+	if batchTimeout <= 0 {
+		batchTimeout = 10 * time.Millisecond
+	}
 	return &Publisher{
 		store: s,
 		writer: &kafka.Writer{
-			Addr:     kafka.TCP(brokers...),
-			Balancer: &kafka.Hash{},
+			Addr:         kafka.TCP(brokers...),
+			Balancer:     &kafka.Hash{},
+			BatchSize:    batchSize,
+			BatchTimeout: batchTimeout,
 		},
-		source:   source,
-		interval: interval,
+		source:    source,
+		interval:  interval,
+		batchSize: batchSize,
 	}
 }
 
@@ -55,34 +65,52 @@ func (p *Publisher) Run(ctx context.Context) error {
 }
 
 func (p *Publisher) publishBatch(ctx context.Context) error {
-	rows, err := p.store.FetchUnpublishedOutbox(ctx, 100)
+	rows, err := p.store.FetchUnpublishedOutbox(ctx, p.batchSize)
 	if err != nil {
 		return err
 	}
+	if len(rows) == 0 {
+		return nil
+	}
+
+	type pending struct {
+		id  int64
+		msg kafka.Message
+	}
+	batch := make([]pending, 0, len(rows))
+
 	for _, row := range rows {
-		if err := p.publishOne(ctx, row); err != nil {
+		_, body, err := buildTwinStateEnvelope(p.source, row)
+		if err != nil {
+			slog.Error("outbox envelope build failed", "id", row.ID, "error", err)
+			continue
+		}
+		batch = append(batch, pending{
+			id: row.ID,
+			msg: kafka.Message{
+				Topic: row.Topic,
+				Key:   []byte(row.PartitionKey),
+				Value: body,
+			},
+		})
+	}
+	if len(batch) == 0 {
+		return nil
+	}
+
+	msgs := make([]kafka.Message, len(batch))
+	for i, item := range batch {
+		msgs[i] = item.msg
+	}
+	if err := p.writer.WriteMessages(ctx, msgs...); err != nil {
+		return err
+	}
+	for _, item := range batch {
+		if err := p.store.MarkOutboxPublished(ctx, item.id); err != nil {
 			return err
 		}
 	}
 	return nil
-}
-
-func (p *Publisher) publishOne(ctx context.Context, row store.OutboxRow) error {
-	_, body, err := buildTwinStateEnvelope(p.source, row)
-	if err != nil {
-		return err
-	}
-
-	err = p.writer.WriteMessages(ctx, kafka.Message{
-		Topic: row.Topic,
-		Key:   []byte(row.PartitionKey),
-		Value: body,
-	})
-	if err != nil {
-		return err
-	}
-
-	return p.store.MarkOutboxPublished(ctx, row.ID)
 }
 
 func (p *Publisher) Close() error {

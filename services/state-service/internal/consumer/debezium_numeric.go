@@ -9,6 +9,11 @@ import (
 )
 
 var tableNumericFields = map[string]map[string]int{
+	"legal_entities": {
+		"lcr":                   4,
+		"hqla":                  2,
+		"net_cash_outflows_30d": 2,
+	},
 	"instruments": {"notional_amount": 2},
 }
 

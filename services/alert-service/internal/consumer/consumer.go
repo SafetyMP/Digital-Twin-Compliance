@@ -42,8 +42,8 @@ func (r *Runner) Run(ctx context.Context) error {
 			if r.dlq == nil {
 				slog.Warn("dlq disabled; committing poison message to avoid consumer stall", "offset", msg.Offset)
 			} else if dlqErr := r.dlq.PublishDLQ(ctx, msg, err); dlqErr != nil {
-				slog.Error("publish dlq message", "error", dlqErr, "offset", msg.Offset)
-				continue
+				slog.Error("publish dlq message; committing offset to avoid consumer stall",
+					"dlq_error", dlqErr, "handle_error", err, "offset", msg.Offset)
 			} else {
 				slog.Warn("routed poison message to dlq", "offset", msg.Offset)
 			}

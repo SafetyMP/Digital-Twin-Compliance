@@ -129,6 +129,7 @@ services:
       STATE_SERVICE_HTTP_ADDR: ":8080"
       STATE_SERVICE_SOURCE: state-service
       DEBEZIUM_TOPICS: domain.events.public.legal_entities,domain.events.public.accounts,domain.events.public.instruments,domain.events.public.payments
+      STATE_CDC_DLQ_TOPIC: domain.events.dlq
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8080/api/v1/health || exit 1"]
       interval: 10s

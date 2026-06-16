@@ -6,6 +6,26 @@ See also: [domain-model.md](./domain-model.md), [data-flow.md](./data-flow.md), 
 
 ---
 
+## Implementation status
+
+This document describes the **target** architecture across all phases. Components implemented in the repository today:
+
+| Component | Phase | Status |
+|-----------|-------|--------|
+| Kafka, Schema Registry, Debezium CDC | 1 | Implemented |
+| State Service, outbox, persona REST API | 1 | Implemented |
+| Flink CEP (INT-M001, INT-M002, BASEL-M001) | 2 | Implemented |
+| Redis online feature store | 2 | Implemented |
+| Alert Service, WebSocket, alert console, Grafana | 2 | Implemented |
+| Cedar Policy Service, GoRules Zen / Decision Service | 3+ | Planned |
+| immudb audit ledger, Audit Explorer | 3+ | Planned |
+| Neo4j / Graph Service, simulation | 4+ | Planned |
+| Regulatory reporting (XBRL/SDMX) | 5+ | Planned |
+
+Phase 2 is **implemented**; formal completion pending mechanical nightly evals and the behavior eval pillar ([AGENTS.md](../AGENTS.md#behavior-evals-phase-2), [review/phase2-exit-checklist.md](./review/phase2-exit-checklist.md)).
+
+---
+
 ## 1. Architectural Principles
 
 1. **Intelligence layer, not replacement** — The twin ingests from source systems; it does not become the system of record for transactions or contracts.
