@@ -14,8 +14,7 @@ type Alert = {
   detectedAt: string;
 };
 
-const API = process.env.NEXT_PUBLIC_ALERT_SERVICE_URL || "http://localhost:8085";
-const WS = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8085/ws/alerts";
+const POLL_MS = 5000;
 
 function severityClass(severity: string) {
   if (severity === "Critical") return "bg-red-600";
@@ -26,58 +25,48 @@ function severityClass(severity: string) {
 export default function HomePage() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [connected, setConnected] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  const upsertAlert = useCallback((alert: Alert) => {
-    setAlerts((prev) => {
-      const rest = prev.filter((a) => a.alertId !== alert.alertId);
-      return [alert, ...rest].sort(
-        (a, b) => new Date(b.detectedAt).getTime() - new Date(a.detectedAt).getTime()
-      );
-    });
+  const loadAlerts = useCallback(async () => {
+    const res = await fetch("/api/alerts?status=Open&limit=50", { cache: "no-store" });
+    if (!res.ok) {
+      throw new Error(`alerts API ${res.status}`);
+    }
+    const data = (await res.json()) as Alert[];
+    setAlerts(Array.isArray(data) ? data : []);
+    setConnected(true);
+    setLoadError(null);
   }, []);
 
   useEffect(() => {
-    fetch(`${API}/api/v1/alerts?status=Open&limit=50`)
-      .then((r) => r.json())
-      .then((data) => setAlerts(data))
-      .catch(console.error);
-  }, []);
-
-  useEffect(() => {
-    let ws: WebSocket | null = null;
-    let backoff = 1000;
     let cancelled = false;
 
-    const connect = () => {
-      ws = new WebSocket(`${WS}?status=Open`);
-      ws.onopen = () => {
-        setConnected(true);
-        backoff = 1000;
-      };
-      ws.onclose = () => {
-        setConnected(false);
-        if (!cancelled) setTimeout(connect, backoff);
-        backoff = Math.min(backoff * 2, 10000);
-      };
-      ws.onmessage = (ev) => {
-        const msg = JSON.parse(ev.data);
-        if (msg.payload) upsertAlert(msg.payload);
-      };
+    const refresh = async () => {
+      try {
+        await loadAlerts();
+      } catch (err) {
+        if (!cancelled) {
+          setConnected(false);
+          setLoadError(err instanceof Error ? err.message : "failed to load alerts");
+        }
+      }
     };
 
-    connect();
+    refresh();
+    const timer = window.setInterval(refresh, POLL_MS);
     return () => {
       cancelled = true;
-      ws?.close();
+      window.clearInterval(timer);
     };
-  }, [upsertAlert]);
+  }, [loadAlerts]);
 
   const acknowledge = async (alertId: string) => {
-    await fetch(`${API}/api/v1/alerts/${alertId}/acknowledge`, {
+    const res = await fetch(`/api/alerts/${alertId}/acknowledge`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ acknowledgedBy: "operator-dev" }),
     });
+    if (!res.ok) return;
     setAlerts((prev) =>
       prev.map((a) => (a.alertId === alertId ? { ...a, status: "Acknowledged" } : a))
     );
@@ -91,6 +80,11 @@ export default function HomePage() {
           {connected ? "Live" : "Reconnecting…"}
         </span>
       </header>
+      {loadError && (
+        <p className="mb-4 rounded border border-red-800 bg-red-950/40 p-3 text-sm text-red-200">
+          {loadError}
+        </p>
+      )}
       <ul className="space-y-3">
         {alerts.map((alert) => (
           <li key={alert.alertId} className="rounded-lg border border-slate-800 bg-slate-900 p-4">
@@ -122,7 +116,7 @@ export default function HomePage() {
             </div>
           </li>
         ))}
-        {alerts.length === 0 && <p className="text-slate-400">No open alerts.</p>}
+        {!loadError && alerts.length === 0 && <p className="text-slate-400">No open alerts.</p>}
       </ul>
     </main>
   );

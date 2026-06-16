@@ -151,9 +151,9 @@ ALERT_SERVICE_WS_PATH=/ws/alerts
 FLINK_JOBMANAGER_URL=http://localhost:8082
 FLINK_PARALLELISM=2
 
-# Alert Console (Next.js)
-NEXT_PUBLIC_ALERT_SERVICE_URL=http://localhost:8085
-NEXT_PUBLIC_WS_URL=ws://localhost:8085/ws/alerts
+# Alert Console (Next.js — server-side proxy; see §10.3)
+# ALERT_SERVICE_URL set in Compose for alert-console container
+ALERT_SERVICE_WS_URL=ws://localhost:8085/ws/alerts
 
 # CEP thresholds (dev defaults; override in Compose)
 CEP_VELOCITY_MAX_PER_HOUR=50
@@ -432,16 +432,19 @@ Path: `apps/alert-console/`
 
 | Route | Description |
 |-------|-------------|
-| `/` | Live alert feed (WebSocket + polling fallback) |
-| `/alerts/[alertId]` | Alert detail + acknowledge button |
+| `/` | Live alert feed (polls `/api/alerts` every 5s) |
+| `/alerts/[alertId]` | Alert detail + acknowledge + audit evidence link |
 
 ### 10.3 Live feed requirements
 
-- Connect to `NEXT_PUBLIC_WS_URL` on mount
+- Fetch open alerts via same-origin `/api/alerts?status=Open` (Next.js route proxies to `ALERT_SERVICE_URL`; do not call `:8085` from the browser — no CORS)
+- Refresh on a 5s interval (browser WebSocket to `:8085` is blocked by cross-origin `CheckOrigin`)
 - Show: severity badge, rule code, summary, persona, detectedAt
 - Sort: newest first
-- Acknowledge action calls REST then updates local state
-- Reconnect with exponential backoff on disconnect
+- Acknowledge action calls `/api/alerts/{id}/acknowledge` then updates local state
+- Surface load errors instead of silent empty state
+
+**Service WebSocket** (`/ws/alerts` on alert-service) remains for smoke tests and non-browser clients (`ALERT_SERVICE_WS_URL` in `.env.example`).
 
 ### 10.4 Tests
 

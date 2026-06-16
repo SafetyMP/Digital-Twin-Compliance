@@ -3,8 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-const AUDIT_API = process.env.NEXT_PUBLIC_AUDIT_SERVICE_URL || "";
-
 type AuditEntry = {
   entryId: string;
   entryType: string;
@@ -18,12 +16,11 @@ export default function EntryPage({ params }: { params: { entryId: string } }) {
   const [entry, setEntry] = useState<AuditEntry | null>(null);
 
   useEffect(() => {
-    const base = AUDIT_API || "";
-    const url = base
-      ? `${base}/api/v1/audit/entries/${params.entryId}`
-      : `http://localhost:8090/api/v1/audit/entries/${params.entryId}`;
-    fetch(url)
-      .then((r) => r.json())
+    fetch(`/api/audit/entries/${params.entryId}`)
+      .then((r) => {
+        if (!r.ok) throw new Error(`audit entry ${r.status}`);
+        return r.json();
+      })
       .then(setEntry)
       .catch(console.error);
   }, [params.entryId]);

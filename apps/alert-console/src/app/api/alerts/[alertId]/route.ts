@@ -1,0 +1,17 @@
+import { NextRequest, NextResponse } from "next/server";
+
+const ALERT_API = process.env.ALERT_SERVICE_URL || "http://localhost:8085";
+
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: { alertId: string } }
+) {
+  const res = await fetch(`${ALERT_API}/api/v1/alerts/${params.alertId}`, {
+    cache: "no-store",
+  });
+  const body = await res.text();
+  return new NextResponse(body, {
+    status: res.status,
+    headers: { "Content-Type": "application/json" },
+  });
+}

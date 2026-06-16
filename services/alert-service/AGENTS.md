@@ -73,3 +73,4 @@ From repo root: see [AGENTS.md](../../AGENTS.md) and [docs/phase2-implementation
 - Run `./scripts/register-schemas.sh` before starting consumer
 - `./scripts/smoke-test-phase2.sh` requires full Phase 2 Compose stack including Flink job RUNNING
 - WebSocket path: `/ws/alerts`; health at `/api/v1/health`
+- **Browser UIs** must proxy REST via Next.js `/api/*` — no CORS on this service; `CheckOrigin` rejects WebSocket from `:3000` → `:8085`

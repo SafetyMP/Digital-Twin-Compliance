@@ -151,7 +151,7 @@ Base URL: `http://localhost:8085/api/v1`
 | `GET` | `/alerts` | List alerts (`limit`, `offset`, filters) |
 | `GET` | `/alerts/{alertId}` | Single alert by ID |
 | `POST` | `/alerts/{alertId}/acknowledge` | Acknowledge an alert |
-| `GET` | `/ws/alerts` | WebSocket stream (see `NEXT_PUBLIC_WS_URL` in `.env.example`) |
+| `GET` | `/ws/alerts` | WebSocket stream (service-to-service / smoke scripts; alert-console uses `/api/alerts` polling) |
 
 Full contract: [docs/phase2-implementation-spec.md](docs/phase2-implementation-spec.md) · [services/alert-service/AGENTS.md](services/alert-service/AGENTS.md)
 

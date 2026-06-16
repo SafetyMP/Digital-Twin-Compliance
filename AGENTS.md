@@ -213,6 +213,8 @@ CI runs Go + `mvn test` + `check-kafka-contracts.sh` before `docker compose up`;
   7. `./scripts/smoke-test.sh` then `./scripts/smoke-test-phase2.sh`
   8. `./scripts/check-coverage-gates.sh`
 
+- **Next.js consoles → Go APIs**: `alert-console` and `audit-explorer` run on `:3000`/`:3002`; browser `fetch`/`WebSocket` to `:8085`/`:8090` fails cross-origin (no CORS). Use Next.js `/api/*` route proxies + server-side `ALERT_SERVICE_URL` / `AUDIT_SERVICE_URL`; do not call backend URLs from client components.
+- **Cedar/Zen policy volume mounts**: bind mount can appear empty inside container until `docker compose restart cedar-service decision-service` (common when repo path has spaces).
 - **immudb Compose healthcheck**: `codenotary/immudb` is distroless (no shell/wget) — use `["CMD", "/usr/local/bin/immuadmin", "status"]`, not `CMD-SHELL` + `wget`.
 - **immudb Go client**: use `client.NewClient()` + `OpenSession`; deprecated `NewImmuClient` already opens gRPC and makes `OpenSession` fail with `session already opened`.
 - **decision-service Docker**: zen-go needs **CGO** — build on `golang:*-bookworm`, run on `debian:bookworm-slim` (Alpine/musl link fails).

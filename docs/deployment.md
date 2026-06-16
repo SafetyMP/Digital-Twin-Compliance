@@ -181,6 +181,21 @@ export STATE_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/state-servic
 
 ---
 
+## Next.js UIs and Go APIs
+
+`alert-console` (`:3000`) and `audit-explorer` (`:3002`) must **not** call Go services on other ports from browser `fetch` — there is no CORS on `alert-service`, `audit-service`, etc.
+
+| UI | Browser calls | Compose env (server-side) |
+|----|---------------|---------------------------|
+| Alert Console | `/api/alerts`, `/api/alerts/{id}/acknowledge` | `ALERT_SERVICE_URL=http://alert-service:8085` |
+| Audit Explorer | `/api/audit/entries`, `/api/audit/verify` | `AUDIT_SERVICE_URL=http://audit-service:8090` |
+
+Cross-links (`NEXT_PUBLIC_AUDIT_EXPLORER_URL`) are navigation `href` only. Live alert feed uses **polling** (not browser WebSocket to `:8085`).
+
+Phase 3 deploy images (`audit-explorer`, `audit-service`, …) are not yet in `docker-compose.deploy.yml` — use `docker-compose.dev.yml` for full Phase 3 demos.
+
+---
+
 ## Troubleshooting
 
 | Symptom | Check |
@@ -191,7 +206,8 @@ export STATE_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/state-servic
 | Smoke test timeout | Wait for initial CDC snapshot; check Debezium connector status at `:8083/connectors` |
 | Phase 2 smoke fails on Flink | Confirm job RUNNING at `:8082`; re-run `./scripts/submit-flink-job.sh` |
 | No alerts on `compliance.alerts` | Check Flink logs; verify Redis at `localhost:6380`; confirm payment seed / burst simulator |
-| WebSocket ack not received | Check `NEXT_PUBLIC_WS_URL` matches Alert Service; verify `alert-service` health at `:8085` |
+| Alert Console empty but API has data | Rebuild `alert-console` image; ensure `ALERT_SERVICE_URL=http://alert-service:8085` in Compose (not `NEXT_PUBLIC_*` to `:8085`). Browser uses same-origin `/api/alerts` — direct `fetch` to `:8085` fails without CORS. |
+| WebSocket ack not received (smoke script) | Set `ALERT_SERVICE_WS_URL=ws://localhost:8085/ws/alerts`; verify `alert-service` health at `:8085`. UI uses 5s polling, not browser WebSocket. |
 | `ALERT_*` or `COMPLIANCE_CEP_*` image unset | Export all four image variables before `docker compose -f docker-compose.deploy.yml` |
 
 For local development issues, see [README.md](../README.md#quick-start).
