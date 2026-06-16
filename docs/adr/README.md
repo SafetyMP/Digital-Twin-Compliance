@@ -11,7 +11,8 @@ Architecture Decision Records for the Financial Digital Twin + Compliance Platfo
 | [005](./005-gorules-zen-vs-drools.md) | GoRules Zen vs Drools for Business Rules | Accepted |
 | [006](./006-polyglot-language-strategy.md) | Polyglot Language Strategy | Accepted |
 | [007](./007-phase1-foundation-decisions.md) | Phase 1 Foundation Decisions (D1, D4, D9) | Accepted |
-| [008](./008-phase2-foundation-decisions.md) | Phase 2 Foundation Decisions (D10–D13) | Accepted |
+| [008](./008-phase2-foundation-decisions.md) | Phase 2 Foundation Decisions (D10–D14) | Accepted |
+| [009](./009-phase3-foundation-decisions.md) | Phase 3 Foundation Decisions (D15–D20) | Accepted |
 
 ## ADR Template
 

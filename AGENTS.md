@@ -4,18 +4,19 @@ Operational contract for coding agents working in this repository.
 
 ## Current phase
 
-**Phase 2** — Real-time compliance monitoring and alert delivery. Full spec: [docs/phase2-implementation-spec.md](docs/phase2-implementation-spec.md). Phase 1 spec: [docs/phase1-implementation-spec.md](docs/phase1-implementation-spec.md).
+**Phase 3** — Rules engine and audit ledger. Full spec: [docs/phase3-implementation-spec.md](docs/phase3-implementation-spec.md). Phase 2 spec: [docs/phase2-implementation-spec.md](docs/phase2-implementation-spec.md). Phase 1 spec: [docs/phase1-implementation-spec.md](docs/phase1-implementation-spec.md).
 
-Architecture and domain docs live under [docs/](docs/). Do not implement Phase 3+ components unless explicitly requested.
+Architecture and domain docs live under [docs/](docs/). Do not implement Phase 4+ components unless explicitly requested.
 
 ## Context loading
 
 Minimize token use — load only what the task requires:
 
-- **Always load**: this file, [docs/phase2-implementation-spec.md](docs/phase2-implementation-spec.md) (Phase 2) or [docs/phase1-implementation-spec.md](docs/phase1-implementation-spec.md) when Phase 1-only work
+- **Always load**: this file, [docs/phase3-implementation-spec.md](docs/phase3-implementation-spec.md) (Phase 3) or [docs/phase2-implementation-spec.md](docs/phase2-implementation-spec.md) / [docs/phase1-implementation-spec.md](docs/phase1-implementation-spec.md) when earlier-phase-only work
 - **For Go State Service work**: [services/state-service/AGENTS.md](services/state-service/AGENTS.md)
 - **For Go Alert Service work**: [services/alert-service/AGENTS.md](services/alert-service/AGENTS.md)
-- **For envelope / idempotency / outbox tasks only**: [docs/data-flow.md](docs/data-flow.md)
+- **For Go Audit / Cedar / Decision Service work**: `services/<svc>/AGENTS.md` (created during Phase 3 implementation)
+- **For envelope / idempotency / outbox / audit Kafka tasks**: [docs/data-flow.md](docs/data-flow.md)
 - **Do not load unless the task explicitly requires**: [docs/architecture.md](docs/architecture.md), [docs/domain-model.md](docs/domain-model.md), [docs/compliance-mapping.md](docs/compliance-mapping.md), [docs/roadmap.md](docs/roadmap.md), ADRs other than [ADR-007](docs/adr/007-phase1-foundation-decisions.md)
 - **Never load for implementation or verification** (unless user pastes a path for scoring):
   - `~/.cursor/projects/**/agent-transcripts/**` — prior chat archaeology
@@ -240,21 +241,24 @@ CI runs Go + `mvn test` + `check-kafka-contracts.sh` before `docker compose up`;
 
 ## Scope by phase
 
-### Phase 2 (current)
+### Phase 3 (current)
 
-In scope unless a task is explicitly Phase 1-only:
+In scope unless a task is explicitly Phase 2-only or earlier:
 
-- Flink CEP job (`jobs/compliance-cep/`), Redis features, Alert Service, Alert Console, Grafana, Phase 2 smoke/CI
+- Cedar Policy Service (`services/cedar-service/`), Decision Service (`services/decision-service/`)
+- Audit Service + immudb (`services/audit-service/`)
+- Audit Explorer UI (`apps/audit-explorer/`)
+- `policies/cedar/`, `policies/zen/`, `smoke-test-phase3.sh`, policy CI gates
 
-### Out of scope (Phase 3+)
+### Out of scope (Phase 4+)
 
 Do **not** add unless the task explicitly targets a later phase:
 
-- Cedar Policy Service / GoRules Zen
-- immudb audit ledger
 - Neo4j / Graph Service
-- Keycloak / full auth middleware
-- Regulatory reporting (XBRL)
+- Simulation Service (Python stress/contagion)
+- Regulatory reporting (XBRL/SDMX)
+- Keycloak / full OIDC auth middleware (mock principal only in Phase 3 — ADR-009 D20)
+- Flink → Zen hot-path migration (Phase 3b stretch; default serial is Phase 3a audit path only)
 
 Phase/deferral rationale: [docs/roadmap.md](docs/roadmap.md).
 
@@ -348,7 +352,7 @@ Measure session efficiency separately with `./scripts/token-efficiency.sh --stri
 ## Handoff between agents
 
 - **Planning agent** produces specs and ADRs under `docs/`; does not implement services.
-- **Implementation agent** builds from [docs/phase1-implementation-spec.md](docs/phase1-implementation-spec.md) or [docs/phase2-implementation-spec.md](docs/phase2-implementation-spec.md).
+- **Implementation agent** builds from [docs/phase1-implementation-spec.md](docs/phase1-implementation-spec.md), [docs/phase2-implementation-spec.md](docs/phase2-implementation-spec.md), or [docs/phase3-implementation-spec.md](docs/phase3-implementation-spec.md).
 - **Verification agent** runs [docs/handoff-verification-agent.md](docs/handoff-verification-agent.md); minimal diffs only.
 - **Continuation** across sessions uses [docs/handoff-continuation.md](docs/handoff-continuation.md); outcomes only, no transcript archaeology.
 - After implementation, run review using [docs/review/phase1-review-checklist.md](docs/review/phase1-review-checklist.md).
