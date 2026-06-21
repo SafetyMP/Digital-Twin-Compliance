@@ -86,7 +86,7 @@ jobs:
             echo "- Harness calibration: ./scripts/calibrate-harness.py"
           } > eval-artifacts/summary.md
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: eval-nightly-summary
