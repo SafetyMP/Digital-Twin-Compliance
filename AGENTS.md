@@ -85,6 +85,7 @@ Track **repeat discovery**: a new session re-fixes a gotcha already in **Repo go
 - **Git worktrees** (optional): when a track needs an isolated branch + directory — `./scripts/agent-worktree.sh create` → fresh chat or `move_agent_to_root` at printed path; handoff [docs/handoff-worktree-agent.md](docs/handoff-worktree-agent.md). Worktrees under `.worktrees/` (gitignored). **Do not** run docker compose from multiple worktrees on the same host ports.
 - **Best-of-N** (optional): `./scripts/agent-worktree-best-of-n.sh create --n 3 --prefix <id> --task "..."` for parallel solution attempts; parent runs `compare`, merges winner, smoke on main root. Max 8 attempts. Slash: `/best-of-n-worktrees`.
 - **Parent orchestration**: `/parallel-parent` or [handoff-parallel-parent.md](docs/handoff-parallel-parent.md) — `check-worktree-scope`, `verify-worktree-merge`, rebuild, smoke on main root. Load global `22-parallel-agents.mdc` + repo `worktrees-repo.mdc`.
+- **Dependency waves** (multi-layer tasks): `/dependency-waves` or [handoff-dependency-waves.md](docs/handoff-dependency-waves.md) — `check-dependency-waves.sh` gates schema → service → Flink → integration order before spawning children.
 - **Parent owns**: synthesis, conflict resolution, `./scripts/smoke-test.sh` + `./scripts/smoke-test-phase2.sh`
 - **Do not parallelize**: shared `docker-compose.dev.yml`, integration debugging, related failure chains
 
@@ -170,6 +171,8 @@ cd services/alert-service && go test ./...
 ./scripts/verify-worktree-merge.sh agent/<track>/<name> --rebuild
 ./scripts/verify-worktree-merge.sh agent/<track>/<name> --rebuild --with-smoke
 ./scripts/check-agent-worktrees.sh
+./scripts/check-dependency-waves.sh plan
+./scripts/check-dependency-waves.sh validate
 
 # Tear down
 docker compose -f docker-compose.dev.yml down -v

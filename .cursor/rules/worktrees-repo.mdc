@@ -25,7 +25,7 @@ Parent runs Compose + smoke from **this repo's main root** only.
 
 ## Parent checklist
 
-Use `/parallel-parent` or [docs/handoff-parallel-parent.md](../docs/handoff-parallel-parent.md):
+Use `/parallel-parent` or [docs/handoff-parallel-parent.md](../docs/handoff-parallel-parent.md). Multi-layer tasks: `/dependency-waves` or [handoff-dependency-waves.md](../docs/handoff-dependency-waves.md).
 
 1. `./scripts/agent-worktree-best-of-n.sh compare --prefix <id>` (if best-of-N)
 2. `./scripts/check-worktree-scope.sh --branch <branch> --strict`

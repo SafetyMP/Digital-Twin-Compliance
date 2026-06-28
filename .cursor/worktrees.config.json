@@ -61,5 +61,61 @@
     "schemas/avro/*": "scripts/check-kafka-contracts.sh",
     "services/*/internal/*": "scripts/check-kafka-contracts.sh",
     "jobs/compliance-cep/*": "scripts/check-kafka-contracts.sh"
-  }
+  },
+  "waves": [
+    {
+      "id": "spec",
+      "order": 0,
+      "runner": "parent",
+      "depends_on": [],
+      "description": "Write specs/<task>.md or bon task.md. Parent only — no child agents."
+    },
+    {
+      "id": "contracts",
+      "order": 1,
+      "runner": "child",
+      "tracks": ["docs"],
+      "path_hints": ["schemas/avro/", "contracts/kafka/"],
+      "depends_on": ["spec"],
+      "child_verify": ["scripts/check-kafka-contracts.sh"],
+      "description": "Avro schemas and golden Kafka fixtures before cross-service payload changes."
+    },
+    {
+      "id": "backend-services",
+      "order": 2,
+      "runner": "child",
+      "tracks": ["backend"],
+      "parallel": true,
+      "max_parallel": 3,
+      "path_hints": ["services/"],
+      "depends_on": ["contracts"],
+      "description": "Go services — one worktree per disjoint service path; package tests only in child."
+    },
+    {
+      "id": "flink",
+      "order": 3,
+      "runner": "child",
+      "tracks": ["backend"],
+      "path_hints": ["jobs/compliance-cep/"],
+      "depends_on": ["contracts", "backend-services"],
+      "child_verify": ["cd jobs/compliance-cep && mvn -q test"],
+      "description": "Flink CEP job after envelope/contracts and publisher parsers are stable."
+    },
+    {
+      "id": "frontend",
+      "order": 4,
+      "runner": "child",
+      "tracks": ["frontend"],
+      "depends_on": ["backend-services"],
+      "optional": true,
+      "description": "Next.js consoles after backend API shapes are stable."
+    },
+    {
+      "id": "integration",
+      "order": 99,
+      "runner": "parent",
+      "depends_on": ["flink"],
+      "description": "Parent on main root: merge branches, verify-worktree-merge --rebuild --with-smoke, submit Flink, cleanup worktrees."
+    }
+  ]
 }

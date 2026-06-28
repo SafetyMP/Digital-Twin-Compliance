@@ -72,6 +72,7 @@ Do **not** capture one-off task state here — use the paste template above.
 |------|-----|--------|
 | Implementation | Verification | New chat → [handoff-verification-agent.md](./handoff-verification-agent.md) |
 | Parallel children | Parent merge/smoke | Parent chat → [handoff-parallel-parent.md](./handoff-parallel-parent.md) or `/parallel-parent` |
+| Multi-layer parallel | Wave parent | [handoff-dependency-waves.md](./handoff-dependency-waves.md) or `/dependency-waves` |
 | Long debug | Fresh attempt | New chat + paste template (outcomes only) |
 | Any session | Eval scoring | New chat; run `./scripts/score-eval-session.sh` only |
 

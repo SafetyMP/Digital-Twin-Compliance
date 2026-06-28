@@ -54,9 +54,18 @@ done < <(git branch --list 'agent/*' | sed 's/^[* ]*//')
 
 # Script presence
 for f in scripts/agent-worktree.sh scripts/agent-worktree-best-of-n.sh \
-  scripts/check-worktree-scope.sh scripts/verify-worktree-merge.sh; do
+  scripts/check-worktree-scope.sh scripts/verify-worktree-merge.sh \
+  scripts/check-dependency-waves.sh; do
   if [[ -x "$f" ]]; then ok "$f executable"; else bad "missing or not executable: $f"; fi
 done
+
+if [[ -x scripts/check-dependency-waves.sh ]]; then
+  if ./scripts/check-dependency-waves.sh validate >/dev/null 2>&1; then
+    ok "dependency waves config valid"
+  else
+    bad "dependency waves validate failed"
+  fi
+fi
 
 echo
 if [[ "$fail" -eq 0 ]]; then

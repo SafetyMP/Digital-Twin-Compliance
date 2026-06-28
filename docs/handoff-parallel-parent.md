@@ -25,6 +25,17 @@ Cursor slash command: `/parallel-parent`
 
 4. Dispatch fresh chats, multi-agent UI, or `best-of-n-runner` subagents — one per track/attempt.
 
+For **multi-layer tasks** (schemas → services → Flink), use dependency waves:
+
+```bash
+./scripts/check-dependency-waves.sh init --task <id>
+./scripts/check-dependency-waves.sh plan
+./scripts/check-dependency-waves.sh ready --task <id> --wave backend-services
+./scripts/check-dependency-waves.sh handoff --task <id> --wave backend-services
+```
+
+See [handoff-dependency-waves.md](./handoff-dependency-waves.md) · `/dependency-waves`
+
 ---
 
 ## While children run
