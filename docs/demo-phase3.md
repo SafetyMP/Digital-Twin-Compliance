@@ -135,7 +135,7 @@ Or use **Verify chain** in Audit Explorer.
 ## What to say is out of scope
 
 - Keycloak / full OIDC (mock `X-Roles` only)
-- Flink calling Zen on the hot path (Phase 3b; CEP still inline)
+- Flink **BASEL-M001** calls Decision Service on the hot path (Phase 3b); INT-M001/M002 still inline
 - Neo4j, simulation, XBRL (Phase 4+)
 - S3 Object Lock artifacts (filesystem stub in dev)
 

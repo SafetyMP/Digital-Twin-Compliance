@@ -19,6 +19,8 @@ public final class JobConfig implements Serializable {
     public final String twinOffset;
     public final String paymentsGroupId;
     public final String twinGroupId;
+    /** Phase 3b: when set, BASEL-M001 uses Decision Service (BASEL-R001) instead of inline LCR threshold. */
+    public final String decisionServiceUrl;
 
     public JobConfig(Map<String, String> params) {
         this.kafkaBrokers = params.getOrDefault("kafka", "kafka:9092");
@@ -33,6 +35,11 @@ public final class JobConfig implements Serializable {
         this.twinOffset = params.getOrDefault("twinOffset", "earliest");
         this.paymentsGroupId = params.getOrDefault("paymentsGroup", "compliance-cep-payments");
         this.twinGroupId = params.getOrDefault("twinGroup", "compliance-cep-twin");
+        this.decisionServiceUrl = params.getOrDefault("decisionServiceUrl", "").trim();
+    }
+
+    public boolean usesZenLcr() {
+        return !decisionServiceUrl.isEmpty();
     }
 
     public OffsetsInitializer paymentsOffsets() {
