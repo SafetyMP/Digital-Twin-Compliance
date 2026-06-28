@@ -82,6 +82,9 @@ Track **repeat discovery**: a new session re-fixes a gotcha already in **Repo go
 
 - **Separate chats**: planning → implementation ([handoff-parallel-agent.md](docs/handoff-parallel-agent.md)); implementation → verification ([handoff-verification-agent.md](docs/handoff-verification-agent.md))
 - **In-session subagents**: max 3 tracks with explicit file boundaries — Integration (Compose + smoke), Backend (`services/*`, `jobs/*`), Frontend (`apps/*`)
+- **Git worktrees** (optional): when a track needs an isolated branch + directory — `./scripts/agent-worktree.sh create` → fresh chat or `move_agent_to_root` at printed path; handoff [docs/handoff-worktree-agent.md](docs/handoff-worktree-agent.md). Worktrees under `.worktrees/` (gitignored). **Do not** run docker compose from multiple worktrees on the same host ports.
+- **Best-of-N** (optional): `./scripts/agent-worktree-best-of-n.sh create --n 3 --prefix <id> --task "..."` for parallel solution attempts; parent runs `compare`, merges winner, smoke on main root. Max 8 attempts. Slash: `/best-of-n-worktrees`.
+- **Parent orchestration**: `/parallel-parent` or [handoff-parallel-parent.md](docs/handoff-parallel-parent.md) — `check-worktree-scope`, `verify-worktree-merge`, rebuild, smoke on main root. Load global `22-parallel-agents.mdc` + repo `worktrees-repo.mdc`.
 - **Parent owns**: synthesis, conflict resolution, `./scripts/smoke-test.sh` + `./scripts/smoke-test-phase2.sh`
 - **Do not parallelize**: shared `docker-compose.dev.yml`, integration debugging, related failure chains
 
@@ -158,6 +161,16 @@ cd services/alert-service && go test ./...
 # Agent learning hygiene (gotchas, retention scenario, fixtures)
 ./scripts/check-agent-learning.sh
 
+# Agent worktrees (optional parallel tracks)
+./scripts/agent-worktree.sh create --track backend --name <name>
+./scripts/agent-worktree.sh list
+./scripts/agent-worktree-best-of-n.sh create --n 3 --prefix <id> --track experiment --task "..."
+./scripts/agent-worktree-best-of-n.sh compare --prefix <id>
+./scripts/check-worktree-scope.sh --branch agent/<track>/<name> --strict
+./scripts/verify-worktree-merge.sh agent/<track>/<name> --rebuild
+./scripts/verify-worktree-merge.sh agent/<track>/<name> --rebuild --with-smoke
+./scripts/check-agent-worktrees.sh
+
 # Tear down
 docker compose -f docker-compose.dev.yml down -v
 ```
@@ -214,6 +227,7 @@ CI runs Go + `mvn test` + `check-kafka-contracts.sh` before `docker compose up`;
   8. `./scripts/check-coverage-gates.sh`
 
 - **Next.js consoles → Go APIs**: `alert-console` and `audit-explorer` run on `:3000`/`:3002`; browser `fetch`/`WebSocket` to `:8085`/`:8090` fails cross-origin (no CORS). Use Next.js `/api/*` route proxies + server-side `ALERT_SERVICE_URL` / `AUDIT_SERVICE_URL`; do not call backend URLs from client components.
+- **Agent git worktrees**: `./scripts/agent-worktree.sh create` → worktrees under `.worktrees/`; guard-shell blocks Compose/smoke/seed from worktree cwd (false green risk); parent runs `./scripts/verify-worktree-merge.sh` on main root after merge ([docs/handoff-worktree-agent.md](docs/handoff-worktree-agent.md)).
 - **Cedar/Zen policy volume mounts**: bind mount can appear empty inside container until `docker compose restart cedar-service decision-service` (common when repo path has spaces).
 - **immudb Compose healthcheck**: `codenotary/immudb` is distroless (no shell/wget) — use `["CMD", "/usr/local/bin/immuadmin", "status"]`, not `CMD-SHELL` + `wget`.
 - **immudb Go client**: use `client.NewClient()` + `OpenSession`; deprecated `NewImmuClient` already opens gRPC and makes `OpenSession` fail with `session already opened`.

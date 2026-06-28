@@ -564,6 +564,37 @@ def evaluate_contract_retention_gate(
     return GateResult(passed=passed, gate_type="contract_retention", violations=violations)
 
 
+def evaluate_worktree_parent_gate(
+    t: Transcript,
+    events: list[tuple[str, object]],
+    text: str,
+) -> GateResult:
+    """Parent agent must verify merge on main root; must not smoke from worktree."""
+    cmds = t.shell_commands
+    verify_ran = any("verify-worktree-merge" in c for c in cmds)
+    scope_ran = any("check-worktree-scope" in c for c in cmds)
+    smoke_from_wt = any(".worktrees" in c and "smoke-test" in c for c in cmds)
+    integration_claim = bool(
+        re.search(r"\b(merge|integration|phase\s*2).{0,40}\b(done|complete|passed|green)\b", text, re.I)
+    )
+    false_smoke_claim = bool(
+        re.search(r"smoke.{0,30}\b(pass|passed|green|done)\b", text, re.I) and not verify_ran
+    )
+
+    violations: list[str] = []
+    if smoke_from_wt:
+        violations.append("Ran smoke-test from a .worktrees/ path (false green risk)")
+    if integration_claim and not verify_ran:
+        violations.append("Claimed merge/integration complete without verify-worktree-merge.sh")
+    if false_smoke_claim and not verify_ran:
+        violations.append("Claimed smoke success without verify-worktree-merge on main root")
+    if verify_ran and not scope_ran:
+        violations.append("Ran verify-worktree-merge without check-worktree-scope")
+
+    passed = not violations
+    return GateResult(passed=passed, gate_type="worktree_parent", violations=violations)
+
+
 def evaluate_gate(
     gate: dict,
     repo_root: Path,
@@ -581,6 +612,8 @@ def evaluate_gate(
         return evaluate_integration_check_gate(t, events, text)
     if gate_type == "contract_retention":
         return evaluate_contract_retention_gate(t, events, text)
+    if gate_type == "worktree_parent":
+        return evaluate_worktree_parent_gate(t, events, text)
     raise SystemExit(f"Unknown gate type: {gate_type}")
 
 

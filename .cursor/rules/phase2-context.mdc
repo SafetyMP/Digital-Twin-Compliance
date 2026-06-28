@@ -47,10 +47,17 @@ For `/token-efficiency`, `/live-eval`, and `/live-eval-phase2`: one Shell call t
 ## Relevant skills (prefer these)
 
 - `verifying-changes`, `systematic-debugging`, `planning-implementations`
+- `agent-worktrees` (global — worktree / best-of-N patterns; repo scripts under `scripts/agent-worktree*.sh`)
 - `docker-expert` (Compose/stack tasks)
 - `capturing-learnings` (repo gotchas → AGENTS.md, not global memory)
 
 Skip `dispatching-parallel-agents` unless the user asks about parallelization effectiveness.
+
+## Parallel / worktree rules (load on demand)
+
+- Global: `22-parallel-agents.mdc` when orchestrating parallel agents or best-of-N
+- Repo: `worktrees-repo.mdc` when creating worktrees or acting as parent/child in this stack
+- Parent merge/smoke: `/parallel-parent` or [handoff-parallel-parent.md](../docs/handoff-parallel-parent.md)
 
 ## Ignore unless asked
 

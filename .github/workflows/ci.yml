@@ -73,6 +73,16 @@ jobs:
       - name: Kafka payload contracts
         run: chmod +x scripts/check-kafka-contracts.sh && ./scripts/check-kafka-contracts.sh
 
+      - name: Agent worktree script hygiene
+        run: |
+          chmod +x scripts/agent-worktree.sh scripts/agent-worktree-best-of-n.sh \
+            scripts/check-agent-worktrees.sh scripts/check-worktree-scope.sh \
+            scripts/verify-worktree-merge.sh
+          bash -n scripts/agent-worktree.sh scripts/agent-worktree-best-of-n.sh \
+            scripts/check-agent-worktrees.sh scripts/check-worktree-scope.sh \
+            scripts/verify-worktree-merge.sh
+          ./scripts/check-agent-worktrees.sh
+
       - name: Live evals (mechanical)
         run: ./scripts/run-live-evals.sh
 

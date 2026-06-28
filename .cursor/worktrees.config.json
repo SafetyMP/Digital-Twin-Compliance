@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "worktrees_dir": ".worktrees",
+  "branch_prefix": "agent",
+  "max_best_of_n": 8,
+  "compose_file": "docker-compose.dev.yml",
+  "integration_scripts": [
+    "scripts/smoke-test.sh",
+    "scripts/smoke-test-phase2.sh",
+    "scripts/smoke-test-phase3.sh",
+    "scripts/seed.sh",
+    "scripts/deploy-stack.sh",
+    "scripts/register-debezium-connector.sh",
+    "scripts/register-schemas.sh",
+    "scripts/submit-flink-job.sh",
+    "scripts/wait-outbox-drained.sh",
+    "scripts/verify-state-twin-pipeline.sh",
+    "scripts/demo-phase3.sh",
+    "scripts/verify-worktree-merge.sh"
+  ],
+  "tracks": {
+    "backend": {
+      "allow_prefixes": ["services/", "jobs/"],
+      "deny_globs": ["apps/", "docker-compose", "scripts/smoke", "scripts/deploy"]
+    },
+    "frontend": {
+      "allow_prefixes": ["apps/"],
+      "deny_globs": ["services/", "jobs/", "docker-compose", "scripts/smoke"]
+    },
+    "docs": {
+      "allow_prefixes": ["docs/", "policies/", "evals/", ".cursor/"],
+      "deny_globs": ["services/", "jobs/", "apps/"]
+    },
+    "experiment": {
+      "allow_prefixes": ["*"],
+      "deny_globs": ["docker-compose", "scripts/smoke", "scripts/deploy"],
+      "warn_only": true
+    }
+  },
+  "path_compose_services": {
+    "services/state-service/*": ["state-service"],
+    "services/alert-service/*": ["alert-service"],
+    "services/audit-service/*": ["audit-service"],
+    "services/cedar-service/*": ["cedar-service"],
+    "services/decision-service/*": ["decision-service"],
+    "jobs/compliance-cep/*": ["flink-jobmanager", "flink-taskmanager"],
+    "apps/alert-console/*": ["alert-console"],
+    "apps/audit-explorer/*": ["audit-explorer"],
+    "docker-compose.dev.yml": ["state-service", "alert-service", "audit-service"]
+  },
+  "path_package_tests": {
+    "services/state-service/*": "cd services/state-service && go test ./...",
+    "services/alert-service/*": "cd services/alert-service && go test ./...",
+    "services/audit-service/*": "cd services/audit-service && go test ./...",
+    "services/cedar-service/*": "cd services/cedar-service && go test ./...",
+    "services/decision-service/*": "cd services/decision-service && go test ./...",
+    "jobs/compliance-cep/*": "cd jobs/compliance-cep && mvn -q test"
+  },
+  "path_contract_checks": {
+    "contracts/kafka/*": "scripts/check-kafka-contracts.sh",
+    "schemas/avro/*": "scripts/check-kafka-contracts.sh",
+    "services/*/internal/*": "scripts/check-kafka-contracts.sh",
+    "jobs/compliance-cep/*": "scripts/check-kafka-contracts.sh"
+  }
+}

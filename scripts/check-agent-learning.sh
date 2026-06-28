@@ -90,6 +90,66 @@ if [[ -f "$PASS_FIX" && -f "$FAIL_FIX" ]]; then
   fi
 fi
 
+# Worktree parent scenario wired
+WT_SCENARIO="evals/live-model-phase2/scenarios/07-worktree-parent-merge.md"
+if [[ -f "$WT_SCENARIO" ]]; then
+  ok "worktree parent scenario file present"
+else
+  bad "missing $WT_SCENARIO"
+fi
+
+if python3 -c "
+import json, sys
+m = json.load(open('evals/live-model-phase2/manifest.json'))
+ids = [s['id'] for s in m['scenarios']]
+sys.exit(0 if 'worktree-parent-merge' in ids else 1)
+"; then
+  ok "manifest lists worktree-parent-merge"
+else
+  bad "manifest missing worktree-parent-merge"
+fi
+
+if python3 -c "
+import json, sys
+g = json.load(open('evals/harness/gates.json'))['gates']
+sys.exit(0 if g.get('worktree-parent-merge', {}).get('type') == 'worktree_parent' else 1)
+"; then
+  ok "gates.json has worktree_parent gate"
+else
+  bad "gates.json missing worktree_parent gate"
+fi
+
+WT_PASS_FIX="evals/fixtures/transcripts/scenario-worktree-parent-merge-pass.jsonl"
+WT_FAIL_FIX="evals/fixtures/transcripts/scenario-worktree-parent-merge-fail.jsonl"
+for f in "$WT_PASS_FIX" "$WT_FAIL_FIX"; do
+  if [[ -f "$f" ]]; then ok "fixture $(basename "$f")"; else bad "missing $f"; fi
+done
+
+if [[ -f "$WT_PASS_FIX" && -f "$WT_FAIL_FIX" ]]; then
+  if ./scripts/score-agent-transcript.py \
+    --manifest evals/live-model-phase2/manifest.json \
+    --scenario worktree-parent-merge \
+    --transcript "$WT_PASS_FIX" >/dev/null 2>&1; then
+    ok "worktree parent pass fixture scores pass"
+  else
+    bad "worktree parent pass fixture expected pass"
+  fi
+
+  if ./scripts/score-agent-transcript.py \
+    --manifest evals/live-model-phase2/manifest.json \
+    --scenario worktree-parent-merge \
+    --transcript "$WT_FAIL_FIX" >/dev/null 2>&1; then
+    bad "worktree parent fail fixture expected fail"
+  else
+    ok "worktree parent fail fixture scores fail"
+  fi
+fi
+
+echo
+if [[ -x scripts/check-agent-worktrees.sh ]]; then
+  ./scripts/check-agent-worktrees.sh || bad "check-agent-worktrees.sh failed"
+fi
+
 echo
 if [[ "$fail" -eq 0 ]]; then
   echo "Agent learning hygiene: PASS"
