@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/cedar-policy/cedar-go v1.8.0
 	github.com/google/uuid v1.6.0
-	github.com/segmentio/kafka-go v0.4.47
+	github.com/segmentio/kafka-go v0.4.51
 )
 
 require (
