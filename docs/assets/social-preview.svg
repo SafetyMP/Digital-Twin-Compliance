@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-labelledby="title desc">
+  <title id="title">Digital Twin Compliance Platform</title>
+  <desc id="desc">Event-driven financial digital twin with Flink CEP, Cedar and Zen policies, and immudb audit ledger</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="640" fill="url(#bg)"/>
+  <text x="80" y="120" fill="#f8fafc" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="52" font-weight="700">Digital Twin Compliance Platform</text>
+  <text x="80" y="190" fill="#94a3b8" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="28">CDC · Kafka · Flink CEP · Cedar/Zen · immudb audit</text>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="22" fill="#e2e8f0">
+    <rect x="80" y="260" width="280" height="72" rx="12" fill="#334155"/>
+    <text x="120" y="305">State Service</text>
+    <rect x="400" y="260" width="280" height="72" rx="12" fill="#334155"/>
+    <text x="455" y="305">Flink CEP</text>
+    <rect x="720" y="260" width="280" height="72" rx="12" fill="#334155"/>
+    <text x="770" y="305">Alert Service</text>
+    <rect x="80" y="380" width="280" height="72" rx="12" fill="#475569"/>
+    <text x="120" y="425">Cedar + Zen</text>
+    <rect x="400" y="380" width="280" height="72" rx="12" fill="#475569"/>
+    <text x="455" y="425">immudb Audit</text>
+    <rect x="720" y="380" width="280" height="72" rx="12" fill="#475569"/>
+    <text x="760" y="425">Audit Explorer</text>
+  </g>
+  <text x="80" y="560" fill="#64748b" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="22">github.com/SafetyMP/Digital-Twin-Compliance · Apache-2.0</text>
+</svg>

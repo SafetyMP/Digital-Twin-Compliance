@@ -2,7 +2,7 @@
 
 Use when stopping mid-task or starting a **new** chat to continue work. Prefer this over reading prior `agent-transcripts/`.
 
-**Companion**: [handoff-verification-agent.md](./handoff-verification-agent.md) · [handoff-parallel-agent.md](./handoff-parallel-agent.md)
+**Companion**: [handoff-verification-agent.md](./handoff-verification-agent.md) · [handoff-parallel-agent.md](./handoff-parallel-agent.md) · [handoff-worktree-agent.md](./handoff-worktree-agent.md) · [handoff-parallel-parent.md](./handoff-parallel-parent.md)
 
 ---
 
@@ -10,6 +10,11 @@ Use when stopping mid-task or starting a **new** chat to continue work. Prefer t
 
 ```
 Continue work on Digital Twin (Phase 2). Do NOT read agent-transcripts.
+
+## Workspace
+- Root: <main repo absolute path | worktree absolute path>
+- Branch: <branch name, e.g. agent/backend/my-track>
+- Parent batch: <bon-<prefix> attempt K/N | none>
 
 ## Done
 - <bullet>
@@ -24,8 +29,8 @@ Continue work on Digital Twin (Phase 2). Do NOT read agent-transcripts.
 - <one line each; link AGENTS.md § Repo gotchas if already documented>
 
 ## Verify before claiming done
-- <e.g. cd services/alert-service && go test ./...>
-- <e.g. ./scripts/smoke-test-phase2.sh or SMOKE_PHASE2_ONLY=M001 ...>
+- Worktree/child: package tests only (go test / mvn test / npm test for touched paths)
+- Main root / parent: ./scripts/smoke-test.sh, smoke-test-phase2.sh (integration — parent only)
 
 Context budget: AGENTS.md + relevant service AGENTS.md + phase spec only.
 ```
@@ -66,6 +71,8 @@ Do **not** capture one-off task state here — use the paste template above.
 | From | To | Action |
 |------|-----|--------|
 | Implementation | Verification | New chat → [handoff-verification-agent.md](./handoff-verification-agent.md) |
+| Parallel children | Parent merge/smoke | Parent chat → [handoff-parallel-parent.md](./handoff-parallel-parent.md) or `/parallel-parent` |
+| Multi-layer parallel | Wave parent | [handoff-dependency-waves.md](./handoff-dependency-waves.md) or `/dependency-waves` |
 | Long debug | Fresh attempt | New chat + paste template (outcomes only) |
 | Any session | Eval scoring | New chat; run `./scripts/score-eval-session.sh` only |
 

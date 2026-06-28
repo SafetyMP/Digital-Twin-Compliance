@@ -21,3 +21,6 @@ __pycache__/
 # Java build output
 jobs/compliance-cep/target/
 jobs/compliance-cep/dependency-reduced-pom.xml
+
+# Agent git worktrees (see scripts/agent-worktree.sh)
+.worktrees/

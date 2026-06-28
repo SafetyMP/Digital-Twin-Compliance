@@ -3,7 +3,8 @@
 Use this document when starting Phase 1 implementation in a separate Cursor chat or agent session.
 
 **Created**: 2026-06-13  
-**Planning agent deliverables**: ADR-007, Phase 1 spec, AGENTS.md, this handoff, review checklist.
+**Planning agent deliverables**: ADR-007, Phase 1 spec, AGENTS.md, this handoff, review checklist.  
+**Companion**: [handoff-worktree-agent.md](./handoff-worktree-agent.md) when the track needs an isolated git worktree (branch + directory).
 
 ---
 

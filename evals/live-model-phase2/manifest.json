@@ -63,6 +63,13 @@
       "weight": 20,
       "tags": ["retention", "gotchas", "integration"],
       "mechanical": false
+    },
+    {
+      "id": "worktree-parent-merge",
+      "file": "scenarios/07-worktree-parent-merge.md",
+      "weight": 15,
+      "tags": ["worktree", "parallel", "verification", "parent"],
+      "mechanical": false
     }
   ],
   "mechanical_checks": [

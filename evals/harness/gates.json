@@ -82,6 +82,9 @@
     },
     "debug-int-m001-retention": {
       "type": "contract_retention"
+    },
+    "worktree-parent-merge": {
+      "type": "worktree_parent"
     }
   },
   "advisory_rubrics": {

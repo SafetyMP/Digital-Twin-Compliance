@@ -3,6 +3,14 @@
 
 # Service and contract boundaries
 /services/state-service/ @SafetyMP
+/services/alert-service/ @SafetyMP
+/services/audit-service/ @SafetyMP
+/services/cedar-service/ @SafetyMP
+/services/decision-service/ @SafetyMP
+/jobs/compliance-cep/ @SafetyMP
+/apps/alert-console/ @SafetyMP
+/apps/audit-explorer/ @SafetyMP
+/policies/ @SafetyMP
 /schemas/ @SafetyMP
 /.github/ @SafetyMP
 /docs/adr/ @SafetyMP

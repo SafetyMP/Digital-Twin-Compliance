@@ -8,6 +8,62 @@ updates:
       - dependencies
       - go
 
+  - package-ecosystem: gomod
+    directory: /services/alert-service
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+      - go
+
+  - package-ecosystem: gomod
+    directory: /services/audit-service
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+      - go
+
+  - package-ecosystem: gomod
+    directory: /services/cedar-service
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+      - go
+
+  - package-ecosystem: gomod
+    directory: /services/decision-service
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+      - go
+
+  - package-ecosystem: npm
+    directory: /apps/alert-console
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+      - javascript
+
+  - package-ecosystem: npm
+    directory: /apps/audit-explorer
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+      - javascript
+
+  - package-ecosystem: maven
+    directory: /jobs/compliance-cep
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+      - java
+
   - package-ecosystem: github-actions
     directory: /
     schedule:
@@ -18,6 +74,14 @@ updates:
 
   - package-ecosystem: docker
     directory: /services/state-service
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+      - docker
+
+  - package-ecosystem: docker
+    directory: /services/alert-service
     schedule:
       interval: weekly
     labels:

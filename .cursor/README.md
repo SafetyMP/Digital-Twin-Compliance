@@ -45,12 +45,17 @@ Re-enable when working on those stacks in other projects.
 ## Project rules
 
 - [.cursor/rules/phase2-context.mdc](rules/phase2-context.mdc) — doc boundaries and skill filter
+- [.cursor/rules/worktrees-repo.mdc](rules/worktrees-repo.mdc) — worktree / parallel constraints (load when using worktrees)
 - [AGENTS.md](../AGENTS.md) § Context loading — canonical read list
 
 ## Commands
 
 | Command | Purpose |
 |---------|---------|
+| `/parallel-parent` | Compare, merge, smoke, cleanup after parallel child agents |
+| `/dependency-waves` | Plan and gate ordered waves before spawning child worktrees |
+| `/worktree-agent` | Create/list/remove git worktrees for isolated parallel tracks |
+| `/best-of-n-worktrees` | Create N worktrees for parallel solution attempts + compare |
 | `/verify-phase2` | Phase 2 smoke verification (no transcript archaeology) |
 | `/live-eval` | Phase 1 mechanical + live scenario evals |
 | `/live-eval-phase2` | Phase 2 mechanical + live scenario evals |

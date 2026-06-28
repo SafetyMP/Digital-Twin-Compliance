@@ -1,0 +1,46 @@
+---
+description: Digital Twin worktree and parallel-agent constraints (Compose, smoke, track scopes). Apply when creating worktrees, running best-of-N, or acting as parent/child agent in this repo.
+---
+
+# Digital Twin — worktree rules
+
+Global patterns: `agent-worktrees` skill · `22-parallel-agents.mdc`. Repo scripts: `scripts/agent-worktree.sh`, `scripts/agent-worktree-best-of-n.sh`.
+
+## Do not use worktrees for
+
+- Editing `docker-compose.dev.yml` or shared smoke scripts
+- Integration debugging (Debezium, Flink, Redis, cross-service chains)
+- Anything requiring `./scripts/smoke-test.sh` or `./scripts/smoke-test-phase2.sh` from the child
+
+Parent runs Compose + smoke from **this repo's main root** only.
+
+## Track scopes (non-overlapping)
+
+| Track | May edit | Must not |
+|-------|----------|----------|
+| `backend` | `services/*`, `jobs/*` | `apps/*`, Compose, smoke scripts |
+| `frontend` | `apps/*` | `services/*`, Compose, smoke scripts |
+| `docs` | `docs/`, `policies/`, eval docs | Service code unless explicit |
+| `experiment` | Confirm with parent | Compose without port coordination |
+
+## Parent checklist
+
+Use `/parallel-parent` or [docs/handoff-parallel-parent.md](../docs/handoff-parallel-parent.md). Multi-layer tasks: `/dependency-waves` or [handoff-dependency-waves.md](../docs/handoff-dependency-waves.md).
+
+1. `./scripts/agent-worktree-best-of-n.sh compare --prefix <id>` (if best-of-N)
+2. `./scripts/check-worktree-scope.sh --branch <branch> --strict`
+3. Review diff; merge winner onto integration branch
+4. `./scripts/verify-worktree-merge.sh <branch> --rebuild` then `--rebuild --with-smoke` on main root
+5. `./scripts/agent-worktree.sh remove` or `agent-worktree-best-of-n.sh remove`
+
+## False smoke risk
+
+Running `./scripts/smoke-test*.sh` from a worktree cwd hits the **main Docker stack**, not unmerged code — guard-shell blocks this. Parent must rebuild services on main root before smoke.
+
+## Hygiene
+
+```bash
+./scripts/check-agent-worktrees.sh
+```
+
+Stale batches under `.worktrees/` confuse future agents — remove after merge.

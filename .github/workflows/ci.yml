@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  phase1:
+  ci:
     runs-on: ubuntu-latest
     env:
       COMPOSE_PROJECT_NAME: digitaltwin
@@ -72,6 +72,16 @@ jobs:
 
       - name: Kafka payload contracts
         run: chmod +x scripts/check-kafka-contracts.sh && ./scripts/check-kafka-contracts.sh
+
+      - name: Agent worktree script hygiene
+        run: |
+          chmod +x scripts/agent-worktree.sh scripts/agent-worktree-best-of-n.sh \
+            scripts/check-agent-worktrees.sh scripts/check-worktree-scope.sh \
+            scripts/verify-worktree-merge.sh scripts/check-dependency-waves.sh
+          bash -n scripts/agent-worktree.sh scripts/agent-worktree-best-of-n.sh \
+            scripts/check-agent-worktrees.sh scripts/check-worktree-scope.sh \
+            scripts/verify-worktree-merge.sh scripts/check-dependency-waves.sh
+          ./scripts/check-agent-worktrees.sh
 
       - name: Live evals (mechanical)
         run: ./scripts/run-live-evals.sh

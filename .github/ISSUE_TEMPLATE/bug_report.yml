@@ -7,6 +7,7 @@ body:
     attributes:
       value: |
         Thanks for reporting a bug. Include commands you ran and their output when possible.
+        Support expectations: [SUPPORT.md](https://github.com/SafetyMP/Digital-Twin-Compliance/blob/main/SUPPORT.md)
 
   - type: textarea
     id: description
@@ -14,6 +15,37 @@ body:
       label: What happened?
       description: Clear description of the bug
       placeholder: Smoke test fails at step 3 with state_version unchanged...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - state-service (ingestion / twin)
+        - alert-service / alert-console
+        - compliance-cep (Flink)
+        - cedar-service / decision-service / policies
+        - audit-service / audit-explorer
+        - schemas / Kafka / Debezium
+        - CI / GitHub Actions
+        - GHCR deploy / staging
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: smoke_area
+    attributes:
+      label: Smoke script (if applicable)
+      options:
+        - smoke-test.sh (ingestion)
+        - smoke-test-phase2.sh (monitoring)
+        - smoke-test-phase3.sh (policy / audit)
+        - run-policy-ci.sh
+        - Not smoke-related
+        - Unsure
     validations:
       required: true
 
@@ -52,12 +84,13 @@ body:
         - Local dev (docker-compose.dev.yml)
         - Staging (docker-compose.deploy.yml)
         - GitHub Actions CI
+        - Release tag (GHCR)
         - Other
     validations:
       required: true
 
   - type: input
-    id: commit
+    id: version
     attributes:
-      label: Commit or image tag (optional)
-      placeholder: main, sha-abc1234, v0.1.0
+      label: Branch, commit, or release tag
+      placeholder: main, abc1234, v0.1.0
