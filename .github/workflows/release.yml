@@ -1,35 +1,29 @@
-name: Release
-
-on:
-  push:
-    tags: ["v*.*.*"]
-
-permissions:
-  contents: write
-  packages: read
-
-jobs:
-  release:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v3
-        with:
-          generate_release_notes: true
           body: |
-            ## Container image
+            ## Container images
 
-            State Service image for this release:
+            Published to GHCR for this release (`${{ github.ref_name }}`):
 
             ```text
             ghcr.io/safetymp/digital-twin-compliance/state-service:${{ github.ref_name }}
-            ghcr.io/safetymp/digital-twin-compliance/state-service:latest
+            ghcr.io/safetymp/digital-twin-compliance/alert-service:${{ github.ref_name }}
+            ghcr.io/safetymp/digital-twin-compliance/alert-console:${{ github.ref_name }}
+            ghcr.io/safetymp/digital-twin-compliance/compliance-cep:${{ github.ref_name }}
             ```
 
-            ## Deploy
+            Semver tags also publish `:latest` on the State Service image.
 
-            See [docs/deployment.md](https://github.com/SafetyMP/Digital-Twin-Compliance/blob/main/docs/deployment.md).
+            **Note:** Phase 3 services (`audit-service`, `cedar-service`, `decision-service`, `audit-explorer`) are not yet published to GHCR. Run the full platform with [docker-compose.dev.yml](https://github.com/SafetyMP/Digital-Twin-Compliance/blob/main/docker-compose.dev.yml) locally or see CI on `main`.
+
+            ## Deploy (Phase 1–2 runtime)
+
+            ```bash
+            export STATE_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/state-service:${{ github.ref_name }}
+            export ALERT_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/alert-service:${{ github.ref_name }}
+            export ALERT_CONSOLE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/alert-console:${{ github.ref_name }}
+            export COMPLIANCE_CEP_IMAGE=ghcr.io/safetymp/digital-twin-compliance/compliance-cep:${{ github.ref_name }}
+            ./scripts/deploy-stack.sh pull
+            ```
+
+            Full guide: [docs/deployment.md](https://github.com/SafetyMP/Digital-Twin-Compliance/blob/main/docs/deployment.md).
+
+            See [CHANGELOG.md](https://github.com/SafetyMP/Digital-Twin-Compliance/blob/main/CHANGELOG.md) for release notes.

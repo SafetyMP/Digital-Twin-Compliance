@@ -17,6 +17,21 @@ body:
     validations:
       required: true
 
+  - type: dropdown
+    id: smoke_phase
+    attributes:
+      label: Affected smoke / area
+      options:
+        - Phase 1 (`smoke-test.sh`)
+        - Phase 2 (`smoke-test-phase2.sh`)
+        - Phase 3 (`smoke-test-phase3.sh` / audit chain)
+        - Policy CI (`run-policy-ci.sh`)
+        - CI workflow (GitHub Actions)
+        - GHCR deploy / staging
+        - Other / not smoke-related
+    validations:
+      required: true
+
   - type: textarea
     id: reproduction
     attributes:

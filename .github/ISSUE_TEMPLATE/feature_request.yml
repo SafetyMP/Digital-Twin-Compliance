@@ -8,7 +8,7 @@ body:
       value: |
         Check [docs/roadmap.md](https://github.com/SafetyMP/Digital-Twin-Compliance/blob/main/docs/roadmap.md)
         and [AGENTS.md scope by phase](https://github.com/SafetyMP/Digital-Twin-Compliance/blob/main/AGENTS.md#scope-by-phase)
-        before filing. Phase 2+ items may be deferred intentionally.
+        before filing. Phase 4+ items may be deferred intentionally.
 
   - type: dropdown
     id: phase
@@ -17,7 +17,8 @@ body:
       options:
         - Phase 1 (ingestion / minimal twin)
         - Phase 2 (Flink CEP / monitoring)
-        - Phase 3+ (rules, audit, graph, reporting)
+        - Phase 3 (Cedar/Zen policies, immudb audit, Audit Explorer)
+        - Phase 4+ (graph, simulation, reporting, full auth)
         - Unsure / needs triage
     validations:
       required: true
@@ -34,7 +35,7 @@ body:
     id: proposal
     attributes:
       label: Proposed solution
-      description: High-level approach; ADR link if applicable
+      description: High-level approach; ADR link if applicable. Phase 3 work should reference [phase3-implementation-spec.md](https://github.com/SafetyMP/Digital-Twin-Compliance/blob/main/docs/phase3-implementation-spec.md).
     validations:
       required: true
 

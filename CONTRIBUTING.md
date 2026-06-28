@@ -32,6 +32,13 @@ cd services/state-service && go test ./...
 ./scripts/submit-flink-job.sh
 cd services/alert-service && go test ./...
 ./scripts/smoke-test-phase2.sh
+
+# Phase 3 (policies + audit ledger)
+./scripts/run-policy-ci.sh
+cd services/cedar-service && go test ./...
+cd services/decision-service && go test ./...
+cd services/audit-service && go test ./...
+./scripts/smoke-test-phase3.sh
 ```
 
 Optional mechanical checks:
@@ -50,11 +57,12 @@ docker run --rm -v "$PWD/jobs/compliance-cep:/app" -w /app maven:3.9-eclipse-tem
 ## Pull requests
 
 - Keep PRs focused on a single purpose.
-- Ensure CI passes (Compose, tests, both smoke tests, schema compatibility).
+- Ensure CI passes (Compose, unit tests, policy CI, Phase 1–3 smoke, schema compatibility).
 - Fill in the PR template checklist and test plan.
 - Self-review against:
   - [docs/review/phase1-review-checklist.md](docs/review/phase1-review-checklist.md) for State Service / Phase 1 paths
   - [docs/review/phase2-exit-checklist.md](docs/review/phase2-exit-checklist.md) for Flink, alert-service, alert-console, Grafana, or Phase 2 smoke/CI changes
+  - [docs/review/phase3-exit-checklist.md](docs/review/phase3-exit-checklist.md) for Cedar, Zen, audit-service, audit-explorer, or Phase 3 smoke/CI changes
 
 ### Commit messages
 
@@ -75,7 +83,7 @@ For PRs that touch only Phase 1 components, do **not** add Phase 2+ capabilities
 
 ### Phase 2 (monitoring + alerts)
 
-**In scope** for current work:
+**In scope** for work that extends Phase 2:
 
 - Flink CEP job (`jobs/compliance-cep/`)
 - Redis feature store integration
@@ -84,14 +92,24 @@ For PRs that touch only Phase 1 components, do **not** add Phase 2+ capabilities
 - Grafana dashboards (`infra/grafana/`)
 - Phase 2 smoke test and CI extensions
 
-### Out of scope (Phase 3+)
+### Phase 3 (policies + audit ledger)
+
+**In scope** for current work:
+
+- Cedar Policy Service (`services/cedar-service/`)
+- Decision Service / GoRules Zen (`services/decision-service/`)
+- Audit Service + immudb (`services/audit-service/`)
+- Audit Explorer (`apps/audit-explorer/`)
+- Policy bundles (`policies/cedar/`, `policies/zen/`)
+- `./scripts/run-policy-ci.sh`, `./scripts/smoke-test-phase3.sh`, `./scripts/verify-audit-chain.sh`
+
+### Out of scope (Phase 4+)
 
 Do **not** add unless the PR explicitly targets a later phase:
 
-- Cedar Policy Service / GoRules Zen
-- immudb audit ledger
 - Neo4j / Graph Service
-- Keycloak / full auth middleware
+- Simulation Service (Python stress/contagion)
+- Keycloak / full OIDC auth middleware (mock principal only in Phase 3)
 - Regulatory reporting (XBRL)
 
 See [AGENTS.md](AGENTS.md) and [docs/roadmap.md](docs/roadmap.md).
@@ -109,6 +127,9 @@ Service-specific contracts:
 
 - State Service: [services/state-service/AGENTS.md](services/state-service/AGENTS.md)
 - Alert Service: [services/alert-service/AGENTS.md](services/alert-service/AGENTS.md)
+- Cedar Service: [services/cedar-service/AGENTS.md](services/cedar-service/AGENTS.md)
+- Decision Service: [services/decision-service/AGENTS.md](services/decision-service/AGENTS.md)
+- Audit Service: [services/audit-service/AGENTS.md](services/audit-service/AGENTS.md)
 
 ## Architecture decisions
 
@@ -119,6 +140,7 @@ Significant design changes should be documented as ADRs under [docs/adr/](docs/a
 - Images are published to GHCR on merge to `main` ([docker-publish.yml](.github/workflows/docker-publish.yml)): `state-service`, `alert-service`, `alert-console`, `compliance-cep`.
 - Staging deploy is manual via the **Deploy Staging** workflow; configure the `staging` environment secrets first.
 - See [docs/deployment.md](docs/deployment.md) for host setup, releases, and troubleshooting.
+- Release history: [CHANGELOG.md](CHANGELOG.md).
 
 ## Questions
 

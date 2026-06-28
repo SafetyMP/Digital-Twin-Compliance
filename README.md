@@ -1,6 +1,6 @@
 # Digital Twin Compliance Platform
 
-Event-driven financial digital twin with embedded compliance monitoring. **Phase 1** delivers the ingestion backbone and minimal twin (Debezium CDC, Kafka, Go State Service, transactional outbox, persona REST API). **Phase 2** adds real-time compliance monitoring (Flink CEP, Redis features, Alert Service, WebSocket, alert console, Grafana).
+Event-driven financial digital twin with embedded compliance monitoring. **Phase 1** — ingestion backbone (Debezium CDC, Kafka, State Service, transactional outbox). **Phase 2** — real-time monitoring (Flink CEP, Redis, Alert Service, alert console, Grafana). **Phase 3** — rules and audit (Cedar + GoRules Zen, immudb ledger, Audit Explorer, `evidenceRef` on alerts).
 
 **Author:** [SafetyMP](https://github.com/SafetyMP)  
 **License:** [Apache License 2.0](LICENSE)
@@ -9,6 +9,7 @@ Event-driven financial digital twin with embedded compliance monitoring. **Phase
 [![Schema Compatibility](https://github.com/SafetyMP/Digital-Twin-Compliance/actions/workflows/schema-compat.yml/badge.svg)](https://github.com/SafetyMP/Digital-Twin-Compliance/actions/workflows/schema-compat.yml)
 [![Docker Publish](https://github.com/SafetyMP/Digital-Twin-Compliance/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/SafetyMP/Digital-Twin-Compliance/actions/workflows/docker-publish.yml)
 [![CodeQL](https://github.com/SafetyMP/Digital-Twin-Compliance/actions/workflows/codeql.yml/badge.svg)](https://github.com/SafetyMP/Digital-Twin-Compliance/actions/workflows/codeql.yml)
+[![License](https://img.shields.io/github/license/SafetyMP/Digital-Twin-Compliance)](LICENSE)
 
 ## Status
 
@@ -26,22 +27,26 @@ See [docs/roadmap.md](docs/roadmap.md) for the full plan.
 mock core-banking (PostgreSQL)
         │  CDC (Debezium) — personas + payments
         ▼
-   Kafka (domain.events.*, twin.state.updated)
+   Kafka (domain.events.*, twin.state.updated, compliance.audit.*)
         │
-        ├──────────────────────────────────┐
-        ▼                                  ▼
-  State Service (Go)              Flink CEP (Java)
-   ├── consumer → twin store            ├── Redis (vel/exp/lcr features)
-   ├── outbox → twin.state.updated     └── compliance.alerts
-   └── REST /api/v1/personas                    │
-                                                ▼
-                                        Alert Service (Go)
-                                         ├── PostgreSQL (alerts)
-                                         ├── REST /api/v1/alerts
-                                         └── WebSocket /ws/alerts
-                                                │
-                                                ▼
-                                        Alert Console (Next.js)
+        ├────────────────────────┬─────────────────────────┐
+        ▼                        ▼                         ▼
+  State Service (Go)     Flink CEP (Java)          Audit Service (Go)
+   ├── twin store               ├── Redis features        ├── immudb (hash chain)
+   ├── outbox                   └── compliance.alerts     └── /api/v1/audit/*
+   └── /api/v1/personas                 │                         ▲
+                                        ▼                         │
+                                Alert Service (Go)                │
+                                 ├── PostgreSQL                   │
+                                 └── /api/v1/alerts ── evidenceRef ┘
+                                        │
+                    ┌───────────────────┼───────────────────┐
+                    ▼                   ▼                   ▼
+            Alert Console      Cedar Service        Decision Service
+            (Next.js)          POST /evaluate       POST /evaluate (Zen)
+                    │
+                    ▼
+            Audit Explorer (Next.js) — chain verify + search
 
 Grafana ← Flink / Kafka metrics (Compose)
 ```
@@ -51,7 +56,7 @@ Details: [docs/architecture.md](docs/architecture.md) · [docs/data-flow.md](doc
 ## Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/) and Docker Compose v2
-- [Go 1.22+](https://go.dev/dl/) (for local service tests)
+- [Go 1.25+](https://go.dev/dl/) (matches CI; for local service tests)
 - CLI tools: `curl`, `jq`, `psql` (PostgreSQL client)
 - **Maven not required** — run Flink job unit tests via Docker (see [CONTRIBUTING.md](CONTRIBUTING.md))
 
@@ -92,6 +97,22 @@ After Phase 1 smoke passes, ensure the Flink CEP job is **RUNNING** (Compose `fl
 - Kafka topics for Phase 2 are created by `./scripts/seed.sh` (via `create-kafka-topics.sh`).
 - Phase 2 smoke injects payment bursts and checks INT-M001, INT-M002, and BASEL-M001 alerts end-to-end.
 
+### Phase 3 (policies + audit ledger)
+
+After Phase 2 smoke passes:
+
+```bash
+./scripts/run-policy-ci.sh
+./scripts/smoke-test-phase3.sh
+```
+
+Walkthrough with demo script and port map: [docs/demo-phase3.md](docs/demo-phase3.md).
+
+**Gotchas**
+
+- UIs proxy Go APIs via Next.js `/api/*` routes — do not `fetch` Cedar/Audit/Alert backends from the browser (no CORS).
+- Cedar bind mounts can appear empty until `docker compose restart cedar-service decision-service` (common when the repo path contains spaces).
+
 ### Verify
 
 ```bash
@@ -106,7 +127,14 @@ curl -s http://localhost:8085/api/v1/health
 curl -s "http://localhost:8085/api/v1/alerts?limit=5" | jq
 open http://localhost:3000   # Alert Console
 open http://localhost:8082   # Flink UI
-open http://localhost:3001   # Grafana
+open http://localhost:3030   # Grafana (Compose maps 3030:3000)
+
+# Phase 3
+./scripts/run-policy-ci.sh
+cd services/cedar-service && go test ./...
+curl -s http://localhost:8091/api/v1/health | jq
+curl -s http://localhost:8090/api/v1/audit/verify | jq
+open http://localhost:3002   # Audit Explorer
 ```
 
 ### Local service URLs
@@ -116,8 +144,12 @@ open http://localhost:3001   # Grafana
 | State Service | `http://localhost:8080` |
 | Alert Service | `http://localhost:8085` |
 | Alert Console | `http://localhost:3000` |
+| Audit Explorer | `http://localhost:3002` |
+| Cedar Service | `http://localhost:8091` |
+| Decision Service | `http://localhost:8092` |
+| Audit Service | `http://localhost:8090` |
 | Flink JobManager UI | `http://localhost:8082` |
-| Grafana | `http://localhost:3001` |
+| Grafana | `http://localhost:3030` |
 | Redis | `localhost:6380` |
 | Debezium Connect | `http://localhost:8083` |
 
@@ -155,14 +187,51 @@ Base URL: `http://localhost:8085/api/v1`
 
 Full contract: [docs/phase2-implementation-spec.md](docs/phase2-implementation-spec.md) · [services/alert-service/AGENTS.md](services/alert-service/AGENTS.md)
 
+### Cedar Service (Phase 3)
+
+Base URL: `http://localhost:8091/api/v1`
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/health` | Policy load status (`policiesLoaded`, `ruleCodes`) |
+| `POST` | `/evaluate` | Cedar access/obligation evaluation → `RuleDecision` |
+
+### Decision Service (Phase 3)
+
+Base URL: `http://localhost:8092/api/v1`
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/health` | Zen model load status |
+| `GET` | `/rules` | Loaded regulatory models |
+| `POST` | `/evaluate` | Zen decision evaluation → `RuleDecision` |
+
+### Audit Service (Phase 3)
+
+Base URL: `http://localhost:8090/api/v1`
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/health` | immudb connectivity |
+| `GET` | `/audit/entries` | Search ledger (`ruleCode`, `from`, `to`, `subjectId`) |
+| `GET` | `/audit/entries/{entryId}` | Single tamper-evident entry |
+| `GET` | `/audit/verify` | Hash-chain integrity check |
+
+Full contract: [docs/phase3-implementation-spec.md](docs/phase3-implementation-spec.md) · [docs/demo-phase3.md](docs/demo-phase3.md)
+
 ## Repository layout
 
 | Path | Purpose |
 |------|---------|
 | [services/state-service/](services/state-service/) | Go REST API, Kafka consumer, transactional outbox |
 | [services/alert-service/](services/alert-service/) | Alerts REST + WebSocket + `compliance.alerts` consumer |
+| [services/cedar-service/](services/cedar-service/) | Cedar policy evaluation (Phase 3) |
+| [services/decision-service/](services/decision-service/) | GoRules Zen decision engine (Phase 3) |
+| [services/audit-service/](services/audit-service/) | immudb audit ledger + verify API (Phase 3) |
 | [jobs/compliance-cep/](jobs/compliance-cep/) | Flink CEP job (Java) — INT-M001, INT-M002, BASEL-M001 |
 | [apps/alert-console/](apps/alert-console/) | Next.js live alert UI |
+| [apps/audit-explorer/](apps/audit-explorer/) | Next.js audit chain explorer (Phase 3) |
+| [policies/](policies/) | Cedar (`.cedar`) and Zen (`.zen`) policy bundles |
 | [infra/grafana/](infra/grafana/) | Grafana dashboards and provisioning |
 | [schemas/avro/](schemas/avro/) | Avro event schemas (Schema Registry) |
 | [mocks/core-banking/](mocks/core-banking/) | CDC source database migrations and seed data |
@@ -177,7 +246,9 @@ Full contract: [docs/phase2-implementation-spec.md](docs/phase2-implementation-s
 |----------|-------------|
 | [docs/phase1-implementation-spec.md](docs/phase1-implementation-spec.md) | Executable Phase 1 specification |
 | [docs/phase2-implementation-spec.md](docs/phase2-implementation-spec.md) | Executable Phase 2 specification |
+| [docs/phase3-implementation-spec.md](docs/phase3-implementation-spec.md) | Executable Phase 3 specification |
 | [docs/review/phase2-exit-checklist.md](docs/review/phase2-exit-checklist.md) | Phase 2 mechanical exit evidence |
+| [docs/review/phase3-exit-checklist.md](docs/review/phase3-exit-checklist.md) | Phase 3 mechanical exit evidence |
 | [docs/architecture.md](docs/architecture.md) | C4 diagrams and component map |
 | [docs/domain-model.md](docs/domain-model.md) | Entities, personas, glossary |
 | [docs/data-flow.md](docs/data-flow.md) | Event envelopes, idempotency, topics |
@@ -187,20 +258,22 @@ Full contract: [docs/phase2-implementation-spec.md](docs/phase2-implementation-s
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute |
 | [docs/deployment.md](docs/deployment.md) | GHCR, releases, staging deploy |
 | [docs/github-setup.md](docs/github-setup.md) | Branch protection, environments, first release |
+| [docs/demo-phase3.md](docs/demo-phase3.md) | Phase 3 demo runbook (policies + audit chain) |
+| [CHANGELOG.md](CHANGELOG.md) | Release history and notable changes |
 
 ## DevOps and deployment
 
 | Capability | Details |
 |------------|---------|
-| **CI** | Full stack + Phase 2 smoke on every push and PR |
+| **CI** | Full stack + Phase 1–3 smoke, policy CI, and eval fixtures on every push and PR |
 | **Container registry** | `state-service`, `alert-service`, `alert-console`, `compliance-cep` on GHCR (`ghcr.io/safetymp/digital-twin-compliance/*`) |
 | **Releases** | Tag `v*.*.*` to publish versioned images and a GitHub Release |
 | **Staging deploy** | Manual workflow — SSH deploy to a host running `docker-compose.deploy.yml` |
-| **Dependabot** | Weekly updates for Go, GitHub Actions, and Docker |
+| **Dependabot** | Weekly updates for Go (all services), npm (UIs), Maven (CEP), GitHub Actions, and Docker |
 | **CodeQL** | Go security analysis on push, PR, and weekly schedule |
 | **Issue templates** | Structured bug reports and feature requests |
 
-Quick deploy on a host with Docker:
+Quick deploy on a host with Docker (Phase 1–2 runtime images only — Phase 3 services require [docker-compose.dev.yml](docker-compose.dev.yml) locally or in CI until GHCR publish extends):
 
 ```bash
 export STATE_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/state-service:main
@@ -214,21 +287,33 @@ Full guide: [docs/deployment.md](docs/deployment.md).
 
 ## CI
 
-GitHub Actions on every push and pull request:
+GitHub Actions on every push and pull request ([ci.yml](.github/workflows/ci.yml), job `ci`):
 
-1. Mechanical live evals (`./scripts/run-live-evals.sh`, `./scripts/run-live-evals-phase2.sh`)
-2. Docker Compose stack + seed + schema registration + Debezium connector
-3. `go vet` and `go test ./...` in `services/state-service` and `services/alert-service`
-4. `mvn test` in `jobs/compliance-cep`
-5. `./scripts/smoke-test.sh` and `./scripts/smoke-test-phase2.sh`
-6. Avro BACKWARD compatibility check (separate workflow)
-7. Docker image build and push to GHCR on merge to `main` (separate workflow)
+1. `go vet` / `go test ./...` — `state-service`, `alert-service`, `audit-service`, `cedar-service`, `decision-service`
+2. Cedar CLI + `./scripts/run-policy-ci.sh`
+3. `mvn test` in `jobs/compliance-cep`; `./scripts/check-kafka-contracts.sh`
+4. Agent worktree / dependency-wave script hygiene (`./scripts/check-agent-worktrees.sh`)
+5. Mechanical live evals (`./scripts/run-live-evals.sh`, `./scripts/run-live-evals-phase2.sh`) and `./scripts/run-eval-fixtures.sh`
+6. Docker Compose stack → seed → Phase 3 service bring-up → schema registration → Debezium → outbox drain → twin pipeline verify
+7. `mvn package`, Next.js builds (`alert-console`, `audit-explorer`), Flink job submit
+8. `./scripts/smoke-test.sh`, `./scripts/smoke-test-phase2.sh`, `./scripts/smoke-test-phase3.sh`
+9. `./scripts/check-coverage-gates.sh`
 
-Nightly: extended Phase 2 evals and behavioral eval dry-runs ([eval-nightly.yml](.github/workflows/eval-nightly.yml)).
+Separate workflows:
+
+| Workflow | Trigger | Purpose |
+|----------|---------|---------|
+| [schema-compat.yml](.github/workflows/schema-compat.yml) | Push, PR | Avro BACKWARD compatibility |
+| [policy-gates.yml](.github/workflows/policy-gates.yml) | PR (path-filtered) | Policy CI when `policies/**` or policy services change |
+| [codeql.yml](.github/workflows/codeql.yml) | Push, PR, weekly | Go security analysis (`analyze` check) |
+| [docker-publish.yml](.github/workflows/docker-publish.yml) | Push to `main`, version tags | GHCR image publish |
+| [eval-nightly.yml](.github/workflows/eval-nightly.yml) | Daily schedule, manual | Eval fixtures, harness calibration, extended smoke |
+
+Branch protection and environment setup: [docs/github-setup.md](docs/github-setup.md).
 
 ## Security
 
-Local development stacks (Phase 1 and Phase 2) have **no authentication middleware**. Do not expose default ports to untrusted networks. See [SECURITY.md](SECURITY.md).
+Local development stacks use **mock principals only** (Phase 3) — no production auth middleware. Do not expose default ports to untrusted networks. See [SECURITY.md](SECURITY.md).
 
 ## Contributing
 

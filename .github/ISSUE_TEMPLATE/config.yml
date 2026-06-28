@@ -1,8 +1,17 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Phase 3 demo runbook
+    url: https://github.com/SafetyMP/Digital-Twin-Compliance/blob/main/docs/demo-phase3.md
+    about: Local walkthrough for Cedar/Zen policies and the immudb audit chain
   - name: Deployment guide
     url: https://github.com/SafetyMP/Digital-Twin-Compliance/blob/main/docs/deployment.md
     about: GHCR images, staging deploy, and host setup
+  - name: GitHub repository setup
+    url: https://github.com/SafetyMP/Digital-Twin-Compliance/blob/main/docs/github-setup.md
+    about: Branch protection, environments, social preview, first release
+  - name: Agent contributor contract
+    url: https://github.com/SafetyMP/Digital-Twin-Compliance/blob/main/AGENTS.md
+    about: Commands, scope, smoke order, and definition of done for coding agents
   - name: Security advisory
     url: https://github.com/SafetyMP/Digital-Twin-Compliance/security/advisories/new
     about: Report a vulnerability privately (do not use public issues)

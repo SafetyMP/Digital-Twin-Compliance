@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  phase1:
+  ci:
     runs-on: ubuntu-latest
     env:
       COMPOSE_PROJECT_NAME: digitaltwin

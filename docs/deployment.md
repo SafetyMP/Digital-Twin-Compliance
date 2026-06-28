@@ -2,7 +2,7 @@
 
 Guide for publishing and running the Digital Twin Compliance Platform outside local development.
 
-**Scope:** Docker Compose on a single host (VM or bare metal) for Phase 1 and Phase 2 services. Kubernetes, Flink Kubernetes Operator, and managed Kafka are future phases — see [roadmap.md](./roadmap.md), [ADR-007](./adr/007-phase1-foundation-decisions.md), and [ADR-008](./adr/008-phase2-foundation-decisions.md).
+**Scope:** Docker Compose on a single host (VM or bare metal). **Local dev and CI** run Phase 1–3 (`docker-compose.dev.yml`). **GHCR deploy** today publishes Phase 1–2 runtime images only; Phase 3 UIs/services are dev/CI until added to [docker-compose.deploy.yml](../docker-compose.deploy.yml). Kubernetes, Flink Kubernetes Operator, and managed Kafka are future phases — see [roadmap.md](./roadmap.md), [ADR-007](./adr/007-phase1-foundation-decisions.md), and [ADR-008](./adr/008-phase2-foundation-decisions.md).
 
 ---
 
@@ -10,13 +10,16 @@ Guide for publishing and running the Digital Twin Compliance Platform outside lo
 
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
-| [CI](../.github/workflows/ci.yml) | Push, PR | Full stack tests + smoke test |
+| [CI](../.github/workflows/ci.yml) | Push, PR | Unit tests, policy CI, eval fixtures, Compose stack, Phase 1–3 smoke, coverage gates |
 | [Schema Compatibility](../.github/workflows/schema-compat.yml) | Push, PR | Avro BACKWARD compatibility |
+| [Policy gates](../.github/workflows/policy-gates.yml) | PR (path-filtered) | Cedar/Zen policy CI when `policies/**` or policy services change |
 | [Docker Publish](../.github/workflows/docker-publish.yml) | Push to `main`, version tags, manual | Build and push `state-service`, `alert-service`, `alert-console`, `compliance-cep` to GHCR |
 | [Release](../.github/workflows/release.yml) | Tag `v*.*.*` | GitHub Release with generated notes |
 | [Deploy Staging](../.github/workflows/deploy-staging.yml) | Manual | SSH deploy to staging host |
+| [Eval Nightly](../.github/workflows/eval-nightly.yml) | Daily schedule, manual | Eval fixture regression, harness calibration, extended smoke |
+| [CodeQL](../.github/workflows/codeql.yml) | Push, PR, weekly | Go security analysis |
 
-Dependabot opens weekly PRs for Go modules, GitHub Actions, and Docker base images ([dependabot.yml](../.github/dependabot.yml)).
+- Dependabot opens weekly PRs for Go (all services), npm (UIs), Maven (CEP), GitHub Actions, and Docker base images ([dependabot.yml](../.github/dependabot.yml)).
 
 ---
 
@@ -165,8 +168,9 @@ export STATE_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/state-servic
 
 | Concern | Where it runs |
 |---------|----------------|
-| Unit + integration smoke | GitHub Actions CI on every PR (`smoke-test.sh` + `smoke-test-phase2.sh`) |
-| Image build | Docker Publish on merge to `main` (all four service images) |
+| Unit + integration smoke | GitHub Actions CI on every PR (`smoke-test.sh`, `smoke-test-phase2.sh`, `smoke-test-phase3.sh`) |
+| Policy CI | Full CI always; [policy-gates.yml](../.github/workflows/policy-gates.yml) also on path-filtered PRs |
+| Image build | Docker Publish on merge to `main` (four Phase 1–2 service images) |
 | Staging deploy | Manual Deploy Staging workflow |
 | Production | Not defined — extend with environments + approval gates in a later phase |
 
