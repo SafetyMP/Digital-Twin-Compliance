@@ -19,8 +19,8 @@ CI on every PR runs all three smoke suites plus policy CI ([README § CI](README
 | Area | Status |
 |------|--------|
 | Local dev stack (`docker-compose.dev.yml`) | **Active** — primary development path |
-| GHCR images (4 services) | **Published** on merge to `main` and semver tags |
-| GHCR deploy (`docker-compose.deploy.yml`) | **Phase 1–2 runtime only** — policy/audit services not yet published |
+| GHCR images (8 services) | **Published** on merge to `main` and semver tags |
+| GHCR deploy (`docker-compose.deploy.yml`) | **Phase 1–3 runtime** — policy bundles bind-mounted from repo clone |
 | Production hardening (TLS, OIDC, secrets) | **Not yet** — mock principals and dev credentials only |
 
 See [docs/deployment.md](docs/deployment.md#production-readiness) for the honest production gap list.

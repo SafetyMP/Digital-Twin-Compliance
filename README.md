@@ -34,9 +34,8 @@ Full stack smoke: `./scripts/smoke-test.sh` → `./scripts/smoke-test-phase2.sh`
 |---------|--------|-------|
 | Ingestion & twin API | Stable on `main` | CI + `./scripts/smoke-test.sh` |
 | Flink CEP + alerts | Stable on `main` | INT-M001, INT-M002, BASEL-M001 |
-| Policy + audit ledger | Stable on `main` (dev stack) | [demo runbook](docs/demo-phase3.md) |
-| GHCR deploy (4 images) | Stable | Phase 1–2 runtime only |
-| Policy/audit GHCR deploy | Planned | Use `docker-compose.dev.yml` today |
+| Policy + audit ledger | Stable on `main` | CI + `./scripts/smoke-test-phase3.sh` · [demo runbook](docs/demo-phase3.md) |
+| GHCR deploy (8 images) | Stable | Full Phase 1–3 via `docker-compose.deploy.yml` |
 | Graph, simulation, XBRL reporting | Planned | See [ROADMAP.md](ROADMAP.md) |
 
 Release history: [CHANGELOG.md](CHANGELOG.md) · [GitHub Releases](https://github.com/SafetyMP/Digital-Twin-Compliance/releases)
@@ -295,20 +294,26 @@ Full contract: [docs/phase3-implementation-spec.md](docs/phase3-implementation-s
 | Capability | Details |
 |------------|---------|
 | **CI** | Full stack + Phase 1–3 smoke, policy CI, and eval fixtures on every push and PR |
-| **Container registry** | `state-service`, `alert-service`, `alert-console`, `compliance-cep` on GHCR (`ghcr.io/safetymp/digital-twin-compliance/*`) |
+| **Container registry** | Eight application images on GHCR (`ghcr.io/safetymp/digital-twin-compliance/*`) |
 | **Releases** | Tag `v*.*.*` to publish versioned images and a GitHub Release |
 | **Staging deploy** | Manual workflow — SSH deploy to a host running `docker-compose.deploy.yml` |
 | **Dependabot** | Weekly updates for Go (all services), npm (UIs), Maven (CEP), GitHub Actions, and Docker |
 | **CodeQL** | Go security analysis on push, PR, and weekly schedule |
 | **Issue templates** | Structured bug reports and feature requests |
 
-Quick deploy on a host with Docker (Phase 1–2 runtime images only — Phase 3 services require [docker-compose.dev.yml](docker-compose.dev.yml) locally or in CI until GHCR publish extends):
+Quick deploy on a host with Docker (requires repo clone for policy bind mounts):
 
 ```bash
-export STATE_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/state-service:main
-export ALERT_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/alert-service:main
-export ALERT_CONSOLE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/alert-console:main
-export COMPLIANCE_CEP_IMAGE=ghcr.io/safetymp/digital-twin-compliance/compliance-cep:main
+PREFIX=ghcr.io/safetymp/digital-twin-compliance
+TAG=main
+export STATE_SERVICE_IMAGE=${PREFIX}/state-service:${TAG}
+export ALERT_SERVICE_IMAGE=${PREFIX}/alert-service:${TAG}
+export ALERT_CONSOLE_IMAGE=${PREFIX}/alert-console:${TAG}
+export COMPLIANCE_CEP_IMAGE=${PREFIX}/compliance-cep:${TAG}
+export AUDIT_SERVICE_IMAGE=${PREFIX}/audit-service:${TAG}
+export CEDAR_SERVICE_IMAGE=${PREFIX}/cedar-service:${TAG}
+export DECISION_SERVICE_IMAGE=${PREFIX}/decision-service:${TAG}
+export AUDIT_EXPLORER_IMAGE=${PREFIX}/audit-explorer:${TAG}
 ./scripts/deploy-stack.sh bootstrap
 ```
 

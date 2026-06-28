@@ -2,7 +2,7 @@
 
 All notable changes to this open-source project are documented here.
 
-Release tags (`v*.*.*`) publish Phase 1–2 runtime images to GHCR and create a GitHub Release. See [docs/deployment.md](docs/deployment.md) and [ROADMAP.md](ROADMAP.md) for deploy scope.
+Release tags (`v*.*.*`) publish all application images to GHCR and create a GitHub Release. See [docs/deployment.md](docs/deployment.md) and [ROADMAP.md](ROADMAP.md) for deploy scope.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
@@ -10,6 +10,7 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- GHCR publish and deploy stack for Phase 3 (`audit-service`, `cedar-service`, `decision-service`, `audit-explorer`)
 - Public [ROADMAP.md](ROADMAP.md) and [SUPPORT.md](SUPPORT.md) for evergreen OSS presentation
 - Policy & audit stack: Cedar Service, Decision Service (Zen), Audit Service (immudb), Audit Explorer UI
 - `./scripts/smoke-test-phase3.sh`, `./scripts/run-policy-ci.sh`, `./scripts/verify-audit-chain.sh`
@@ -19,10 +20,11 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - README and CONTRIBUTING lead with product capabilities instead of internal phase delivery language
 - Issue/PR templates use component-based triage
 - CI job `ci` runs full ingestion → monitoring → policy/audit smoke on every PR
+- Restored [release.yml](.github/workflows/release.yml) workflow (accidentally truncated in docs refresh)
 
-### Notes
+### Removed
 
-- Policy/audit services run in `docker-compose.dev.yml` and CI but are **not** yet on GHCR or `docker-compose.deploy.yml`
+- CHANGELOG note that policy/audit services were dev/CI-only for deploy
 
 ## History on `main`
 

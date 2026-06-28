@@ -5,7 +5,7 @@
 | Version / phase | Supported | Notes |
 |-----------------|-----------|-------|
 | `main` (Phase 1–3 dev stack) | Yes | Local development and CI only — not production-hardened |
-| Tagged releases (`v*.*.*`) | Yes | GHCR images for Phase 1–2 runtime services; see [CHANGELOG.md](CHANGELOG.md) |
+| Tagged releases (`v*.*.*`) | Yes | GHCR images for all application services; see [CHANGELOG.md](CHANGELOG.md) |
 | Phase 4+ (graph, simulation, full auth) | Not yet released | — |
 
 Report security issues against the current `main` branch unless you are running a specific release tag.
@@ -34,7 +34,7 @@ This repository targets **local development and CI**, not production deployment 
 - **No production authentication** — Phase 3 uses mock principals only (ADR-009 D20); no Keycloak/OIDC middleware
 - **Default credentials** in Docker Compose (PostgreSQL, Kafka, Redis, immudb)
 - **No TLS** on local service ports
-- **Phase 3 audit/policy services** are exercised in CI and `docker-compose.dev.yml`; GHCR deploy today covers Phase 1–2 images only ([deployment.md](docs/deployment.md))
+- **GHCR deploy** publishes application images; policy bundles are bind-mounted from the repo clone — not production-hardened ([deployment.md](docs/deployment.md))
 
 Do not expose Compose ports to untrusted networks. Do not deploy the dev stack unchanged to production.
 

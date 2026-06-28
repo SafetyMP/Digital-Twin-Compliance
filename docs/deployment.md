@@ -2,7 +2,7 @@
 
 Guide for publishing and running the Digital Twin Compliance Platform outside local development.
 
-**Scope:** Docker Compose on a single host (VM or bare metal). **Local dev and CI** run Phase 1–3 (`docker-compose.dev.yml`). **GHCR deploy** today publishes Phase 1–2 runtime images only; Phase 3 UIs/services are dev/CI until added to [docker-compose.deploy.yml](../docker-compose.deploy.yml). Kubernetes, Flink Kubernetes Operator, and managed Kafka are future phases — see [roadmap.md](./roadmap.md), [ADR-007](./adr/007-phase1-foundation-decisions.md), and [ADR-008](./adr/008-phase2-foundation-decisions.md).
+**Scope:** Docker Compose on a single host (VM or bare metal). **Local dev and CI** run Phase 1–3 (`docker-compose.dev.yml`). **GHCR deploy** publishes all eight application images and runs the full Phase 1–3 stack via [docker-compose.deploy.yml](../docker-compose.deploy.yml). Kubernetes, Flink Kubernetes Operator, and managed Kafka are future phases — see [roadmap.md](./roadmap.md), [ADR-007](./adr/007-phase1-foundation-decisions.md), and [ADR-008](./adr/008-phase2-foundation-decisions.md).
 
 ---
 
@@ -13,7 +13,7 @@ Guide for publishing and running the Digital Twin Compliance Platform outside lo
 | [CI](../.github/workflows/ci.yml) | Push, PR | Unit tests, policy CI, eval fixtures, Compose stack, Phase 1–3 smoke, coverage gates |
 | [Schema Compatibility](../.github/workflows/schema-compat.yml) | Push, PR | Avro BACKWARD compatibility |
 | [Policy gates](../.github/workflows/policy-gates.yml) | PR (path-filtered) | Cedar/Zen policy CI when `policies/**` or policy services change |
-| [Docker Publish](../.github/workflows/docker-publish.yml) | Push to `main`, version tags, manual | Build and push `state-service`, `alert-service`, `alert-console`, `compliance-cep` to GHCR |
+| [Docker Publish](../.github/workflows/docker-publish.yml) | Push to `main`, version tags, manual | Build and push eight application images to GHCR |
 | [Release](../.github/workflows/release.yml) | Tag `v*.*.*` | GitHub Release with generated notes |
 | [Deploy Staging](../.github/workflows/deploy-staging.yml) | Manual | SSH deploy to staging host |
 | [Eval Nightly](../.github/workflows/eval-nightly.yml) | Daily schedule, manual | Eval fixture regression, harness calibration, extended smoke |
@@ -33,6 +33,10 @@ Images are published under `ghcr.io/safetymp/digital-twin-compliance/`:
 | `alert-service` | Phase 2 alerts REST + WebSocket |
 | `alert-console` | Phase 2 Next.js UI |
 | `compliance-cep` | Phase 2 Flink job runtime |
+| `audit-service` | Phase 3 immudb ledger + REST API |
+| `cedar-service` | Phase 3 Cedar policy evaluate |
+| `decision-service` | Phase 3 GoRules Zen evaluate |
+| `audit-explorer` | Phase 3 Audit Explorer UI |
 
 Example pull:
 
@@ -69,23 +73,38 @@ Make the package **public** under GitHub → Packages → Package settings if st
 | [docker-compose.dev.yml](../docker-compose.dev.yml) | Local development; builds services from source |
 | [docker-compose.deploy.yml](../docker-compose.deploy.yml) | Staging/production-like; pulls images from GHCR |
 
-Deploy Compose requires image variables:
+Deploy Compose requires image variables (same tag for all services is typical):
+
+```bash
+TAG=main
+PREFIX=ghcr.io/safetymp/digital-twin-compliance
+export STATE_SERVICE_IMAGE=${PREFIX}/state-service:${TAG}
+export ALERT_SERVICE_IMAGE=${PREFIX}/alert-service:${TAG}
+export ALERT_CONSOLE_IMAGE=${PREFIX}/alert-console:${TAG}
+export COMPLIANCE_CEP_IMAGE=${PREFIX}/compliance-cep:${TAG}
+export AUDIT_SERVICE_IMAGE=${PREFIX}/audit-service:${TAG}
+export CEDAR_SERVICE_IMAGE=${PREFIX}/cedar-service:${TAG}
+export DECISION_SERVICE_IMAGE=${PREFIX}/decision-service:${TAG}
+export AUDIT_EXPLORER_IMAGE=${PREFIX}/audit-explorer:${TAG}
+docker compose -f docker-compose.deploy.yml up -d --wait
+```
+
+Policy bundles (`policies/cedar`, `policies/zen`) are bind-mounted from the repo clone on the host — keep the checkout in sync with image tags when policies change.
+
+Or use the helper script:
 
 ```bash
 export STATE_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/state-service:main
 export ALERT_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/alert-service:main
 export ALERT_CONSOLE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/alert-console:main
 export COMPLIANCE_CEP_IMAGE=ghcr.io/safetymp/digital-twin-compliance/compliance-cep:main
-docker compose -f docker-compose.deploy.yml up -d --wait
-```
-
-Or use the helper script:
-
-```bash
-export STATE_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/state-service:main
+export AUDIT_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/audit-service:main
+export CEDAR_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/cedar-service:main
+export DECISION_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/decision-service:main
+export AUDIT_EXPLORER_IMAGE=ghcr.io/safetymp/digital-twin-compliance/audit-explorer:main
 ./scripts/deploy-stack.sh bootstrap   # first-time: up + seed + schemas + debezium
-./scripts/deploy-stack.sh pull        # rolling update of deployed images
-./scripts/deploy-stack.sh smoke       # run Phase 1 + Phase 2 smoke tests against running stack
+./scripts/deploy-stack.sh pull        # rolling update of all deployed images
+./scripts/deploy-stack.sh smoke       # Phase 1 + 2 + 3 smoke tests against running stack
 ```
 
 ---
@@ -107,6 +126,13 @@ cd Digital-Twin-Compliance
 cp .env.example .env
 
 export STATE_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/state-service:main
+export ALERT_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/alert-service:main
+export ALERT_CONSOLE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/alert-console:main
+export COMPLIANCE_CEP_IMAGE=ghcr.io/safetymp/digital-twin-compliance/compliance-cep:main
+export AUDIT_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/audit-service:main
+export CEDAR_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/cedar-service:main
+export DECISION_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/decision-service:main
+export AUDIT_EXPLORER_IMAGE=ghcr.io/safetymp/digital-twin-compliance/audit-explorer:main
 ./scripts/deploy-stack.sh bootstrap
 ./scripts/deploy-stack.sh smoke
 ```
@@ -117,6 +143,13 @@ After a new image is published to GHCR:
 
 ```bash
 export STATE_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/state-service:main
+export ALERT_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/alert-service:main
+export ALERT_CONSOLE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/alert-console:main
+export COMPLIANCE_CEP_IMAGE=ghcr.io/safetymp/digital-twin-compliance/compliance-cep:main
+export AUDIT_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/audit-service:main
+export CEDAR_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/cedar-service:main
+export DECISION_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/decision-service:main
+export AUDIT_EXPLORER_IMAGE=ghcr.io/safetymp/digital-twin-compliance/audit-explorer:main
 ./scripts/deploy-stack.sh pull
 ```
 
@@ -136,7 +169,7 @@ Configure a GitHub **Environment** named `staging` (Settings → Environments) w
 
 Run **Deploy Staging** from Actions → workflow dispatch:
 
-- **pull** — fetch latest repo, pull new image, restart `state-service`
+- **pull** — fetch latest repo, pull all GHCR images, restart stack
 - **bootstrap** — full stack up + seed + schema/connector registration (use on first deploy or after infra reset)
 
 ---
@@ -158,7 +191,16 @@ This triggers:
 Deploy a release:
 
 ```bash
-export STATE_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/state-service:v0.1.0
+TAG=v0.1.0
+PREFIX=ghcr.io/safetymp/digital-twin-compliance
+export STATE_SERVICE_IMAGE=${PREFIX}/state-service:${TAG}
+export ALERT_SERVICE_IMAGE=${PREFIX}/alert-service:${TAG}
+export ALERT_CONSOLE_IMAGE=${PREFIX}/alert-console:${TAG}
+export COMPLIANCE_CEP_IMAGE=${PREFIX}/compliance-cep:${TAG}
+export AUDIT_SERVICE_IMAGE=${PREFIX}/audit-service:${TAG}
+export CEDAR_SERVICE_IMAGE=${PREFIX}/cedar-service:${TAG}
+export DECISION_SERVICE_IMAGE=${PREFIX}/decision-service:${TAG}
+export AUDIT_EXPLORER_IMAGE=${PREFIX}/audit-explorer:${TAG}
 ./scripts/deploy-stack.sh pull
 ```
 
@@ -173,7 +215,7 @@ This project is an **open-source reference implementation**. The default stacks 
 | Authentication | Mock principals only | OIDC / Keycloak ([ROADMAP.md](../ROADMAP.md)) |
 | TLS | Plain HTTP on Compose ports | Reverse proxy or ingress in deploy stack |
 | Secrets | `.env` / Compose defaults | GitHub Environments, vault, or cloud secret manager |
-| Policy/audit deploy | Dev Compose + CI only | Extend GHCR + `docker-compose.deploy.yml` |
+| Policy bundles on deploy | Bind-mounted from repo clone (`policies/cedar`, `policies/zen`) | Bake into images or ConfigMaps in K8s |
 | HA / scaling | Single-host Compose | K8s / managed services ([docs/roadmap.md](./roadmap.md)) |
 
 Before exposing any environment to untrusted networks, read [SECURITY.md](../SECURITY.md) and [SUPPORT.md](../SUPPORT.md).
@@ -184,7 +226,7 @@ Before exposing any environment to untrusted networks, read [SECURITY.md](../SEC
 |---------|----------------|
 | Unit + integration smoke | GitHub Actions CI on every PR (`smoke-test.sh`, `smoke-test-phase2.sh`, `smoke-test-phase3.sh`) |
 | Policy CI | Full CI always; [policy-gates.yml](../.github/workflows/policy-gates.yml) also on path-filtered PRs |
-| Image build | Docker Publish on merge to `main` (four Phase 1–2 service images) |
+| Image build | Docker Publish on merge to `main` (eight application images) |
 | Staging deploy | Manual Deploy Staging workflow |
 | Production | Not defined — extend with environments + approval gates in a later phase |
 
@@ -193,7 +235,7 @@ Before exposing any environment to untrusted networks, read [SECURITY.md](../SEC
 ## Security notes
 
 - Deploy stacks use **default dev credentials** in Compose — not production-safe.
-- Do not expose ports 5433–5435, 6380, 9092, 8080–8085, 3000–3001 to the public internet without TLS, auth, and secret rotation.
+- Do not expose ports 5433–5436, 3322, 6380, 9092, 8080–8092, 3000–3002 to the public internet without TLS, auth, and secret rotation.
 - Store real credentials in GitHub Environment secrets or a secrets manager; never commit `.env`.
 - Review [SECURITY.md](../SECURITY.md) before exposing any environment.
 
@@ -210,7 +252,7 @@ Before exposing any environment to untrusted networks, read [SECURITY.md](../SEC
 
 Cross-links (`NEXT_PUBLIC_AUDIT_EXPLORER_URL`) are navigation `href` only. Live alert feed uses **polling** (not browser WebSocket to `:8085`).
 
-Phase 3 deploy images (`audit-explorer`, `audit-service`, …) are not yet in `docker-compose.deploy.yml` — use `docker-compose.dev.yml` for full Phase 3 demos.
+Flink CEP on deploy calls Decision Service when `CEP_DECISION_SERVICE_URL` is set (default in `docker-compose.deploy.yml`).
 
 ---
 
@@ -222,10 +264,12 @@ Phase 3 deploy images (`audit-explorer`, `audit-service`, …) are not yet in `d
 | Image pull 401/403 | `docker login ghcr.io` or make GHCR package public |
 | Personas not syncing | Re-run `./scripts/register-debezium-connector.sh` and restart `state-service` |
 | Smoke test timeout | Wait for initial CDC snapshot; check Debezium connector status at `:8083/connectors` |
-| Phase 2 smoke fails on Flink | Confirm job RUNNING at `:8082`; re-run `./scripts/submit-flink-job.sh` |
+| Phase 2 smoke fails on Flink | Confirm job RUNNING at `:8082`; check `flink-job-submitter` logs (deploy) or re-run `./scripts/submit-flink-job.sh` (dev) |
 | No alerts on `compliance.alerts` | Check Flink logs; verify Redis at `localhost:6380`; confirm payment seed / burst simulator |
-| Alert Console empty but API has data | Rebuild `alert-console` image; ensure `ALERT_SERVICE_URL=http://alert-service:8085` in Compose (not `NEXT_PUBLIC_*` to `:8085`). Browser uses same-origin `/api/alerts` — direct `fetch` to `:8085` fails without CORS. |
-| WebSocket ack not received (smoke script) | Set `ALERT_SERVICE_WS_URL=ws://localhost:8085/ws/alerts`; verify `alert-service` health at `:8085`. UI uses 5s polling, not browser WebSocket. |
-| `ALERT_*` or `COMPLIANCE_CEP_*` image unset | Export all four image variables before `docker compose -f docker-compose.deploy.yml` |
+| Alert Console empty but API has data | Rebuild `alert-console` image; ensure `ALERT_SERVICE_URL=http://alert-service:8085` in Compose (not `NEXT_PUBLIC_*` to `:8085`) |
+| WebSocket ack not received (smoke script) | Set `ALERT_SERVICE_WS_URL=ws://localhost:8085/ws/alerts`; verify `alert-service` health at `:8085` |
+| Phase 3 smoke fails on audit chain | Verify `audit-service` at `:8090`; check `compliance.audit.pending` consumer; run `./scripts/verify-audit-chain.sh` |
+| Cedar/Zen policies empty in container | `git pull` policies on host; restart `cedar-service` and `decision-service` (bind mount) |
+| `*_IMAGE` unset | Export all eight image variables before `docker compose -f docker-compose.deploy.yml` |
 
 For local development issues, see [README.md](../README.md#quick-start).

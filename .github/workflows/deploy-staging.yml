@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       image_tag:
-        description: "State Service image tag (main, sha-abc1234, v1.0.0)"
+        description: "Image tag for all GHCR services (main, sha-abc1234, v1.0.0)"
         required: true
         default: main
         type: string
@@ -41,7 +41,16 @@ jobs:
             git fetch origin main
             git checkout main
             git pull origin main
-            export STATE_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/state-service:${{ inputs.image_tag }}
+            TAG="${{ inputs.image_tag }}"
+            PREFIX=ghcr.io/safetymp/digital-twin-compliance
+            export STATE_SERVICE_IMAGE=${PREFIX}/state-service:${TAG}
+            export ALERT_SERVICE_IMAGE=${PREFIX}/alert-service:${TAG}
+            export ALERT_CONSOLE_IMAGE=${PREFIX}/alert-console:${TAG}
+            export COMPLIANCE_CEP_IMAGE=${PREFIX}/compliance-cep:${TAG}
+            export AUDIT_SERVICE_IMAGE=${PREFIX}/audit-service:${TAG}
+            export CEDAR_SERVICE_IMAGE=${PREFIX}/cedar-service:${TAG}
+            export DECISION_SERVICE_IMAGE=${PREFIX}/decision-service:${TAG}
+            export AUDIT_EXPLORER_IMAGE=${PREFIX}/audit-explorer:${TAG}
             chmod +x scripts/deploy-stack.sh
             ./scripts/deploy-stack.sh ${{ inputs.action }}
 
@@ -50,3 +59,4 @@ jobs:
           echo "### Staging deployment" >> "$GITHUB_STEP_SUMMARY"
           echo "- **Image tag:** \`${{ inputs.image_tag }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- **Action:** \`${{ inputs.action }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Images:** state, alert, alert-console, compliance-cep, audit, cedar, decision, audit-explorer" >> "$GITHUB_STEP_SUMMARY"

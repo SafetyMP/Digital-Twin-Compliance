@@ -128,9 +128,99 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Docker metadata (audit-service)
+        id: meta_audit
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/safetymp/digital-twin-compliance/audit-service
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+
+      - name: Build and push Audit Service
+        uses: docker/build-push-action@v7
+        with:
+          context: ./services/audit-service
+          file: ./services/audit-service/Dockerfile
+          push: true
+          tags: ${{ steps.meta_audit.outputs.tags }}
+          labels: ${{ steps.meta_audit.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Docker metadata (cedar-service)
+        id: meta_cedar
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/safetymp/digital-twin-compliance/cedar-service
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+
+      - name: Build and push Cedar Service
+        uses: docker/build-push-action@v7
+        with:
+          context: ./services/cedar-service
+          file: ./services/cedar-service/Dockerfile
+          push: true
+          tags: ${{ steps.meta_cedar.outputs.tags }}
+          labels: ${{ steps.meta_cedar.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Docker metadata (decision-service)
+        id: meta_decision
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/safetymp/digital-twin-compliance/decision-service
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+
+      - name: Build and push Decision Service
+        uses: docker/build-push-action@v7
+        with:
+          context: ./services/decision-service
+          file: ./services/decision-service/Dockerfile
+          push: true
+          tags: ${{ steps.meta_decision.outputs.tags }}
+          labels: ${{ steps.meta_decision.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Docker metadata (audit-explorer)
+        id: meta_audit_explorer
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/safetymp/digital-twin-compliance/audit-explorer
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+
+      - name: Build and push Audit Explorer
+        uses: docker/build-push-action@v7
+        with:
+          context: ./apps/audit-explorer
+          file: ./apps/audit-explorer/Dockerfile
+          push: true
+          tags: ${{ steps.meta_audit_explorer.outputs.tags }}
+          labels: ${{ steps.meta_audit_explorer.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
       - name: Image summary
         run: |
           echo "### Published images" >> "$GITHUB_STEP_SUMMARY"
+          echo "- state-service, alert-service, alert-console, compliance-cep" >> "$GITHUB_STEP_SUMMARY"
+          echo "- audit-service, cedar-service, decision-service, audit-explorer" >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
           echo "${{ steps.meta.outputs.tags }}" >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"

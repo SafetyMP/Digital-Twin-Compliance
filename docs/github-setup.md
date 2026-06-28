@@ -91,7 +91,7 @@ Optional protection rules: required reviewers before deploy, wait timer.
 
 ### production (future)
 
-Defer until Phase 4+ deploy automation; use approval gates and separate secrets. Phase 3 services run in CI and local Compose; GHCR publish today covers Phase 1–2 runtime images only ([deployment.md](./deployment.md)).
+Defer until Phase 4+ deploy automation; use approval gates and separate secrets. Full Phase 1–3 stack deploy uses GHCR + `docker-compose.deploy.yml` ([deployment.md](./deployment.md)).
 
 ---
 
@@ -99,7 +99,7 @@ Defer until Phase 4+ deploy automation; use approval gates and separate secrets.
 
 After the first **Docker Publish** workflow succeeds:
 
-1. **Packages** → `digital-twin-compliance/state-service`
+1. **Packages** → `digital-twin-compliance/*` (eight application images)
 2. **Package settings → Change visibility** → Public (if staging pulls without auth)
 3. Add a short **description** on the package page linking to [deployment.md](./deployment.md)
 
@@ -135,7 +135,16 @@ Expect:
 Deploy:
 
 ```bash
-export STATE_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/state-service:v0.1.0
+TAG=v0.1.0
+PREFIX=ghcr.io/safetymp/digital-twin-compliance
+export STATE_SERVICE_IMAGE=${PREFIX}/state-service:${TAG}
+export ALERT_SERVICE_IMAGE=${PREFIX}/alert-service:${TAG}
+export ALERT_CONSOLE_IMAGE=${PREFIX}/alert-console:${TAG}
+export COMPLIANCE_CEP_IMAGE=${PREFIX}/compliance-cep:${TAG}
+export AUDIT_SERVICE_IMAGE=${PREFIX}/audit-service:${TAG}
+export CEDAR_SERVICE_IMAGE=${PREFIX}/cedar-service:${TAG}
+export DECISION_SERVICE_IMAGE=${PREFIX}/decision-service:${TAG}
+export AUDIT_EXPLORER_IMAGE=${PREFIX}/audit-explorer:${TAG}
 ./scripts/deploy-stack.sh pull
 ```
 
@@ -150,7 +159,7 @@ export STATE_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/state-servic
 | [policy-gates.yml](../.github/workflows/policy-gates.yml) | Cedar/Zen policy CI on PRs touching `policies/**` or policy services (also runs inside `ci.yml`) |
 | [codeql.yml](../.github/workflows/codeql.yml) | Go security analysis (`analyze` job) |
 | [eval-nightly.yml](../.github/workflows/eval-nightly.yml) | Nightly eval fixtures, harness calibration, extended smoke |
-| [docker-publish.yml](../.github/workflows/docker-publish.yml) | GHCR images (`state-service`, `alert-service`, `alert-console`, `compliance-cep`) |
+| [docker-publish.yml](../.github/workflows/docker-publish.yml) | GHCR images (state, alert, alert-console, compliance-cep, audit, cedar, decision, audit-explorer) |
 | [release.yml](../.github/workflows/release.yml) | Version releases on `v*.*.*` tags |
 | [deploy-staging.yml](../.github/workflows/deploy-staging.yml) | Manual SSH staging deploy |
 | [dependabot.yml](../.github/dependabot.yml) | Weekly Go, Actions, and Docker dependency PRs |

@@ -1,3 +1,25 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: write
+  packages: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          generate_release_notes: true
           body: |
             ## Container images
 
@@ -8,19 +30,26 @@
             ghcr.io/safetymp/digital-twin-compliance/alert-service:${{ github.ref_name }}
             ghcr.io/safetymp/digital-twin-compliance/alert-console:${{ github.ref_name }}
             ghcr.io/safetymp/digital-twin-compliance/compliance-cep:${{ github.ref_name }}
+            ghcr.io/safetymp/digital-twin-compliance/audit-service:${{ github.ref_name }}
+            ghcr.io/safetymp/digital-twin-compliance/cedar-service:${{ github.ref_name }}
+            ghcr.io/safetymp/digital-twin-compliance/decision-service:${{ github.ref_name }}
+            ghcr.io/safetymp/digital-twin-compliance/audit-explorer:${{ github.ref_name }}
             ```
 
-            Semver tags also publish `:latest` on the State Service image.
+            Semver tags also publish `:latest` on application images.
 
-            **Note:** Phase 3 services (`audit-service`, `cedar-service`, `decision-service`, `audit-explorer`) are not yet published to GHCR. Run the full platform with [docker-compose.dev.yml](https://github.com/SafetyMP/Digital-Twin-Compliance/blob/main/docker-compose.dev.yml) locally or see CI on `main`.
-
-            ## Deploy (Phase 1–2 runtime)
+            ## Deploy
 
             ```bash
-            export STATE_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/state-service:${{ github.ref_name }}
-            export ALERT_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/alert-service:${{ github.ref_name }}
-            export ALERT_CONSOLE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/alert-console:${{ github.ref_name }}
-            export COMPLIANCE_CEP_IMAGE=ghcr.io/safetymp/digital-twin-compliance/compliance-cep:${{ github.ref_name }}
+            export IMAGE_TAG=${{ github.ref_name }}
+            export STATE_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/state-service:${IMAGE_TAG}
+            export ALERT_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/alert-service:${IMAGE_TAG}
+            export ALERT_CONSOLE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/alert-console:${IMAGE_TAG}
+            export COMPLIANCE_CEP_IMAGE=ghcr.io/safetymp/digital-twin-compliance/compliance-cep:${IMAGE_TAG}
+            export AUDIT_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/audit-service:${IMAGE_TAG}
+            export CEDAR_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/cedar-service:${IMAGE_TAG}
+            export DECISION_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/decision-service:${IMAGE_TAG}
+            export AUDIT_EXPLORER_IMAGE=ghcr.io/safetymp/digital-twin-compliance/audit-explorer:${IMAGE_TAG}
             ./scripts/deploy-stack.sh pull
             ```
 
