@@ -127,10 +127,16 @@ public class ComplianceCepJob {
             this.config = config;
         }
 
+        private transient DecisionServiceClient decisionClient;
+
         @Override
         public void open(org.apache.flink.configuration.Configuration parameters) {
             redis = new RedisFeatureStore(config.redisHost, config.redisPort, config.tenantId);
-            engine = new PatternEngine(config, redis);
+            if (config.usesDecisionService()) {
+                decisionClient = new DecisionServiceClient(config.decisionServiceUrl);
+                LOG.info("Phase 3b: INT-M001 uses Decision Service (INT-R001) at " + config.decisionServiceUrl);
+            }
+            engine = new PatternEngine(config, redis, decisionClient);
         }
 
         @Override
@@ -168,9 +174,9 @@ public class ComplianceCepJob {
         @Override
         public void open(org.apache.flink.configuration.Configuration parameters) {
             redis = new RedisFeatureStore(config.redisHost, config.redisPort, config.tenantId);
-            if (config.usesZenLcr()) {
+            if (config.usesDecisionService()) {
                 decisionClient = new DecisionServiceClient(config.decisionServiceUrl);
-                LOG.info("Phase 3b: BASEL-M001 uses Decision Service at " + config.decisionServiceUrl);
+                LOG.info("Phase 3b: INT-M002/BASEL-M001 use Decision Service at " + config.decisionServiceUrl);
             }
             engine = new PatternEngine(config, redis, decisionClient);
         }

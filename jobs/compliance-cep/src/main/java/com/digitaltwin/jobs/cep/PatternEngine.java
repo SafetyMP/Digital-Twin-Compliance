@@ -16,8 +16,8 @@ public final class PatternEngine {
     }
 
     public PatternEngine(JobConfig config, RedisFeatureStore redis, DecisionServiceClient decisionClient) {
-        this.velocity = new VelocityChecker(config, redis);
-        this.exposure = new ExposureChecker(config, redis);
+        this.velocity = new VelocityChecker(config, redis, decisionClient);
+        this.exposure = new ExposureChecker(config, redis, decisionClient);
         this.lcr = new LcrChecker(config, redis, decisionClient);
     }
 

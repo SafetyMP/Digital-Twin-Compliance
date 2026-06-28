@@ -42,6 +42,37 @@ class DecisionServiceClientTest {
                 client.evaluateBaselLcr(0.9, "p1", "00000000-0000-0000-0000-000000000001"));
     }
 
+    @Test
+    void evaluateIntVelocityReturnsOutcome() throws Exception {
+        int port = startServer("""
+                {"ruleCode":"INT-R001","outcome":"Flag"}
+                """);
+        DecisionServiceClient client = new DecisionServiceClient("http://127.0.0.1:" + port);
+
+        assertEquals("Flag", client.evaluateIntVelocity(
+                55, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", "00000000-0000-0000-0000-000000000001"));
+    }
+
+    @Test
+    void evaluateIntExposureReturnsOutcome() throws Exception {
+        int port = startServer("""
+                {"ruleCode":"INT-R002","outcome":"Flag"}
+                """);
+        DecisionServiceClient client = new DecisionServiceClient("http://127.0.0.1:" + port);
+
+        assertEquals("Flag", client.evaluateIntExposure(
+                12_500_000,
+                "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+                "cccccccc-cccc-cccc-cccc-cccccccccccc",
+                "00000000-0000-0000-0000-000000000001"));
+    }
+
+    @Test
+    void requiresAlertMatchesZenOutcomes() {
+        assertTrue(DecisionServiceClient.requiresAlert("Flag"));
+        assertFalse(DecisionServiceClient.requiresAlert("Allow"));
+    }
+
     private int startServer(String body) throws IOException {
         return startServer(200, body);
     }

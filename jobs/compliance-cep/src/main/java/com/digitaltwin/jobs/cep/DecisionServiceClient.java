@@ -18,7 +18,6 @@ import java.util.logging.Logger;
 public final class DecisionServiceClient {
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final Logger LOG = Logger.getLogger(DecisionServiceClient.class.getName());
-    private static final String BASEL_RULE = "BASEL-R001";
     private static final Duration TIMEOUT = Duration.ofSeconds(3);
 
     private final String baseUrl;
@@ -31,17 +30,42 @@ public final class DecisionServiceClient {
                 .build();
     }
 
-    /**
-     * @return Zen outcome: Allow, Deny, Flag, or Escalate
-     */
     public String evaluateBaselLcr(double lcr, String personaId, String tenantId) throws IOException, InterruptedException {
         ObjectNode input = MAPPER.createObjectNode();
         input.put("lcr", lcr);
         input.put("personaId", personaId);
         input.put("tenantId", tenantId);
+        return evaluate("BASEL-R001", input);
+    }
 
+    public String evaluateIntVelocity(long velocity, String accountId, String tenantId) throws IOException, InterruptedException {
+        ObjectNode input = MAPPER.createObjectNode();
+        input.put("velocity", velocity);
+        input.put("accountId", accountId);
+        input.put("tenantId", tenantId);
+        return evaluate("INT-R001", input);
+    }
+
+    public String evaluateIntExposure(
+            double exposureEur,
+            String ownerEntityId,
+            String counterpartyId,
+            String tenantId
+    ) throws IOException, InterruptedException {
+        ObjectNode input = MAPPER.createObjectNode();
+        input.put("exposureEur", exposureEur);
+        input.put("ownerEntityId", ownerEntityId);
+        input.put("counterpartyId", counterpartyId);
+        input.put("tenantId", tenantId);
+        return evaluate("INT-R002", input);
+    }
+
+    /**
+     * @return Zen outcome: Allow, Deny, Flag, or Escalate
+     */
+    public String evaluate(String ruleCode, ObjectNode input) throws IOException, InterruptedException {
         ObjectNode body = MAPPER.createObjectNode();
-        body.put("ruleCode", BASEL_RULE);
+        body.put("ruleCode", ruleCode);
         body.set("input", input);
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -62,8 +86,12 @@ public final class DecisionServiceClient {
             throw new IOException("decision service response missing outcome");
         }
         String value = outcome.asText();
-        LOG.fine(() -> "Zen " + BASEL_RULE + " persona=" + personaId + " lcr=" + lcr + " outcome=" + value);
+        LOG.fine(() -> "Zen " + ruleCode + " outcome=" + value + " input=" + input);
         return value;
+    }
+
+    public static boolean requiresAlert(String outcome) {
+        return "Deny".equals(outcome) || "Flag".equals(outcome) || "Escalate".equals(outcome);
     }
 
     private static String trimTrailingSlash(String url) {

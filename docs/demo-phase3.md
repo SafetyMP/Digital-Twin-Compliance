@@ -135,7 +135,7 @@ Or use **Verify chain** in Audit Explorer.
 ## What to say is out of scope
 
 - Keycloak / full OIDC (mock `X-Roles` only)
-- Flink **BASEL-M001** calls Decision Service on the hot path (Phase 3b); INT-M001/M002 still inline
+- Flink **INT-M001**, **INT-M002**, and **BASEL-M001** call Decision Service on the hot path when `CEP_DECISION_SERVICE_URL` is set (Phase 3b); inline thresholds on HTTP failure
 - Neo4j, simulation, XBRL (Phase 4+)
 - S3 Object Lock artifacts (filesystem stub in dev)
 

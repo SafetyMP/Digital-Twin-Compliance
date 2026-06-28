@@ -285,8 +285,7 @@ Do **not** add unless the task explicitly targets a later phase:
 - Simulation Service (Python stress/contagion)
 - Regulatory reporting (XBRL/SDMX)
 - Keycloak / full OIDC auth middleware (mock principal only in Phase 3 — ADR-009 D20)
-- **Phase 3b BASEL-M001 → Zen**: when `CEP_DECISION_SERVICE_URL` is set, Flink calls Decision Service `BASEL-R001` for LCR alerts; inline `lcrMinimum` is fallback on HTTP failure. Rebuild CEP jar + resubmit Flink job after Java changes.
-- Flink → Zen hot-path migration (Phase 3b stretch; **BASEL-M001 done**; INT-M001/M002 still inline)
+- **Phase 3b Decision Service hot path**: when `CEP_DECISION_SERVICE_URL` is set, Flink calls Decision Service for **INT-M001** (`INT-R001`), **INT-M002** (`INT-R002`), and **BASEL-M001** (`BASEL-R001`); inline thresholds are fallback on HTTP failure. Rebuild CEP jar + resubmit Flink job after Java changes.
 
 Phase/deferral rationale: [docs/roadmap.md](docs/roadmap.md).
 

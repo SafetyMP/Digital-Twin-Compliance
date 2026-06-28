@@ -19,7 +19,7 @@ public final class JobConfig implements Serializable {
     public final String twinOffset;
     public final String paymentsGroupId;
     public final String twinGroupId;
-    /** Phase 3b: when set, BASEL-M001 uses Decision Service (BASEL-R001) instead of inline LCR threshold. */
+    /** Phase 3b: when set, CEP patterns call Decision Service (INT-R001/R002, BASEL-R001) with inline fallback. */
     public final String decisionServiceUrl;
 
     public JobConfig(Map<String, String> params) {
@@ -38,8 +38,13 @@ public final class JobConfig implements Serializable {
         this.decisionServiceUrl = params.getOrDefault("decisionServiceUrl", "").trim();
     }
 
-    public boolean usesZenLcr() {
+    public boolean usesDecisionService() {
         return !decisionServiceUrl.isEmpty();
+    }
+
+    /** @deprecated use {@link #usesDecisionService()} */
+    public boolean usesZenLcr() {
+        return usesDecisionService();
     }
 
     public OffsetsInitializer paymentsOffsets() {

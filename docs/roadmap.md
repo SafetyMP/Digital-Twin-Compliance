@@ -146,7 +146,7 @@ gantt
 
 **Duration**: 4 weeks  
 **Dependencies**: Phase 2 complete  
-**Status**: Complete (mechanical) — merged to `main` via PR #19 (2026-06-28); CI green on `main` ([run](https://github.com/SafetyMP/Digital-Twin-Compliance/actions/runs/28335248362)). Soak/p99 pending. Phase 3b: BASEL-M001 → Decision Service landed; INT-M001/M002 still inline.
+**Status**: Complete (mechanical) — merged to `main` via PR #19 (2026-06-28); CI green on `main` ([run](https://github.com/SafetyMP/Digital-Twin-Compliance/actions/runs/28335248362)). Soak/p99 pending. Phase 3b: Flink CEP → Decision Service for INT-M001, INT-M002, and BASEL-M001 when `CEP_DECISION_SERVICE_URL` is set.
 
 **Handoff**: [phase3-implementation-spec.md](./phase3-implementation-spec.md) · [handoff-phase3-agent.md](./handoff-phase3-agent.md) · [ADR-009](./adr/009-phase3-foundation-decisions.md) · [review/phase3-exit-checklist.md](./review/phase3-exit-checklist.md)
 

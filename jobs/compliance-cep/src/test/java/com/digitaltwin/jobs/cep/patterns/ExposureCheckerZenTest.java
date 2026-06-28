@@ -3,7 +3,6 @@ package com.digitaltwin.jobs.cep.patterns;
 import com.digitaltwin.jobs.cep.AlertRecord;
 import com.digitaltwin.jobs.cep.DecisionServiceClient;
 import com.digitaltwin.jobs.cep.JobConfig;
-import com.digitaltwin.jobs.cep.JsonParsers;
 import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -17,7 +16,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class LcrCheckerZenTest {
+class ExposureCheckerZenTest {
     private HttpServer server;
 
     @AfterEach
@@ -28,76 +27,57 @@ class LcrCheckerZenTest {
     }
 
     @Test
-    void zenDenyProducesBaselAlertWithZenMetadata() throws Exception {
+    void zenFlagProducesIntM002AlertWithMetadata() throws Exception {
         int port = startDecisionServer("""
-                {"ruleCode":"BASEL-R001","outcome":"Deny"}
+                {"ruleCode":"INT-R002","outcome":"Flag"}
                 """);
         JobConfig config = new JobConfig(Map.of(
-                "lcrMinimum", "1.0",
+                "exposureLimit", "10000000",
                 "decisionServiceUrl", "http://127.0.0.1:" + port
         ));
-        LcrChecker checker = new LcrChecker(config, null, new DecisionServiceClient(config.decisionServiceUrl));
-        JsonParsers.TwinStateEvent twin = institutionTwin(0.9);
+        ExposureChecker checker = new ExposureChecker(
+                config, null, new DecisionServiceClient(config.decisionServiceUrl));
 
-        Optional<AlertRecord> alert = checker.check(twin);
+        Optional<AlertRecord> alert = checker.evaluateExposure(
+                "11111111-1111-1111-1111-111111111102",
+                "22222222-2222-2222-2222-222222222202",
+                12_500_000);
 
         assertTrue(alert.isPresent());
-        assertEquals("BASEL-M001", alert.get().ruleCode());
-        assertEquals("Deny", alert.get().details().get("zenOutcome"));
-        assertEquals("BASEL-R001", alert.get().details().get("zenRuleCode"));
+        assertEquals("INT-M002", alert.get().ruleCode());
+        assertEquals("Flag", alert.get().details().get("zenOutcome"));
+        assertEquals("INT-R002", alert.get().details().get("zenRuleCode"));
     }
 
     @Test
     void zenAllowProducesNoAlert() throws Exception {
         int port = startDecisionServer("""
-                {"ruleCode":"BASEL-R001","outcome":"Allow"}
+                {"ruleCode":"INT-R002","outcome":"Allow"}
                 """);
         JobConfig config = new JobConfig(Map.of(
-                "lcrMinimum", "1.0",
+                "exposureLimit", "10000000",
                 "decisionServiceUrl", "http://127.0.0.1:" + port
         ));
-        LcrChecker checker = new LcrChecker(config, null, new DecisionServiceClient(config.decisionServiceUrl));
+        ExposureChecker checker = new ExposureChecker(
+                config, null, new DecisionServiceClient(config.decisionServiceUrl));
 
-        assertTrue(checker.check(institutionTwin(1.05)).isEmpty());
+        assertTrue(checker.evaluateExposure("owner", "cp", 8_500_000).isEmpty());
     }
 
     @Test
     void zenFailureFallsBackToInlineThreshold() throws Exception {
         int port = startDecisionServer(503, "unavailable");
         JobConfig config = new JobConfig(Map.of(
-                "lcrMinimum", "1.0",
+                "exposureLimit", "10000000",
                 "decisionServiceUrl", "http://127.0.0.1:" + port
         ));
-        LcrChecker checker = new LcrChecker(config, null, new DecisionServiceClient(config.decisionServiceUrl));
+        ExposureChecker checker = new ExposureChecker(
+                config, null, new DecisionServiceClient(config.decisionServiceUrl));
 
-        Optional<AlertRecord> alert = checker.check(institutionTwin(0.9));
+        Optional<AlertRecord> alert = checker.evaluateExposure("owner", "cp", 11_000_000);
 
         assertTrue(alert.isPresent());
         assertEquals("true", alert.get().details().get("zenFallback"));
-    }
-
-    @Test
-    void requiresAlertMatchesDecisionServiceOutcomes() {
-        assertTrue(DecisionServiceClient.requiresAlert("Deny"));
-        assertTrue(DecisionServiceClient.requiresAlert("Flag"));
-        assertTrue(DecisionServiceClient.requiresAlert("Escalate"));
-        assertFalse(DecisionServiceClient.requiresAlert("Allow"));
-    }
-
-    private static JsonParsers.TwinStateEvent institutionTwin(double lcr) throws Exception {
-        String raw = """
-                {
-                  "personaId": "44444444-4444-4444-4444-444444444401",
-                  "personaType": "Institution",
-                  "stateVersion": 2,
-                  "currentState": {
-                    "liquidity": {
-                      "lcr": %s
-                    }
-                  }
-                }
-                """.formatted(lcr);
-        return JsonParsers.parseTwinState(raw).orElseThrow();
     }
 
     private int startDecisionServer(String body) throws IOException {

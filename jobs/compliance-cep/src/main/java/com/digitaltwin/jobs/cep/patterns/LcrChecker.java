@@ -58,7 +58,7 @@ public final class LcrChecker {
     private Optional<AlertRecord> checkWithZen(String personaId, double lcr) {
         try {
             String outcome = decisionClient.evaluateBaselLcr(lcr, personaId, config.tenantId);
-            if (!requiresAlert(outcome)) {
+            if (!DecisionServiceClient.requiresAlert(outcome)) {
                 return Optional.empty();
             }
             return Optional.of(buildAlert(
@@ -98,9 +98,5 @@ public final class LcrChecker {
 
     public boolean shouldAlert(double lcr, double minimum) {
         return lcr < minimum;
-    }
-
-    static boolean requiresAlert(String outcome) {
-        return "Deny".equals(outcome) || "Flag".equals(outcome) || "Escalate".equals(outcome);
     }
 }
