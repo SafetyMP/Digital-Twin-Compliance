@@ -1,0 +1,48 @@
+# Roadmap
+
+Public roadmap for the **Digital Twin Compliance Platform** — an open-source reference stack for event-driven financial twins with embedded compliance monitoring.
+
+Detailed planning, risks, and phase specs: [docs/roadmap.md](docs/roadmap.md).
+
+## On `main` today
+
+| Capability | What you get | Try it |
+|------------|--------------|--------|
+| **Ingestion & twin** | Debezium CDC → Kafka → State Service, transactional outbox, persona REST API | `./scripts/smoke-test.sh` |
+| **Real-time monitoring** | Flink CEP, Redis features, Alert Service, alert console, Grafana | `./scripts/smoke-test-phase2.sh` |
+| **Policy & audit** | Cedar + GoRules Zen, immudb ledger, Audit Explorer, `evidenceRef` on alerts | `./scripts/smoke-test-phase3.sh` · [demo runbook](docs/demo-phase3.md) |
+
+CI on every PR runs all three smoke suites plus policy CI ([README § CI](README.md#ci)).
+
+## Stability
+
+| Area | Status |
+|------|--------|
+| Local dev stack (`docker-compose.dev.yml`) | **Active** — primary development path |
+| GHCR images (4 services) | **Published** on merge to `main` and semver tags |
+| GHCR deploy (`docker-compose.deploy.yml`) | **Phase 1–2 runtime only** — policy/audit services not yet published |
+| Production hardening (TLS, OIDC, secrets) | **Not yet** — mock principals and dev credentials only |
+
+See [docs/deployment.md](docs/deployment.md#production-readiness) for the honest production gap list.
+
+## Planned (not built yet)
+
+| Theme | Examples | Tracking |
+|-------|----------|----------|
+| **Graph & simulation** | Neo4j exposure graph, stress/contagion simulation | [docs/roadmap.md § Phase 4](docs/roadmap.md#phase-4-graph-model-and-simulation) |
+| **Regulatory reporting** | XBRL / SDMX outputs, report UI | [docs/roadmap.md § Phase 5](docs/roadmap.md#phase-5-regulatory-reporting) |
+| **Hardening** | Keycloak/OIDC, production Compose/K8s paths | [docs/roadmap.md](docs/roadmap.md) |
+
+Features outside this roadmap: open a [feature request](https://github.com/SafetyMP/Digital-Twin-Compliance/issues/new/choose) for discussion before large PRs.
+
+## Releases
+
+- **Continuous integration** on `main`
+- **Semver tags** (`v*.*.*`) publish GHCR images and a GitHub Release — see [CHANGELOG.md](CHANGELOG.md)
+- Maintainers aim to tag releases when a capability milestone is smoke-stable (no fixed calendar yet)
+
+## How to influence priority
+
+1. **+1** or comment on an existing issue
+2. Open a **feature request** with component + use case
+3. Submit a **PR** with tests/smoke updates ([CONTRIBUTING.md](CONTRIBUTING.md))

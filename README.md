@@ -1,9 +1,8 @@
 # Digital Twin Compliance Platform
 
-Event-driven financial digital twin with embedded compliance monitoring. **Phase 1** — ingestion backbone (Debezium CDC, Kafka, State Service, transactional outbox). **Phase 2** — real-time monitoring (Flink CEP, Redis, Alert Service, alert console, Grafana). **Phase 3** — rules and audit (Cedar + GoRules Zen, immudb ledger, Audit Explorer, `evidenceRef` on alerts).
+Open-source reference stack for an **event-driven financial digital twin** with embedded compliance monitoring: CDC ingestion, stream processing, policy evaluation, and a tamper-evident audit ledger.
 
-**Author:** [SafetyMP](https://github.com/SafetyMP)  
-**License:** [Apache License 2.0](LICENSE)
+**Maintainers:** [SafetyMP](https://github.com/SafetyMP) · **License:** [Apache License 2.0](LICENSE)
 
 [![CI](https://github.com/SafetyMP/Digital-Twin-Compliance/actions/workflows/ci.yml/badge.svg)](https://github.com/SafetyMP/Digital-Twin-Compliance/actions/workflows/ci.yml)
 [![Schema Compatibility](https://github.com/SafetyMP/Digital-Twin-Compliance/actions/workflows/schema-compat.yml/badge.svg)](https://github.com/SafetyMP/Digital-Twin-Compliance/actions/workflows/schema-compat.yml)
@@ -11,15 +10,36 @@ Event-driven financial digital twin with embedded compliance monitoring. **Phase
 [![CodeQL](https://github.com/SafetyMP/Digital-Twin-Compliance/actions/workflows/codeql.yml/badge.svg)](https://github.com/SafetyMP/Digital-Twin-Compliance/actions/workflows/codeql.yml)
 [![License](https://img.shields.io/github/license/SafetyMP/Digital-Twin-Compliance)](LICENSE)
 
-## Status
+## Who this is for
 
-| Phase | Scope | Status |
-|-------|--------|--------|
-| **Phase 1** | Kafka, Debezium CDC, State Service, outbox, persona API, schema CI | Complete |
-| **Phase 2** | Flink CEP, Redis, Alert Service, WebSocket, alert console, Grafana | Implemented on `main` — [mechanical smoke green](docs/review/phase2-exit-checklist.md); [behavior eval pillar](AGENTS.md#behavior-evals-phase-2) tracked separately |
-| **Phase 3** | Cedar + Zen, immudb audit ledger, Audit Explorer, `evidenceRef` on alerts | Implemented (3a) — [`smoke-test-phase3.sh`](scripts/smoke-test-phase3.sh) + [spec §13](docs/phase3-implementation-spec.md#13-phase-3-exit-criteria-checklist) |
+- **Platform / data engineers** building CDC → Kafka → twin pipelines
+- **Compliance / regtech engineers** prototyping CEP rules, policy engines, and audit trails
+- **Contributors** who want a runnable, test-gated reference architecture (not slides)
 
-See [docs/roadmap.md](docs/roadmap.md) for the full plan.
+## Capabilities on `main`
+
+| Layer | Components |
+|-------|------------|
+| **Ingestion & twin** | Debezium, Kafka, Go State Service, transactional outbox, persona API |
+| **Monitoring** | Flink CEP, Redis features, Alert Service, WebSocket, alert console, Grafana |
+| **Policy & audit** | Cedar + GoRules Zen, immudb hash chain, Audit Explorer, alert `evidenceRef` |
+
+Full stack smoke: `./scripts/smoke-test.sh` → `./scripts/smoke-test-phase2.sh` → `./scripts/smoke-test-phase3.sh`.
+
+**Roadmap & gaps:** [ROADMAP.md](ROADMAP.md) · **Support expectations:** [SUPPORT.md](SUPPORT.md)
+
+## Features & maturity
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Ingestion & twin API | Stable on `main` | CI + `./scripts/smoke-test.sh` |
+| Flink CEP + alerts | Stable on `main` | INT-M001, INT-M002, BASEL-M001 |
+| Policy + audit ledger | Stable on `main` (dev stack) | [demo runbook](docs/demo-phase3.md) |
+| GHCR deploy (4 images) | Stable | Phase 1–2 runtime only |
+| Policy/audit GHCR deploy | Planned | Use `docker-compose.dev.yml` today |
+| Graph, simulation, XBRL reporting | Planned | See [ROADMAP.md](ROADMAP.md) |
+
+Release history: [CHANGELOG.md](CHANGELOG.md) · [GitHub Releases](https://github.com/SafetyMP/Digital-Twin-Compliance/releases)
 
 ## Architecture
 
@@ -62,7 +82,9 @@ Details: [docs/architecture.md](docs/architecture.md) · [docs/data-flow.md](doc
 
 ## Quick start
 
-### Phase 1 (ingestion + twin)
+Run the full platform locally (~10–40 minutes cold start depending on image pulls):
+
+### 1. Ingestion & twin
 
 ```bash
 git clone https://github.com/SafetyMP/Digital-Twin-Compliance.git
@@ -82,9 +104,9 @@ docker compose -f docker-compose.dev.yml up -d --wait state-service
 ./scripts/smoke-test.sh
 ```
 
-### Phase 2 (monitoring + alerts)
+### 2. Monitoring & alerts
 
-After Phase 1 smoke passes, ensure the Flink CEP job is **RUNNING** (Compose `flink-job-submitter` usually handles this; re-submit if needed):
+After ingestion smoke passes, ensure the Flink CEP job is **RUNNING** (Compose `flink-job-submitter` usually handles this; re-submit if needed):
 
 ```bash
 ./scripts/submit-flink-job.sh
@@ -95,11 +117,11 @@ After Phase 1 smoke passes, ensure the Flink CEP job is **RUNNING** (Compose `fl
 
 - Redis host port is **6380** (Compose maps `6380:6379`); see `REDIS_URL` in `.env.example`.
 - Kafka topics for Phase 2 are created by `./scripts/seed.sh` (via `create-kafka-topics.sh`).
-- Phase 2 smoke injects payment bursts and checks INT-M001, INT-M002, and BASEL-M001 alerts end-to-end.
+- Monitoring smoke injects payment bursts and checks INT-M001, INT-M002, and BASEL-M001 alerts end-to-end.
 
-### Phase 3 (policies + audit ledger)
+### 3. Policy & audit ledger
 
-After Phase 2 smoke passes:
+After monitoring smoke passes:
 
 ```bash
 ./scripts/run-policy-ci.sh
@@ -116,12 +138,12 @@ Walkthrough with demo script and port map: [docs/demo-phase3.md](docs/demo-phase
 ### Verify
 
 ```bash
-# Phase 1
+# Ingestion
 cd services/state-service && go test ./...
 curl -s http://localhost:8080/api/v1/health
 curl -s "http://localhost:8080/api/v1/personas?personaType=Institution&limit=5" | jq
 
-# Phase 2
+# Monitoring
 cd services/alert-service && go test ./...
 curl -s http://localhost:8085/api/v1/health
 curl -s "http://localhost:8085/api/v1/alerts?limit=5" | jq
@@ -129,7 +151,7 @@ open http://localhost:3000   # Alert Console
 open http://localhost:8082   # Flink UI
 open http://localhost:3030   # Grafana (Compose maps 3030:3000)
 
-# Phase 3
+# Policy & audit
 ./scripts/run-policy-ci.sh
 cd services/cedar-service && go test ./...
 curl -s http://localhost:8091/api/v1/health | jq
@@ -161,7 +183,7 @@ docker compose -f docker-compose.dev.yml down -v
 
 ## REST API
 
-### State Service (Phase 1)
+### State Service
 
 Base URL: `http://localhost:8080/api/v1`
 
@@ -173,7 +195,7 @@ Base URL: `http://localhost:8080/api/v1`
 
 Persona types: `Institution`, `Account`, `Instrument`.
 
-### Alert Service (Phase 2)
+### Alert Service
 
 Base URL: `http://localhost:8085/api/v1`
 
@@ -187,7 +209,7 @@ Base URL: `http://localhost:8085/api/v1`
 
 Full contract: [docs/phase2-implementation-spec.md](docs/phase2-implementation-spec.md) · [services/alert-service/AGENTS.md](services/alert-service/AGENTS.md)
 
-### Cedar Service (Phase 3)
+### Cedar Service
 
 Base URL: `http://localhost:8091/api/v1`
 
@@ -196,7 +218,7 @@ Base URL: `http://localhost:8091/api/v1`
 | `GET` | `/health` | Policy load status (`policiesLoaded`, `ruleCodes`) |
 | `POST` | `/evaluate` | Cedar access/obligation evaluation → `RuleDecision` |
 
-### Decision Service (Phase 3)
+### Decision Service
 
 Base URL: `http://localhost:8092/api/v1`
 
@@ -206,7 +228,7 @@ Base URL: `http://localhost:8092/api/v1`
 | `GET` | `/rules` | Loaded regulatory models |
 | `POST` | `/evaluate` | Zen decision evaluation → `RuleDecision` |
 
-### Audit Service (Phase 3)
+### Audit Service
 
 Base URL: `http://localhost:8090/api/v1`
 
@@ -225,12 +247,12 @@ Full contract: [docs/phase3-implementation-spec.md](docs/phase3-implementation-s
 |------|---------|
 | [services/state-service/](services/state-service/) | Go REST API, Kafka consumer, transactional outbox |
 | [services/alert-service/](services/alert-service/) | Alerts REST + WebSocket + `compliance.alerts` consumer |
-| [services/cedar-service/](services/cedar-service/) | Cedar policy evaluation (Phase 3) |
-| [services/decision-service/](services/decision-service/) | GoRules Zen decision engine (Phase 3) |
-| [services/audit-service/](services/audit-service/) | immudb audit ledger + verify API (Phase 3) |
+| [services/cedar-service/](services/cedar-service/) | Cedar policy evaluation |
+| [services/decision-service/](services/decision-service/) | GoRules Zen decision engine |
+| [services/audit-service/](services/audit-service/) | immudb audit ledger + verify API |
 | [jobs/compliance-cep/](jobs/compliance-cep/) | Flink CEP job (Java) — INT-M001, INT-M002, BASEL-M001 |
 | [apps/alert-console/](apps/alert-console/) | Next.js live alert UI |
-| [apps/audit-explorer/](apps/audit-explorer/) | Next.js audit chain explorer (Phase 3) |
+| [apps/audit-explorer/](apps/audit-explorer/) | Next.js audit chain explorer |
 | [policies/](policies/) | Cedar (`.cedar`) and Zen (`.zen`) policy bundles |
 | [infra/grafana/](infra/grafana/) | Grafana dashboards and provisioning |
 | [schemas/avro/](schemas/avro/) | Avro event schemas (Schema Registry) |
@@ -242,24 +264,31 @@ Full contract: [docs/phase3-implementation-spec.md](docs/phase3-implementation-s
 
 ## Documentation
 
+### Using & extending the platform
+
 | Document | Description |
 |----------|-------------|
-| [docs/phase1-implementation-spec.md](docs/phase1-implementation-spec.md) | Executable Phase 1 specification |
-| [docs/phase2-implementation-spec.md](docs/phase2-implementation-spec.md) | Executable Phase 2 specification |
-| [docs/phase3-implementation-spec.md](docs/phase3-implementation-spec.md) | Executable Phase 3 specification |
-| [docs/review/phase2-exit-checklist.md](docs/review/phase2-exit-checklist.md) | Phase 2 mechanical exit evidence |
-| [docs/review/phase3-exit-checklist.md](docs/review/phase3-exit-checklist.md) | Phase 3 mechanical exit evidence |
+| [ROADMAP.md](ROADMAP.md) | Public roadmap, stability, planned work |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute |
+| [SUPPORT.md](SUPPORT.md) | Support channels and expectations |
+| [CHANGELOG.md](CHANGELOG.md) | Release history |
 | [docs/architecture.md](docs/architecture.md) | C4 diagrams and component map |
 | [docs/domain-model.md](docs/domain-model.md) | Entities, personas, glossary |
 | [docs/data-flow.md](docs/data-flow.md) | Event envelopes, idempotency, topics |
-| [docs/roadmap.md](docs/roadmap.md) | Phased delivery plan |
-| [docs/adr/](docs/adr/) | Architecture decision records |
-| [AGENTS.md](AGENTS.md) | Coding-agent contract (commands, scope, definition of done) |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute |
 | [docs/deployment.md](docs/deployment.md) | GHCR, releases, staging deploy |
-| [docs/github-setup.md](docs/github-setup.md) | Branch protection, environments, first release |
-| [docs/demo-phase3.md](docs/demo-phase3.md) | Phase 3 demo runbook (policies + audit chain) |
-| [CHANGELOG.md](CHANGELOG.md) | Release history and notable changes |
+| [docs/demo-phase3.md](docs/demo-phase3.md) | Policy + audit demo runbook |
+| [docs/adr/](docs/adr/) | Architecture decision records |
+
+### Maintainer & implementation references
+
+| Document | Description |
+|----------|-------------|
+| [docs/roadmap.md](docs/roadmap.md) | Detailed phased plan (internal engineering) |
+| [docs/phase1-implementation-spec.md](docs/phase1-implementation-spec.md) | Ingestion specification |
+| [docs/phase2-implementation-spec.md](docs/phase2-implementation-spec.md) | Monitoring specification |
+| [docs/phase3-implementation-spec.md](docs/phase3-implementation-spec.md) | Policy & audit specification |
+| [AGENTS.md](AGENTS.md) | Coding-agent contract (CI scope, smoke order) |
+| [docs/github-setup.md](docs/github-setup.md) | Branch protection, releases, community settings |
 
 ## DevOps and deployment
 
@@ -313,10 +342,17 @@ Branch protection and environment setup: [docs/github-setup.md](docs/github-setu
 
 ## Security
 
-Local development stacks use **mock principals only** (Phase 3) — no production auth middleware. Do not expose default ports to untrusted networks. See [SECURITY.md](SECURITY.md).
+Local stacks use **mock principals only** — no production auth middleware. Default Compose credentials are not production-safe. Do not expose service ports to untrusted networks. See [SECURITY.md](SECURITY.md).
+
+## Community
+
+- **Bugs & features:** [GitHub Issues](https://github.com/SafetyMP/Digital-Twin-Compliance/issues/new/choose)
+- **Security:** [Private advisories](https://github.com/SafetyMP/Digital-Twin-Compliance/security/advisories/new) — see [SECURITY.md](SECURITY.md)
+- **Conduct:** [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+- **Governance:** Maintained by SafetyMP; contributions via PR welcome on `main`
 
 ## Contributing
 
-Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
+Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) and [ROADMAP.md](ROADMAP.md) before opening a pull request.
 
-This project follows the [Code of Conduct](CODE_OF_CONDUCT.md). GitHub setup (branch protection, environments, first release): [docs/github-setup.md](docs/github-setup.md).
+GitHub setup for maintainers: [docs/github-setup.md](docs/github-setup.md).

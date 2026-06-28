@@ -1,17 +1,20 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Public roadmap
+    url: https://github.com/SafetyMP/Digital-Twin-Compliance/blob/main/ROADMAP.md
+    about: What is on main, what is planned, and release expectations
+  - name: Support policy
+    url: https://github.com/SafetyMP/Digital-Twin-Compliance/blob/main/SUPPORT.md
+    about: Channels, supported versions, and response expectations
   - name: Phase 3 demo runbook
     url: https://github.com/SafetyMP/Digital-Twin-Compliance/blob/main/docs/demo-phase3.md
     about: Local walkthrough for Cedar/Zen policies and the immudb audit chain
   - name: Deployment guide
     url: https://github.com/SafetyMP/Digital-Twin-Compliance/blob/main/docs/deployment.md
     about: GHCR images, staging deploy, and host setup
-  - name: GitHub repository setup
-    url: https://github.com/SafetyMP/Digital-Twin-Compliance/blob/main/docs/github-setup.md
-    about: Branch protection, environments, social preview, first release
-  - name: Agent contributor contract
-    url: https://github.com/SafetyMP/Digital-Twin-Compliance/blob/main/AGENTS.md
-    about: Commands, scope, smoke order, and definition of done for coding agents
+  - name: Contributing
+    url: https://github.com/SafetyMP/Digital-Twin-Compliance/blob/main/CONTRIBUTING.md
+    about: Development workflow and PR expectations
   - name: Security advisory
     url: https://github.com/SafetyMP/Digital-Twin-Compliance/security/advisories/new
     about: Report a vulnerability privately (do not use public issues)

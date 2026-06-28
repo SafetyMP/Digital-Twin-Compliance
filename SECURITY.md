@@ -25,6 +25,8 @@ Please include:
 
 We aim to acknowledge reports within a reasonable timeframe and will coordinate disclosure after a fix is available.
 
+Support expectations for non-security issues: [SUPPORT.md](SUPPORT.md).
+
 ## Development stack security posture
 
 This repository targets **local development and CI**, not production deployment as-is:

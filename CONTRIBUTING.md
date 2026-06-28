@@ -1,10 +1,8 @@
 # Contributing
 
-Thank you for contributing to the Digital Twin Compliance Platform.
+Thank you for contributing to the Digital Twin Compliance Platform — an open-source reference stack maintained by [SafetyMP](https://github.com/SafetyMP) under the [Apache License 2.0](LICENSE).
 
-**Copyright holder:** SafetyMP · **License:** [Apache License 2.0](LICENSE)
-
-Please read the [Code of Conduct](CODE_OF_CONDUCT.md) before participating.
+Please read the [Code of Conduct](CODE_OF_CONDUCT.md) and [ROADMAP.md](ROADMAP.md) before participating.
 
 ## Getting started
 
@@ -28,24 +26,17 @@ docker compose -f docker-compose.dev.yml up -d --wait state-service
 cd services/state-service && go test ./...
 ./scripts/smoke-test.sh
 
-# Phase 2 (monitoring + alerts)
+# Monitoring
 ./scripts/submit-flink-job.sh
 cd services/alert-service && go test ./...
 ./scripts/smoke-test-phase2.sh
 
-# Phase 3 (policies + audit ledger)
+# Policy & audit
 ./scripts/run-policy-ci.sh
 cd services/cedar-service && go test ./...
 cd services/decision-service && go test ./...
 cd services/audit-service && go test ./...
 ./scripts/smoke-test-phase3.sh
-```
-
-Optional mechanical checks:
-
-```bash
-./scripts/run-live-evals.sh
-./scripts/run-live-evals-phase2.sh
 ```
 
 Flink CEP unit tests (no local Maven required):
@@ -56,13 +47,19 @@ docker run --rm -v "$PWD/jobs/compliance-cep:/app" -w /app maven:3.9-eclipse-tem
 
 ## Pull requests
 
-- Keep PRs focused on a single purpose.
-- Ensure CI passes (Compose, unit tests, policy CI, Phase 1–3 smoke, schema compatibility).
-- Fill in the PR template checklist and test plan.
-- Self-review against:
-  - [docs/review/phase1-review-checklist.md](docs/review/phase1-review-checklist.md) for State Service / Phase 1 paths
-  - [docs/review/phase2-exit-checklist.md](docs/review/phase2-exit-checklist.md) for Flink, alert-service, alert-console, Grafana, or Phase 2 smoke/CI changes
-  - [docs/review/phase3-exit-checklist.md](docs/review/phase3-exit-checklist.md) for Cedar, Zen, audit-service, audit-explorer, or Phase 3 smoke/CI changes
+1. Open an issue or comment on an existing one for large changes (see [ROADMAP.md](ROADMAP.md)).
+2. Keep PRs focused — one purpose per PR.
+3. Ensure CI passes (unit tests, policy CI, smoke tests, schema compatibility).
+4. Fill in the PR template test plan.
+5. Update [CHANGELOG.md](CHANGELOG.md) under `[Unreleased]` for user-visible changes.
+
+### Review checklists (by area touched)
+
+| Area | Checklist |
+|------|-----------|
+| State Service / ingestion | [phase1-review-checklist.md](docs/review/phase1-review-checklist.md) |
+| Flink / alerts / console | [phase2-exit-checklist.md](docs/review/phase2-exit-checklist.md) |
+| Policies / audit / explorer | [phase3-exit-checklist.md](docs/review/phase3-exit-checklist.md) |
 
 ### Commit messages
 
@@ -75,44 +72,28 @@ Use [Conventional Commits](https://www.conventionalcommits.org/) when practical:
 - `ci:` CI/workflow changes
 - `refactor:` behavior-preserving refactor
 
-## Scope by phase
+## Contribution areas
 
-### Phase 1 (ingestion + twin)
+| Component | Path | Typical tests |
+|-----------|------|---------------|
+| State Service | `services/state-service/` | `go test ./...`, `./scripts/smoke-test.sh` |
+| Alert Service | `services/alert-service/` | `go test ./...`, `./scripts/smoke-test-phase2.sh` |
+| Flink CEP | `jobs/compliance-cep/` | `mvn test`, Phase 2 smoke |
+| Alert Console | `apps/alert-console/` | `npm run build`, Phase 2 smoke |
+| Cedar / Zen | `services/cedar-service/`, `services/decision-service/`, `policies/` | `./scripts/run-policy-ci.sh` |
+| Audit ledger | `services/audit-service/`, `apps/audit-explorer/` | `./scripts/smoke-test-phase3.sh` |
+| Kafka contracts | `schemas/avro/`, `contracts/kafka/` | `./scripts/check-kafka-contracts.sh` |
 
-For PRs that touch only Phase 1 components, do **not** add Phase 2+ capabilities unless the PR explicitly targets a later phase.
+## Not on the roadmap yet
 
-### Phase 2 (monitoring + alerts)
+These are **planned but not built** — discuss in an issue before opening a large PR:
 
-**In scope** for work that extends Phase 2:
+- Neo4j graph service and exposure UI
+- Python simulation / stress testing service
+- Regulatory reporting (XBRL / SDMX)
+- Full OIDC auth middleware (today: mock principals only)
 
-- Flink CEP job (`jobs/compliance-cep/`)
-- Redis feature store integration
-- Alert Service (`services/alert-service/`)
-- Alert Console (`apps/alert-console/`)
-- Grafana dashboards (`infra/grafana/`)
-- Phase 2 smoke test and CI extensions
-
-### Phase 3 (policies + audit ledger)
-
-**In scope** for current work:
-
-- Cedar Policy Service (`services/cedar-service/`)
-- Decision Service / GoRules Zen (`services/decision-service/`)
-- Audit Service + immudb (`services/audit-service/`)
-- Audit Explorer (`apps/audit-explorer/`)
-- Policy bundles (`policies/cedar/`, `policies/zen/`)
-- `./scripts/run-policy-ci.sh`, `./scripts/smoke-test-phase3.sh`, `./scripts/verify-audit-chain.sh`
-
-### Out of scope (Phase 4+)
-
-Do **not** add unless the PR explicitly targets a later phase:
-
-- Neo4j / Graph Service
-- Simulation Service (Python stress/contagion)
-- Keycloak / full OIDC auth middleware (mock principal only in Phase 3)
-- Regulatory reporting (XBRL)
-
-See [AGENTS.md](AGENTS.md) and [docs/roadmap.md](docs/roadmap.md).
+Details: [ROADMAP.md](ROADMAP.md) and [docs/roadmap.md](docs/roadmap.md).
 
 ## Coding guidelines
 
@@ -135,13 +116,17 @@ Service-specific contracts:
 
 Significant design changes should be documented as ADRs under [docs/adr/](docs/adr/) before or alongside implementation.
 
-## Deployment
+## Deployment & releases
 
 - Images are published to GHCR on merge to `main` ([docker-publish.yml](.github/workflows/docker-publish.yml)): `state-service`, `alert-service`, `alert-console`, `compliance-cep`.
-- Staging deploy is manual via the **Deploy Staging** workflow; configure the `staging` environment secrets first.
-- See [docs/deployment.md](docs/deployment.md) for host setup, releases, and troubleshooting.
-- Release history: [CHANGELOG.md](CHANGELOG.md).
+- Semver tags (`v*.*.*`) cut a GitHub Release — update [CHANGELOG.md](CHANGELOG.md) first.
+- Staging deploy is manual via the **Deploy Staging** workflow; see [docs/deployment.md](docs/deployment.md).
+
+## Automated agents
+
+If you are a Cursor/Codex agent contributor, also read [AGENTS.md](AGENTS.md) for smoke order, scope boundaries, and eval gates. Human contributors can ignore this unless touching agent harness scripts.
 
 ## Questions
 
-Open a [GitHub issue](https://github.com/SafetyMP/Digital-Twin-Compliance/issues) for bugs, questions, or proposed scope changes.
+- [GitHub Issues](https://github.com/SafetyMP/Digital-Twin-Compliance/issues) — bugs and features
+- [SUPPORT.md](SUPPORT.md) — response expectations

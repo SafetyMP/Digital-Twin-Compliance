@@ -164,7 +164,21 @@ export STATE_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/state-servic
 
 ---
 
-## CI vs deploy
+## Production readiness
+
+This project is an **open-source reference implementation**. The default stacks are for **local development, demos, and CI** — not production as-is.
+
+| Gap | Today | Path forward |
+|-----|-------|--------------|
+| Authentication | Mock principals only | OIDC / Keycloak ([ROADMAP.md](../ROADMAP.md)) |
+| TLS | Plain HTTP on Compose ports | Reverse proxy or ingress in deploy stack |
+| Secrets | `.env` / Compose defaults | GitHub Environments, vault, or cloud secret manager |
+| Policy/audit deploy | Dev Compose + CI only | Extend GHCR + `docker-compose.deploy.yml` |
+| HA / scaling | Single-host Compose | K8s / managed services ([docs/roadmap.md](./roadmap.md)) |
+
+Before exposing any environment to untrusted networks, read [SECURITY.md](../SECURITY.md) and [SUPPORT.md](../SUPPORT.md).
+
+---
 
 | Concern | Where it runs |
 |---------|----------------|

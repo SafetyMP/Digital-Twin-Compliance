@@ -1,6 +1,8 @@
 # Changelog
 
-All notable changes to this project are documented here. Release tags (`v*.*.*`) publish Phase 1–2 runtime images to GHCR; see [docs/deployment.md](docs/deployment.md).
+All notable changes to this open-source project are documented here.
+
+Release tags (`v*.*.*`) publish Phase 1–2 runtime images to GHCR and create a GitHub Release. See [docs/deployment.md](docs/deployment.md) and [ROADMAP.md](ROADMAP.md) for deploy scope.
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
@@ -8,33 +10,33 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
-- Phase 3 stack: Cedar Service, Decision Service (Zen), Audit Service (immudb), Audit Explorer UI
+- Public [ROADMAP.md](ROADMAP.md) and [SUPPORT.md](SUPPORT.md) for evergreen OSS presentation
+- Policy & audit stack: Cedar Service, Decision Service (Zen), Audit Service (immudb), Audit Explorer UI
 - `./scripts/smoke-test-phase3.sh`, `./scripts/run-policy-ci.sh`, `./scripts/verify-audit-chain.sh`
-- CI job `ci` — full Phase 1–3 smoke, policy gates, eval fixtures, coverage gates
-- GitHub issue/PR templates updated for Phase 3 scope and smoke triage
 
 ### Changed
 
-- README architecture diagram and quick start cover Phase 3
-- Dependabot watches all Go services, both Next.js apps, Flink CEP (Maven), Actions, and Docker bases
+- README and CONTRIBUTING lead with product capabilities instead of internal phase delivery language
+- Issue/PR templates use component-based triage
+- CI job `ci` runs full ingestion → monitoring → policy/audit smoke on every PR
 
 ### Notes
 
-- Phase 3 services are exercised in CI and `docker-compose.dev.yml` but are **not** yet published to GHCR or `docker-compose.deploy.yml`
+- Policy/audit services run in `docker-compose.dev.yml` and CI but are **not** yet on GHCR or `docker-compose.deploy.yml`
 
-## Phase milestones on `main`
+## History on `main`
 
-| Phase | Highlights | Evidence |
-|-------|------------|----------|
-| **Phase 1** | Debezium CDC, State Service, outbox, persona API | [phase1-exit checklist](docs/phase1-implementation-spec.md#10-phase-1-exit-criteria-checklist) |
-| **Phase 2** | Flink CEP, Alert Service, alert console, Grafana | [phase2-exit-checklist.md](docs/review/phase2-exit-checklist.md) |
-| **Phase 3** | Cedar + Zen, immudb audit ledger, Audit Explorer | [phase3-exit-checklist.md](docs/review/phase3-exit-checklist.md) |
+Capability milestones (internal phase specs remain under `docs/phase*-implementation-spec.md`):
 
-## Tagged releases
+| Milestone | Highlights |
+|-----------|------------|
+| Ingestion & twin | Debezium CDC, State Service, outbox, persona API |
+| Monitoring | Flink CEP, Alert Service, alert console, Grafana |
+| Policy & audit | Cedar + Zen, immudb ledger, Audit Explorer, `evidenceRef` |
 
-When cutting a release:
+## Cutting a release
 
-1. Update this file under a new `## [x.y.z] — YYYY-MM-DD` heading
+1. Move `[Unreleased]` items to `## [x.y.z] — YYYY-MM-DD`
 2. Tag `vX.Y.Z` and push — triggers [release.yml](.github/workflows/release.yml) and [docker-publish.yml](.github/workflows/docker-publish.yml)
 
-Previous tags (if any) are listed on the [GitHub Releases](https://github.com/SafetyMP/Digital-Twin-Compliance/releases) page.
+Previous tags: [GitHub Releases](https://github.com/SafetyMP/Digital-Twin-Compliance/releases).

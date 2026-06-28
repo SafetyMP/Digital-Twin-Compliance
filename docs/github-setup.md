@@ -10,12 +10,45 @@ One-time configuration for [SafetyMP/Digital-Twin-Compliance](https://github.com
 
 | Field | Suggested value |
 |-------|-----------------|
-| Description | Event-driven financial digital twin with compliance monitoring (CDC, Flink CEP, Cedar/Zen policies, immudb audit) |
+| Description | Open-source financial digital twin with compliance monitoring (CDC, Flink CEP, Cedar/Zen, immudb audit) |
 | Website | (optional) link to [README](../README.md) or [demo-phase3.md](./demo-phase3.md) |
 | Topics | `digital-twin`, `compliance`, `kafka`, `debezium`, `flink`, `go`, `event-driven`, `postgresql`, `avro`, `immudb`, `cedar` |
 | Social preview | Upload [docs/assets/social-preview.svg](./assets/social-preview.svg) (Settings → General → Social preview) |
 
-Enable **Issues** and **Discussions** (optional) under Features.
+Enable **Issues** under Features. **Discussions** optional — useful for Q&A if issue volume grows.
+
+---
+
+## Evergreen OSS practices
+
+### Issue labels (Settings → Issues → Labels)
+
+Suggested starter set:
+
+| Label | Use |
+|-------|-----|
+| `bug` | Regressions, smoke failures |
+| `enhancement` | Features aligned with [ROADMAP.md](../ROADMAP.md) |
+| `good first issue` | Small, bounded tasks for new contributors |
+| `help wanted` | Maintainer welcomes external PR |
+| `dependencies` | Dependabot PRs (already applied by [dependabot.yml](../.github/dependabot.yml)) |
+
+### Release cadence
+
+- **`main`** — continuous integration; default contribution target
+- **Tags `v*.*.*`** — semver releases with [CHANGELOG.md](../CHANGELOG.md) entry and GHCR images
+- Cut a release when a capability milestone is smoke-stable (no fixed calendar required yet)
+
+### Community health files
+
+| File | Purpose |
+|------|---------|
+| [ROADMAP.md](../ROADMAP.md) | Public roadmap (GitHub storefront) |
+| [SUPPORT.md](../SUPPORT.md) | Support channels and expectations |
+| [CONTRIBUTING.md](../CONTRIBUTING.md) | Human contributor workflow |
+| [CHANGELOG.md](../CHANGELOG.md) | Release history |
+
+Internal engineering specs (`docs/phase*-implementation-spec.md`, [AGENTS.md](../AGENTS.md)) stay in repo but are not the primary GitHub story.
 
 ---
 
@@ -136,4 +169,6 @@ export STATE_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/state-servic
 | [CONTRIBUTING.md](../CONTRIBUTING.md) | Contribution workflow |
 | [SECURITY.md](../SECURITY.md) | Vulnerability reporting |
 | [CHANGELOG.md](../CHANGELOG.md) | Release notes |
+| [ROADMAP.md](../ROADMAP.md) | Public roadmap |
+| [SUPPORT.md](../SUPPORT.md) | Support policy |
 | [NOTICE](../NOTICE) | Apache 2.0 attribution |
