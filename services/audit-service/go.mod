@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/codenotary/immudb v1.11.0
 	github.com/google/uuid v1.6.0
-	github.com/jackc/pgx/v5 v5.9.1
+	github.com/jackc/pgx/v5 v5.10.0
 	github.com/segmentio/kafka-go v0.4.47
 )
 
