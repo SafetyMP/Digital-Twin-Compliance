@@ -14,12 +14,17 @@ bad() { echo "FAIL $*"; fail=1; }
 
 echo "== Agent worktree hygiene =="
 
-if [[ ! -d "$WORKTREES_DIR" ]]; then
-  ok "no .worktrees directory (nothing to check)"
-  exit 0
+if [[ -x scripts/demo-agent-workflows.sh ]]; then
+  if ./scripts/demo-agent-workflows.sh >/dev/null 2>&1; then
+    ok "demo-agent-workflows dry run"
+  else
+    bad "demo-agent-workflows failed"
+  fi
 fi
 
-# Manifest batches
+if [[ ! -d "$WORKTREES_DIR" ]]; then
+  ok "no .worktrees directory (nothing else to check)"
+else
 manifest_count=0
 while IFS= read -r -d '' mf; do
   manifest_count=$((manifest_count + 1))
@@ -42,6 +47,7 @@ done < <(find "$WORKTREES_DIR" -mindepth 2 -maxdepth 2 -name manifest.json -prin
 
 if [[ "$manifest_count" -eq 0 ]]; then
   ok "no best-of-N manifests"
+fi
 fi
 
 # agent/* branches without an active worktree (informational)

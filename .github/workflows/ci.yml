@@ -77,10 +77,12 @@ jobs:
         run: |
           chmod +x scripts/agent-worktree.sh scripts/agent-worktree-best-of-n.sh \
             scripts/check-agent-worktrees.sh scripts/check-worktree-scope.sh \
-            scripts/verify-worktree-merge.sh scripts/check-dependency-waves.sh
+            scripts/verify-worktree-merge.sh scripts/check-dependency-waves.sh \
+            scripts/demo-agent-workflows.sh
           bash -n scripts/agent-worktree.sh scripts/agent-worktree-best-of-n.sh \
             scripts/check-agent-worktrees.sh scripts/check-worktree-scope.sh \
-            scripts/verify-worktree-merge.sh scripts/check-dependency-waves.sh
+            scripts/verify-worktree-merge.sh scripts/check-dependency-waves.sh \
+            scripts/demo-agent-workflows.sh
           ./scripts/check-agent-worktrees.sh
 
       - name: Live evals (mechanical)
