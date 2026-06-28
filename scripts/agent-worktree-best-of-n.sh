@@ -5,7 +5,42 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-WORKTREES_DIR="${AGENT_WORKTREES_DIR:-$ROOT/.worktrees}"
+_load_awt_lib() {
+  local lib="${CURSOR_AGENT_WORKTREE_LIB:-$HOME/.cursor/scripts/agent-worktree/lib.sh}"
+  if [[ -f "$lib" ]]; then
+    # shellcheck source=/dev/null
+    source "$lib"
+    awt_init
+    ROOT="$AWT_ROOT"
+    WORKTREES_DIR="$AWT_WORKTREES_DIR"
+    die() { awt_die "$@"; }
+    slugify() { awt_slugify "$@"; }
+    normalize_prefix() { awt_normalize_prefix "$@"; }
+    return 0
+  fi
+  return 1
+}
+
+if ! _load_awt_lib; then
+  WORKTREES_DIR="${AGENT_WORKTREES_DIR:-$ROOT/.worktrees}"
+
+  die() {
+    echo "agent-worktree-best-of-n: $*" >&2
+    exit 1
+  }
+
+  slugify() {
+    printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9._-' '-' | sed 's/^-*//;s/-*$//'
+  }
+
+  normalize_prefix() {
+    local p
+    p="$(slugify "$1")"
+    p="${p#bon-}"
+    printf '%s' "$p"
+  }
+fi
+
 WT="$ROOT/scripts/agent-worktree.sh"
 
 usage() {
@@ -42,22 +77,6 @@ After create:
   - Or delegate each attempt to built-in best-of-n-runner Task subagents
   - Parent compares, picks winner, merges, runs integration smoke from main root
 EOF
-}
-
-die() {
-  echo "agent-worktree-best-of-n: $*" >&2
-  exit 1
-}
-
-slugify() {
-  printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9._-' '-' | sed 's/^-*//;s/-*$//'
-}
-
-normalize_prefix() {
-  local p
-  p="$(slugify "$1")"
-  p="${p#bon-}"
-  printf '%s' "$p"
 }
 
 batch_dir_for_prefix() {

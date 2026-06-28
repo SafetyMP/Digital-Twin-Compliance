@@ -6,7 +6,33 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-WORKTREES_DIR="${AGENT_WORKTREES_DIR:-$ROOT/.worktrees}"
+_load_awt_lib() {
+  local lib="${CURSOR_AGENT_WORKTREE_LIB:-$HOME/.cursor/scripts/agent-worktree/lib.sh}"
+  if [[ -f "$lib" ]]; then
+    # shellcheck source=/dev/null
+    source "$lib"
+    awt_init
+    ROOT="$AWT_ROOT"
+    WORKTREES_DIR="$AWT_WORKTREES_DIR"
+    die() { awt_die "$@"; }
+    slugify() { awt_slugify "$@"; }
+    return 0
+  fi
+  return 1
+}
+
+if ! _load_awt_lib; then
+  WORKTREES_DIR="${AGENT_WORKTREES_DIR:-$ROOT/.worktrees}"
+
+  die() {
+    echo "agent-worktree: $*" >&2
+    exit 1
+  }
+
+  slugify() {
+    printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9._-' '-' | sed 's/^-*//;s/-*$//'
+  }
+fi
 
 usage() {
   cat <<'EOF'
@@ -38,15 +64,6 @@ Examples:
 After create/handoff, open a fresh Cursor chat at the printed path or call
 cursor-app-control move_agent_to_root with the absolute path.
 EOF
-}
-
-die() {
-  echo "agent-worktree: $*" >&2
-  exit 1
-}
-
-slugify() {
-  printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9._-' '-' | sed 's/^-*//;s/-*$//'
 }
 
 require_git() {
