@@ -2,9 +2,9 @@
 
 Maps [phase3-implementation-spec.md §13](../phase3-implementation-spec.md#13-phase-3-exit-criteria-checklist) to fresh local evidence.
 
-Verified: 2026-06-28 (local cold-start stack, branch `phase3b-flink-zen-lcr`, HEAD `67cfbe7`).
+Verified: 2026-06-28 — local cold-start stack (`phase3b-flink-zen-lcr`) and CI on `main` after [PR #19](https://github.com/SafetyMP/Digital-Twin-Compliance/pull/19) merge ([CI run](https://github.com/SafetyMP/Digital-Twin-Compliance/actions/runs/28335248362), `6240a80`).
 
-Copy into PR description when opening the Phase 3 PR.
+Merged to `main` 2026-06-28.
 
 ## Checklist
 
@@ -48,10 +48,10 @@ Copy into PR description when opening the Phase 3 PR.
 - [x] Keycloak not added (mock principal only per D20)
   **Evidence**: same grep — no `keycloak` usage in services/jobs/apps. `cedar-service` uses dev `X-Principal`/`X-Roles` headers (smoke step 2 sends `X-Roles: Reporter`).
 
-## Not verified locally / deferred
+## Not verified / deferred
 
-- **Alert latency p99 < 2s and Flink checkpoint success rate > 99% over soak**: not measured here. Phase 2 smoke observed a single-shot `consume_latency_ms=1403` (< 2000ms budget); Flink reported `no checkpoint history yet (non-fatal during cold start)`, so the soak success-rate metric was not captured this run.
-- **Live `cedar` CLI gate**: not run locally (CLI absent); validated via workflow + runtime policy load (see caveat above). Confirm green on a CI run of `policy-gates.yml`.
+- **Alert latency p99 < 2s and Flink checkpoint success rate > 99% over soak**: not measured. Phase 2 smoke observed single-shot `consume_latency_ms=1403` (< 2000ms budget); Flink reported `no checkpoint history yet (non-fatal during cold start)` on cold start.
+- **Cedar CLI gate**: confirmed in CI on PR #19 and post-merge `main` (`Policy CI` step — `cedar check-parse` on all 5 policies + Zen fixtures).
 - **Rule evaluation latency < 5ms p99** (roadmap success metric): not benchmarked.
 
 ## Commands to re-verify
