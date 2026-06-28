@@ -41,6 +41,9 @@ jobs:
       - name: Seed databases
         run: ./scripts/seed.sh
 
+      - name: Restart alert-service after seed
+        run: docker compose -f docker-compose.dev.yml restart alert-service && docker compose -f docker-compose.dev.yml up -d --wait alert-service
+
       - name: Register schemas
         run: ./scripts/register-schemas.sh
 
@@ -50,9 +53,28 @@ jobs:
       - name: Restart state-service after connector
         run: docker compose -f docker-compose.dev.yml restart state-service && docker compose -f docker-compose.dev.yml up -d --wait state-service
 
-      - name: Wait for Flink job
+      - name: Wait for outbox drain after restart
+        run: chmod +x scripts/wait-outbox-drained.sh scripts/smoke-lib-phase2.sh && ./scripts/wait-outbox-drained.sh
+
+      - name: Maven package (compliance-cep)
+        working-directory: jobs/compliance-cep
         run: |
-          for i in $(seq 1 90); do
+          sudo rm -rf target
+          mvn -q package -DskipTests
+
+      - name: Submit Flink job and wait for RUNNING
+        env:
+          CEP_PAYMENTS_OFFSET: latest
+          CEP_TWIN_OFFSET: latest
+          CEP_CONSUMER_GROUP_SUFFIX: "-${{ github.run_id }}"
+        run: |
+          chmod +x scripts/submit-flink-job.sh
+          ./scripts/submit-flink-job.sh
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:8082/jobs/overview | jq -e '.jobs[] | select(.state=="RUNNING")' >/dev/null; then
+              echo "Flink job running"
+              exit 0
+            fi
             if curl -sf http://localhost:8082/jobs | jq -e '.jobs[] | select(.status=="RUNNING")' >/dev/null; then
               echo "Flink job running"
               exit 0
@@ -60,6 +82,9 @@ jobs:
             sleep 5
           done
           echo "Flink job did not reach RUNNING" >&2
+          curl -sf http://localhost:8082/jobs/overview | jq . || true
+          docker compose -f docker-compose.dev.yml logs flink-jobmanager --tail 80
+          docker compose -f docker-compose.dev.yml logs flink-taskmanager --tail 80
           exit 1
 
       - name: Phase 1 full evals

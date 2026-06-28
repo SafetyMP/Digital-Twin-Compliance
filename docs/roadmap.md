@@ -145,7 +145,10 @@ gantt
 ## Phase 3: Rules Engine and Audit Ledger
 
 **Duration**: 4 weeks  
-**Dependencies**: Phase 2 complete
+**Dependencies**: Phase 2 complete  
+**Status**: Implemented — mechanical exit criteria verified locally 2026-06-28 ([review/phase3-exit-checklist.md](./review/phase3-exit-checklist.md)); CI policy gate + soak/p99 pending. Phase 3b (Flink → Decision Service for BASEL-M001) landed; INT-M001/M002 still inline.
+
+**Handoff**: [phase3-implementation-spec.md](./phase3-implementation-spec.md) · [handoff-phase3-agent.md](./handoff-phase3-agent.md) · [ADR-009](./adr/009-phase3-foundation-decisions.md) · [review/phase3-exit-checklist.md](./review/phase3-exit-checklist.md)
 
 ### Scope
 
@@ -408,3 +411,5 @@ These must be resolved before or during Phase 0 exit:
 | ADR-005: Zen vs Drools | [adr/005-gorules-zen-vs-drools.md](./adr/005-gorules-zen-vs-drools.md) | Accepted |
 | Phase 2 Implementation Spec | [phase2-implementation-spec.md](./phase2-implementation-spec.md) | Implemented — evals pending |
 | Phase 2 Exit Checklist | [review/phase2-exit-checklist.md](./review/phase2-exit-checklist.md) | Mechanical criteria met |
+| Phase 3 Implementation Spec | [phase3-implementation-spec.md](./phase3-implementation-spec.md) | Implemented — CI gate + soak pending |
+| Phase 3 Exit Checklist | [review/phase3-exit-checklist.md](./review/phase3-exit-checklist.md) | Mechanical criteria met (local) |
