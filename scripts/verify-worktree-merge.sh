@@ -4,9 +4,11 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
+# shellcheck source=agent-worktree/lib.sh
+source "$ROOT/scripts/agent-worktree/lib.sh"
 
 CONFIG="${AWT_CONFIG:-$ROOT/.cursor/worktrees.config.json}"
-CONFIG_PY="${CURSOR_AGENT_WORKTREE_CONFIG_PY:-$HOME/.cursor/scripts/agent-worktree/config.py}"
+CONFIG_PY="$(resolve_agent_worktree_config_py "$ROOT" || true)"
 LIB="${CURSOR_AGENT_WORKTREE_LIB:-$HOME/.cursor/scripts/agent-worktree/lib.sh}"
 
 # shellcheck source=/dev/null
