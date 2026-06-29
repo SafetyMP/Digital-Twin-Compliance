@@ -4,9 +4,11 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
+# shellcheck source=agent-worktree/lib.sh
+source "$ROOT/scripts/agent-worktree/lib.sh"
 
 CONFIG="${AWT_CONFIG:-$ROOT/.cursor/worktrees.config.json}"
-CONFIG_PY="${CURSOR_AGENT_WORKTREE_CONFIG_PY:-$HOME/.cursor/scripts/agent-worktree/config.py}"
+CONFIG_PY="$(resolve_agent_worktree_config_py "$ROOT" || true)"
 
 usage() {
   cat <<'EOF'
@@ -42,4 +44,4 @@ if [[ -f "$CONFIG" && -f "$CONFIG_PY" ]]; then
   exec "${args[@]}"
 fi
 
-die "missing $CONFIG or $CONFIG_PY — copy from ~/.cursor/templates/worktrees/worktrees.config.json.example"
+die "missing $CONFIG or scripts/agent-worktree/config.py (or set CURSOR_AGENT_WORKTREE_CONFIG_PY)"

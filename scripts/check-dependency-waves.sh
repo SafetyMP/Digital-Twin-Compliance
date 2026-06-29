@@ -4,9 +4,11 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
+# shellcheck source=agent-worktree/lib.sh
+source "$ROOT/scripts/agent-worktree/lib.sh"
 
 CONFIG="${AWT_CONFIG:-$ROOT/.cursor/worktrees.config.json}"
-CONFIG_PY="${CURSOR_AGENT_WORKTREE_CONFIG_PY:-$HOME/.cursor/scripts/agent-worktree/config.py}"
+CONFIG_PY="$(resolve_agent_worktree_config_py "$ROOT" || true)"
 WAVES_DIR="${AGENT_WORKTREES_DIR:-$ROOT/.worktrees}/waves"
 
 usage() {
@@ -41,7 +43,7 @@ die() {
 
 require_config() {
   [[ -f "$CONFIG" ]] || die "missing $CONFIG"
-  [[ -f "$CONFIG_PY" ]] || die "missing $CONFIG_PY — install global agent-worktree helpers"
+  [[ -n "$CONFIG_PY" && -f "$CONFIG_PY" ]] || die "missing scripts/agent-worktree/config.py (or set CURSOR_AGENT_WORKTREE_CONFIG_PY)"
 }
 
 state_file() {
