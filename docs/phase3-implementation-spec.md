@@ -355,20 +355,21 @@ cd services/decision-service && go test ./...
 
 ## 13. Phase 3 exit criteria checklist
 
-Copy into PR description when Phase 3 is complete:
+**Status**: Complete (v0.1.0, 2026-06-29). Evidence: [review/phase3-exit-checklist.md](./review/phase3-exit-checklist.md).
 
-- [ ] Compose starts Phase 1–2 services **plus** immudb, audit, cedar, decision, audit-explorer
-- [ ] 5 Cedar policies pass `cedar analyze` in CI
-- [ ] 5 Zen models pass fixture tests in CI
-- [ ] `compliance.audit.pending` → immudb → `compliance.audit.recorded` pipeline works
-- [ ] Hash chain verification API returns valid for 100% of entries in smoke run
-- [ ] New alerts have non-null `evidenceRef` within 10s
-- [ ] Audit Explorer search returns alert audit entries with integrity badge
-- [ ] `./scripts/smoke-test-phase3.sh` exits 0
-- [ ] `./scripts/smoke-test-phase2.sh` still passes (regression)
-- [ ] `go test ./...` passes for audit, cedar, decision services
-- [ ] No Phase 4+ components added (Neo4j, simulation, XBRL)
-- [ ] Keycloak not added (mock principal only per D20)
+- [x] Compose starts Phase 1–2 services **plus** immudb, audit, cedar, decision, audit-explorer
+- [x] 5 Cedar policies pass `cedar analyze` in CI
+- [x] 5 Zen models pass fixture tests in CI
+- [x] `compliance.audit.pending` → immudb → `compliance.audit.recorded` pipeline works
+- [x] Hash chain verification API returns valid for 100% of entries in smoke run
+- [x] New alerts have non-null `evidenceRef` within 10s
+- [x] Audit Explorer search returns alert audit entries with integrity badge
+- [x] `./scripts/smoke-test-phase3.sh` exits 0
+- [x] `./scripts/smoke-test-phase2.sh` still passes (regression)
+- [x] `go test ./...` passes for audit, cedar, decision services
+- [x] No Phase 4+ components added (Neo4j, simulation, XBRL)
+- [x] Keycloak not added (mock principal only per D20)
+- [x] Phase 3b (stretch): Flink → Decision Service for INT-M001/M002/BASEL-M001 when `CEP_DECISION_SERVICE_URL` set
 
 ---
 
@@ -377,7 +378,7 @@ Copy into PR description when Phase 3 is complete:
 - immudb HA cluster + backup to S3 (ADR-003)
 - Replace filesystem artifacts with S3 Object Lock
 - OIDC (Keycloak) feeding Cedar principal attributes
-- Optional: Flink → Decision Service HTTP for `BASEL-M001` (Phase 3b)
+- Phase 3b complete: Flink → Decision Service for INT-M001, INT-M002, BASEL-M001
 
 ---
 

@@ -4,18 +4,19 @@ Operational contract for coding agents working in this repository.
 
 ## Current phase
 
-**Phase 3** — Rules engine and audit ledger. Full spec: [docs/phase3-implementation-spec.md](docs/phase3-implementation-spec.md). Phase 2 spec: [docs/phase2-implementation-spec.md](docs/phase2-implementation-spec.md). Phase 1 spec: [docs/phase1-implementation-spec.md](docs/phase1-implementation-spec.md).
+**Phase 4** — Graph model and simulation (planning → implementation). Full spec: [docs/phase4-implementation-spec.md](docs/phase4-implementation-spec.md). **Phase 3 complete** (v0.1.0): [docs/review/phase3-exit-checklist.md](docs/review/phase3-exit-checklist.md). Earlier specs: [phase3](docs/phase3-implementation-spec.md), [phase2](docs/phase2-implementation-spec.md), [phase1](docs/phase1-implementation-spec.md).
 
-Architecture and domain docs live under [docs/](docs/). Do not implement Phase 4+ components unless explicitly requested.
+Architecture and domain docs live under [docs/](docs/). Do not implement Phase 5+ components unless explicitly requested.
 
 ## Context loading
 
 Minimize token use — load only what the task requires:
 
-- **Always load**: this file, [docs/phase3-implementation-spec.md](docs/phase3-implementation-spec.md) (Phase 3) or [docs/phase2-implementation-spec.md](docs/phase2-implementation-spec.md) / [docs/phase1-implementation-spec.md](docs/phase1-implementation-spec.md) when earlier-phase-only work
+- **Always load**: this file, [docs/phase4-implementation-spec.md](docs/phase4-implementation-spec.md) (Phase 4) or [docs/phase3-implementation-spec.md](docs/phase3-implementation-spec.md) (Phase 3 maintenance) / [docs/phase2-implementation-spec.md](docs/phase2-implementation-spec.md) / [docs/phase1-implementation-spec.md](docs/phase1-implementation-spec.md) when earlier-phase-only work
 - **For Go State Service work**: [services/state-service/AGENTS.md](services/state-service/AGENTS.md)
 - **For Go Alert Service work**: [services/alert-service/AGENTS.md](services/alert-service/AGENTS.md)
-- **For Go Audit / Cedar / Decision Service work**: `services/<svc>/AGENTS.md` (created during Phase 3 implementation)
+- **For Go Audit / Cedar / Decision Service work**: `services/<svc>/AGENTS.md`
+- **For Graph / Simulation Service work** (Phase 4): `services/graph-service/AGENTS.md`, `services/simulation-service/AGENTS.md` (created during Phase 4 implementation)
 - **For envelope / idempotency / outbox / audit Kafka tasks**: [docs/data-flow.md](docs/data-flow.md)
 - **Do not load unless the task explicitly requires**: [docs/architecture.md](docs/architecture.md), [docs/domain-model.md](docs/domain-model.md), [docs/compliance-mapping.md](docs/compliance-mapping.md), [docs/roadmap.md](docs/roadmap.md), ADRs other than [ADR-007](docs/adr/007-phase1-foundation-decisions.md)
 - **Never load for implementation or verification** (unless user pastes a path for scoring):
@@ -152,6 +153,13 @@ cd services/alert-service && go test ./...
 # End-to-end smoke tests
 ./scripts/smoke-test.sh
 ./scripts/smoke-test-phase2.sh
+./scripts/smoke-test-phase3.sh
+
+# Phase 3 optional benchmarks (warm stack)
+./scripts/measure-phase3-latency.sh
+
+# Parent agent: before Task subagents
+./scripts/check-subagent-preflight.sh
 
 # Twin-path canary (after state-service restart / Debezium register)
 ./scripts/wait-outbox-drained.sh
@@ -239,6 +247,8 @@ CI runs Go + `mvn test` + `check-kafka-contracts.sh` before `docker compose up`;
 - **decision-service Docker**: zen-go needs **CGO** — build on `golang:*-bookworm`, run on `debian:bookworm-slim` (Alpine/musl link fails).
 - **cedar-service dev roles**: `"roles":[]` in JSON is explicit no-role; only omit `roles` (or use `X-Roles`) to apply `DEFAULT_ROLES`.
 - **audit ledger reset**: truncating `audit_entry_index` without wiping immudb leaves sequence gaps; audit-service resets immudb head on startup when the PG index is empty.
+- **Phase 3b CEP → Zen**: when `CEP_DECISION_SERVICE_URL` is set, Flink calls Decision Service for INT-M001/M002/BASEL-M001; inline thresholds are fallback on HTTP failure. Rebuild CEP jar + `./scripts/submit-flink-job.sh` after Java changes.
+- **Subagent preflight**: parent runs `./scripts/check-subagent-preflight.sh` before Task dispatch — not a CI gate; do not assign cold Compose/smoke as a subagent's first action.
 
 ## Layout
 
@@ -268,24 +278,29 @@ CI runs Go + `mvn test` + `check-kafka-contracts.sh` before `docker compose up`;
 
 ## Scope by phase
 
-### Phase 3 (current)
+### Phase 4 (current)
 
-In scope unless a task is explicitly Phase 2-only or earlier:
+In scope unless a task is explicitly Phase 3 maintenance or earlier:
 
-- Cedar Policy Service (`services/cedar-service/`), Decision Service (`services/decision-service/`)
-- Audit Service + immudb (`services/audit-service/`)
-- Audit Explorer UI (`apps/audit-explorer/`)
-- `policies/cedar/`, `policies/zen/`, `smoke-test-phase3.sh`, policy CI gates
+- Graph Service (`services/graph-service/`) + Neo4j in Compose
+- Simulation Service (`services/simulation-service/`) — deterministic stress only (ADR-010 D23)
+- Graph Explorer UI (`apps/graph-explorer/`), Simulation Console UI (`apps/simulation-console/`)
+- `smoke-test-phase4.sh`, `wait-graph-seeded.sh`, CI Phase 4 smoke
 
-### Out of scope (Phase 4+)
+Handoff: [docs/handoff-phase4-agent.md](docs/handoff-phase4-agent.md) · readiness: [docs/review/phase4-readiness.md](docs/review/phase4-readiness.md)
+
+### Phase 3 (complete — maintenance)
+
+- Cedar, Decision, Audit services, Audit Explorer, policy CI, `smoke-test-phase3.sh`
+- Exit evidence: [docs/review/phase3-exit-checklist.md](docs/review/phase3-exit-checklist.md) (v0.1.0)
+
+### Out of scope (Phase 5+)
 
 Do **not** add unless the task explicitly targets a later phase:
 
-- Neo4j / Graph Service
-- Simulation Service (Python stress/contagion)
-- Regulatory reporting (XBRL/SDMX)
-- Keycloak / full OIDC auth middleware (mock principal only in Phase 3 — ADR-009 D20)
-- **Phase 3b Decision Service hot path**: when `CEP_DECISION_SERVICE_URL` is set, Flink calls Decision Service for **INT-M001** (`INT-R001`), **INT-M002** (`INT-R002`), and **BASEL-M001** (`BASEL-R001`); inline thresholds are fallback on HTTP failure. Rebuild CEP jar + resubmit Flink job after Java changes.
+- Regulatory reporting (XBRL/SDMX/ClickHouse pipeline)
+- Agent-based contagion simulation (Phase 6+)
+- Keycloak / full OIDC auth middleware (mock principal per ADR-009 D20)
 
 Phase/deferral rationale: [docs/roadmap.md](docs/roadmap.md).
 

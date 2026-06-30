@@ -14,6 +14,12 @@ Detailed planning, risks, and phase specs: [docs/roadmap.md](docs/roadmap.md).
 
 CI on every PR runs all three smoke suites plus policy CI ([README § CI](README.md#ci)).
 
+**Release [v0.1.0](https://github.com/SafetyMP/Digital-Twin-Compliance/releases/tag/v0.1.0)** — Phase 1–3 smoke-stable; Flink 1.20 runtime aligned.
+
+## Next up: Phase 4
+
+Graph + simulation planning is complete. Implementation handoff: [docs/handoff-phase4-agent.md](docs/handoff-phase4-agent.md) · [docs/phase4-implementation-spec.md](docs/phase4-implementation-spec.md).
+
 ## Stability
 
 | Area | Status |
@@ -29,7 +35,7 @@ See [docs/deployment.md](docs/deployment.md#production-readiness) for the honest
 
 | Theme | Examples | Tracking |
 |-------|----------|----------|
-| **Graph & simulation** | Neo4j exposure graph, stress/contagion simulation | [docs/roadmap.md § Phase 4](docs/roadmap.md#phase-4-graph-model-and-simulation) |
+| **Graph & simulation** *(in progress — spec ready)* | Neo4j exposure graph, deterministic stress simulation | [phase4-implementation-spec.md](docs/phase4-implementation-spec.md) |
 | **Regulatory reporting** | XBRL / SDMX outputs, report UI | [docs/roadmap.md § Phase 5](docs/roadmap.md#phase-5-regulatory-reporting) |
 | **Hardening** | Keycloak/OIDC, production Compose/K8s paths | [docs/roadmap.md](docs/roadmap.md) |
 

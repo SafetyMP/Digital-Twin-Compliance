@@ -10,6 +10,8 @@ Cursor slash command: `/parallel-parent`
 
 ## Before spawning children
 
+0. Run `./scripts/check-subagent-preflight.sh` (parent root only — advisory, not CI).
+
 1. Write or point to a **single spec** (`specs/<task>.md`, bon `task.md`, or handoff block).
 2. Confirm **non-overlapping** file boundaries per track.
 3. Create worktrees if needed:
