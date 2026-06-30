@@ -13,6 +13,7 @@ Architecture Decision Records for the Financial Digital Twin + Compliance Platfo
 | [007](./007-phase1-foundation-decisions.md) | Phase 1 Foundation Decisions (D1, D4, D9) | Accepted |
 | [008](./008-phase2-foundation-decisions.md) | Phase 2 Foundation Decisions (D10–D14) | Accepted |
 | [009](./009-phase3-foundation-decisions.md) | Phase 3 Foundation Decisions (D15–D20) | Accepted |
+| [010](./010-phase4-foundation-decisions.md) | Phase 4 Foundation Decisions (D21–D24) | Accepted (planning) |
 
 ## ADR Template
 

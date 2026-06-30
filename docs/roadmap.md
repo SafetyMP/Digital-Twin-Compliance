@@ -146,7 +146,7 @@ gantt
 
 **Duration**: 4 weeks  
 **Dependencies**: Phase 2 complete  
-**Status**: Complete (mechanical) — merged to `main` via PR #19 (2026-06-28); CI green on `main` ([run](https://github.com/SafetyMP/Digital-Twin-Compliance/actions/runs/28335248362)). Soak/p99 pending. Phase 3b: Flink CEP → Decision Service for INT-M001, INT-M002, and BASEL-M001 when `CEP_DECISION_SERVICE_URL` is set.
+**Status**: **Complete** — v0.1.0 on `main` (2026-06-29). Mechanical exit + Phase 3b (Flink → Decision Service for INT-M001/M002/BASEL-M001). Stretch soak/p99 documented in [review/phase3-exit-checklist.md](./review/phase3-exit-checklist.md).
 
 **Handoff**: [phase3-implementation-spec.md](./phase3-implementation-spec.md) · [handoff-phase3-agent.md](./handoff-phase3-agent.md) · [ADR-009](./adr/009-phase3-foundation-decisions.md) · [review/phase3-exit-checklist.md](./review/phase3-exit-checklist.md)
 
@@ -190,7 +190,10 @@ gantt
 ## Phase 4: Graph Model and Simulation
 
 **Duration**: 6 weeks  
-**Dependencies**: Phase 3 complete
+**Dependencies**: Phase 3 complete  
+**Status**: **Planning complete** — ready for implementation (2026-06-29). Spec + ADR-010 + readiness checklist on `main`.
+
+**Handoff**: [phase4-implementation-spec.md](./phase4-implementation-spec.md) · [handoff-phase4-agent.md](./handoff-phase4-agent.md) · [ADR-010](./adr/010-phase4-foundation-decisions.md) · [review/phase4-readiness.md](./review/phase4-readiness.md)
 
 ### Scope
 
