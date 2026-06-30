@@ -204,6 +204,17 @@ export AUDIT_EXPLORER_IMAGE=${PREFIX}/audit-explorer:${TAG}
 ./scripts/deploy-stack.sh pull
 ```
 
+### Release validation
+
+After tagging and waiting for **Docker Publish** to finish:
+
+1. Confirm all eight packages exist under `ghcr.io/safetymp/digital-twin-compliance/` for the tag.
+2. On a host with Docker, clone the repo (policy bind mounts) and export all `*_IMAGE` vars with `TAG=v0.1.0` (see deploy example above).
+3. Run `./scripts/deploy-stack.sh bootstrap` then `./scripts/deploy-stack.sh smoke` (Phase 1–3).
+4. Optional: run **Deploy Staging** workflow with `image_tag=v0.1.0`.
+
+For day-to-day `:main` images, repeat with `TAG=main` after merges.
+
 ---
 
 ## Production readiness
