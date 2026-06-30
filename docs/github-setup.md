@@ -71,6 +71,8 @@ After the first CodeQL run completes, the `analyze` check name appears under req
 
 If branch protection still lists `phase1`, replace it with `ci` after merging the CI job rename (Settings → Branches → edit ruleset).
 
+**Agents and direct pushes:** enable **Require a pull request before merging** so coding agents use feature branches (`feat/...`, `chore/...`) instead of pushing to `main`. Bypass only for maintainers when intentionally hotfixing.
+
 ---
 
 ## GitHub Environments
