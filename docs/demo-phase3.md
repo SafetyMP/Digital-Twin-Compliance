@@ -153,6 +153,27 @@ Or use **Verify chain** in Audit Explorer.
 
 ---
 
+## Screenshots for maintainers
+
+Regenerate [README](../README.md) hero images when alert-console or audit-explorer UI changes materially.
+
+**Prerequisites:** warm Phase 3 stack with a linked alert (`evidenceRef` populated).
+
+```bash
+./scripts/demo-phase3.sh --trigger-alert --restart-policies
+```
+
+Note the printed URLs (alert detail + audit entry), then capture at ~1280px width:
+
+| Output file | URL pattern |
+|-------------|-------------|
+| `docs/assets/alert-console.png` | `http://localhost:3000/alerts/{alertId}` — INT-M001 detail with **View in Audit Explorer** link |
+| `docs/assets/audit-explorer.png` | `http://localhost:3002/entries/{entryId}` — entry with **integrity OK** badge and payload JSON |
+
+Optional: export `docs/assets/social-preview.png` from [social-preview.svg](./assets/social-preview.svg) (1280×640) for GitHub Settings → Social preview.
+
+---
+
 ## References
 
 - [phase3-implementation-spec.md](./phase3-implementation-spec.md) — scope and exit criteria

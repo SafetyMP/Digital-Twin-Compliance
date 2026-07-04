@@ -52,6 +52,7 @@ docker run --rm -v "$PWD/jobs/compliance-cep:/app" -w /app maven:3.9-eclipse-tem
 3. Ensure CI passes (unit tests, policy CI, smoke tests, schema compatibility).
 4. Fill in the PR template test plan.
 5. Update [CHANGELOG.md](CHANGELOG.md) under `[Unreleased]` for user-visible changes.
+6. If you change alert-console or audit-explorer UI materially, regenerate README screenshots per [docs/demo-phase3.md § Screenshots for maintainers](docs/demo-phase3.md#screenshots-for-maintainers).
 
 ### Review checklists (by area touched)
 
