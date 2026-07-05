@@ -431,6 +431,106 @@ services:
     environment:
       AUDIT_SERVICE_URL: http://audit-service:8090
 
+  neo4j:
+    image: neo4j:5-community
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      NEO4J_AUTH: neo4j/changeme
+    volumes:
+      - neo4j_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7474 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+
+  graph-service:
+    build:
+      context: ./services/graph-service
+      dockerfile: Dockerfile
+    depends_on:
+      neo4j:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      state-service:
+        condition: service_healthy
+    ports:
+      - "8093:8093"
+    environment:
+      NEO4J_URI: bolt://neo4j:7687
+      NEO4J_USER: neo4j
+      NEO4J_PASSWORD: changeme
+      KAFKA_BROKERS: kafka:9092
+      GRAPH_SERVICE_HTTP_ADDR: ":8093"
+      DEFAULT_TENANT_ID: "00000000-0000-0000-0000-000000000001"
+      TWIN_STATE_TOPIC: twin.state.updated
+      GRAPH_CONSUMER_GROUP: graph-service
+      GRAPH_INSTRUMENTS_CONSUMER_GROUP: graph-service-instruments
+      GRAPH_SERVICE_SOURCE: graph-service
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8093/api/v1/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 25s
+
+  simulation-service:
+    build:
+      context: ./services/simulation-service
+      dockerfile: Dockerfile
+    depends_on:
+      graph-service:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      decision-service:
+        condition: service_healthy
+    ports:
+      - "8094:8094"
+    environment:
+      GRAPH_SERVICE_URL: http://graph-service:8093
+      DECISION_SERVICE_URL: http://decision-service:8092
+      KAFKA_BROKERS: kafka:9092
+      KAFKA_AUDIT_PENDING_TOPIC: compliance.audit.pending
+      DEFAULT_TENANT_ID: "00000000-0000-0000-0000-000000000001"
+      SIMULATION_SERVICE_HTTP_ADDR: ":8094"
+      SIMULATION_SERVICE_SOURCE: simulation-service
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8094/api/v1/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  graph-explorer:
+    build:
+      context: ./apps/graph-explorer
+      dockerfile: Dockerfile
+    depends_on:
+      graph-service:
+        condition: service_healthy
+    ports:
+      - "3003:3000"
+    environment:
+      GRAPH_SERVICE_URL: http://graph-service:8093
+
+  simulation-console:
+    build:
+      context: ./apps/simulation-console
+      dockerfile: Dockerfile
+    depends_on:
+      simulation-service:
+        condition: service_healthy
+    ports:
+      - "3004:3000"
+    environment:
+      SIMULATION_SERVICE_URL: http://simulation-service:8094
+      NEXT_PUBLIC_AUDIT_EXPLORER_URL: http://localhost:3002
+
   grafana:
     image: grafana/grafana:10.4.0
     depends_on:
@@ -460,3 +560,4 @@ volumes:
   immudb_data:
   audit_artifacts:
   flink_checkpoints:
+  neo4j_data:
