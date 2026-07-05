@@ -87,6 +87,9 @@ jobs:
             scripts/measure-phase3-latency.sh
           ./scripts/check-agent-worktrees.sh
 
+      - name: OSS publish metadata
+        run: chmod +x scripts/publish-check.sh && bash -n scripts/publish-check.sh && ./scripts/publish-check.sh
+
       - name: Live evals (mechanical)
         run: ./scripts/run-live-evals.sh
 

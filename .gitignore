@@ -24,3 +24,8 @@ jobs/compliance-cep/dependency-reduced-pom.xml
 
 # Agent git worktrees (see scripts/agent-worktree.sh)
 .worktrees/
+
+# Local Cursor agent wiring — ship .cursor/rules/ (and commands/) only
+.cursor/mcp.json
+.cursor/hooks.json
+.cursor/agents/
