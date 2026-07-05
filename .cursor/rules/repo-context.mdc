@@ -1,9 +1,9 @@
 ---
-description: Phase 2 context budget — doc boundaries and skill filter for Digital Twin
+description: Repo context budget — doc boundaries and skill filter for Digital Twin (Phase 4)
 alwaysApply: true
 ---
 
-# Phase 2 context budget
+# Repo context budget
 
 Follow [AGENTS.md](../AGENTS.md) § Context loading. Do not preload planning docs.
 
@@ -11,9 +11,12 @@ Follow [AGENTS.md](../AGENTS.md) § Context loading. Do not preload planning doc
 
 | Load | When |
 |------|------|
-| `AGENTS.md`, `docs/phase2-implementation-spec.md` | Always (once per session) |
+| `AGENTS.md`, `docs/phase4-implementation-spec.md` | Always (once per session) |
+| `docs/phase3-implementation-spec.md` | Phase 3 maintenance only |
+| `docs/phase2-implementation-spec.md` | Phase 2 maintenance only |
 | `services/state-service/AGENTS.md` | Go State Service work |
 | `services/alert-service/AGENTS.md` | Go Alert Service work |
+| `services/graph-service/AGENTS.md`, `services/simulation-service/AGENTS.md` | Phase 4 graph/simulation work |
 | `docs/data-flow.md` | Envelope, idempotency, or outbox tasks only |
 | `docs/architecture.md`, `domain-model.md`, `compliance-mapping.md`, `roadmap.md`, ADRs (except ADR-007) | Only when task explicitly requires |
 
@@ -24,6 +27,8 @@ If the task is smoke test, integration verify, or `/verify-phase2`:
 1. Run `./scripts/smoke-test.sh` and `./scripts/smoke-test-phase2.sh` before any Read of prior sessions
 2. Load only `AGENTS.md` + relevant service `AGENTS.md`
 3. See [docs/handoff-verification-agent.md](../docs/handoff-verification-agent.md)
+
+Phase 4 integration: `./scripts/smoke-test-phase4.sh` when graph/simulation stack is in scope.
 
 ## Do not read (implementation / verification)
 
@@ -39,8 +44,8 @@ Unless the user pasted a path for scoring:
 Unless the user edited the file, you StrReplace'd it, or the task is harness/meta work:
 
 - **Global:** `~/.cursor/HARNESS.md`, `~/.cursor/TOOLING.md`, `~/.cursor/memory/MEMORY.md`, `~/.cursor/rules/`, `~/.cursor/skills/**/SKILL.md`
-- **Repo contract:** `AGENTS.md`, `docs/phase2-implementation-spec.md`, `docs/handoff-parallel-agent.md`, `docs/handoff-verification-agent.md`
-- **Eval harness:** `scripts/score-agent-transcript.py`, `evals/live-model/README.md`, `evals/live-model/manifest.json` — run scripts instead of reading source
+- **Repo contract:** `AGENTS.md`, phase specs, `docs/handoff-parallel-agent.md`, `docs/handoff-verification-agent.md`
+- **Eval harness:** `scripts/score-agent-transcript.py`, eval README/manifest — run scripts instead of reading source
 
 For `/token-efficiency`, `/live-eval`, and `/live-eval-phase2`: one Shell call to `./scripts/token-efficiency.sh`, `./scripts/run-live-evals.sh`, or `./scripts/run-live-evals-phase2.sh`; no Read of scorer/eval files.
 
@@ -61,4 +66,4 @@ Skip `dispatching-parallel-agents` unless the user asks about parallelization ef
 
 ## Ignore unless asked
 
-Prisma, Vercel, Next.js, Encore, Neon, and other full-stack plugin skills — this repo is Go + Kafka + Flink + Docker Compose for Phase 2. UI-only skills unless working on `apps/alert-console/`.
+Prisma, Vercel, Encore, Neon, and other full-stack plugin skills unrelated to this stack. UI-only skills unless working on `apps/alert-console/`, `apps/audit-explorer/`, `apps/graph-explorer/`, or `apps/simulation-console/`.

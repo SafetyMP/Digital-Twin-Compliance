@@ -8,12 +8,42 @@ One-time configuration for [SafetyMP/Digital-Twin-Compliance](https://github.com
 
 **Settings → General → Repository details**
 
-| Field | Suggested value |
-|-------|-----------------|
-| Description | Open-source financial digital twin with compliance monitoring (CDC, Flink CEP, Cedar/Zen, immudb audit) |
-| Website | (optional) link to [README](../README.md) or [demo-phase3.md](./demo-phase3.md) |
-| Topics | `digital-twin`, `compliance`, `kafka`, `debezium`, `flink`, `go`, `event-driven`, `postgresql`, `avro`, `immudb`, `cedar` |
-| Social preview | Upload [docs/assets/social-preview.svg](./assets/social-preview.svg) (Settings → General → Social preview) |
+### Topic rules (GitHub standard)
+
+Per [GitHub Docs — Classifying your repository with topics](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/classifying-your-repository-with-topics):
+
+- **Format**: lowercase letters, numbers, and hyphens only (no underscores or spaces)
+- **Length**: ≤ 50 characters per topic
+- **Count**: ≤ 20 topics per repository
+- **Mix**: purpose + tech stack + industry/domain (6–15 tags is a practical target)
+- **Skip** the primary language topic (`go`) — GitHub already surfaces language from code
+- **Avoid** meta or version tags (`beta`, `2026`, `wip`, `release-1`)
+
+Align topics with the README, About description, and actual dependencies — not roadmap-only tech.
+
+### Canonical values
+
+| Field | Value |
+|-------|-------|
+| Description | Open-source reference stack for an event-driven financial digital twin with embedded compliance monitoring: CDC ingestion, stream processing, policy evaluation, and a tamper-evident audit ledger. |
+| Website | `https://github.com/SafetyMP/Digital-Twin-Compliance#readme` (**applied**) |
+| Topics | See table below (**applied** — 14 topics) |
+| Social preview | Upload [docs/assets/social-preview.png](./assets/social-preview.png) (1280×640 PNG; export from SVG if needed) — **Settings → General → Social preview** |
+
+**Topics** (14 — purpose, stack, domain):
+
+| Category | Topics |
+|----------|--------|
+| Purpose / architecture | `digital-twin`, `compliance`, `event-driven`, `transactional-outbox` |
+| Industry / domain | `regtech`, `fintech`, `core-banking` |
+| Tech stack | `kafka`, `debezium`, `flink`, `postgresql`, `avro`, `immudb`, `cedar` |
+
+Apply from a maintainer shell (replaces the full topic list):
+
+```bash
+printf '%s' '{"names":["digital-twin","compliance","event-driven","transactional-outbox","regtech","fintech","core-banking","kafka","debezium","flink","postgresql","avro","immudb","cedar"]}' \
+  | gh api -X PUT repos/SafetyMP/Digital-Twin-Compliance/topics --input -
+```
 
 Enable **Issues** under Features. **Discussions** optional — useful for Q&A if issue volume grows.
 

@@ -8,7 +8,55 @@ Open-source reference stack for an **event-driven financial digital twin** with 
 [![Schema Compatibility](https://github.com/SafetyMP/Digital-Twin-Compliance/actions/workflows/schema-compat.yml/badge.svg)](https://github.com/SafetyMP/Digital-Twin-Compliance/actions/workflows/schema-compat.yml)
 [![Docker Publish](https://github.com/SafetyMP/Digital-Twin-Compliance/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/SafetyMP/Digital-Twin-Compliance/actions/workflows/docker-publish.yml)
 [![CodeQL](https://github.com/SafetyMP/Digital-Twin-Compliance/actions/workflows/codeql.yml/badge.svg)](https://github.com/SafetyMP/Digital-Twin-Compliance/actions/workflows/codeql.yml)
+[![Release](https://img.shields.io/github/v/release/SafetyMP/Digital-Twin-Compliance)](https://github.com/SafetyMP/Digital-Twin-Compliance/releases)
 [![License](https://img.shields.io/github/license/SafetyMP/Digital-Twin-Compliance)](LICENSE)
+
+<p align="center">
+  <img src="docs/assets/alert-console.png" alt="Alert Console showing INT-M001 compliance alert with audit evidence link" width="49%" />
+  <img src="docs/assets/audit-explorer.png" alt="Audit Explorer showing tamper-evident ledger entry with integrity OK badge" width="49%" />
+</p>
+
+## TL;DR
+
+**Path A — full platform (cold start, ~10–40 min):**
+
+```bash
+git clone https://github.com/SafetyMP/Digital-Twin-Compliance.git && cd Digital-Twin-Compliance
+cp .env.example .env
+docker compose -f docker-compose.dev.yml up -d --wait && ./scripts/seed.sh
+```
+
+Then run phased smoke: [Quick start](#quick-start) (`smoke-test.sh` → `smoke-test-phase2.sh` → `smoke-test-phase3.sh`).
+
+**Path B — policy + audit demo (warm stack, ~5 min):** [docs/demo-phase3.md](docs/demo-phase3.md)
+
+```bash
+./scripts/demo-phase3.sh --trigger-alert --restart-policies
+SMOKE_PHASE3_SKIP_PREREQS=1 ./scripts/smoke-test-phase3.sh
+```
+
+Open [Alert Console](http://localhost:3000) and [Audit Explorer](http://localhost:3002).
+
+**How this differs:** streaming CDC → Kafka → twin state with Flink CEP and policy evaluation — not batch regulatory ETL. A multi-service reference stack with CI smoke gates — not a single-service demo. Dev/CI architecture with mock principals — not a production-hardened core.
+
+**Quick links:** [TL;DR](#tldr) · [Demo](docs/demo-phase3.md) · [Architecture](#architecture) · [Quick start](#quick-start) · [REST API](#rest-api) · [Contributing](#contributing)
+
+## Table of contents
+
+- [Who this is for](#who-this-is-for)
+- [Capabilities on `main`](#capabilities-on-main)
+- [Features & maturity](#features--maturity)
+- [Architecture](#architecture)
+- [Prerequisites](#prerequisites)
+- [Quick start](#quick-start)
+- [REST API](#rest-api)
+- [Repository layout](#repository-layout)
+- [Documentation](#documentation)
+- [DevOps and deployment](#devops-and-deployment)
+- [CI](#ci)
+- [Security](#security)
+- [Community](#community)
+- [Contributing](#contributing)
 
 ## Who this is for
 

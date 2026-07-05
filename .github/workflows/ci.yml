@@ -78,12 +78,17 @@ jobs:
           chmod +x scripts/agent-worktree.sh scripts/agent-worktree-best-of-n.sh \
             scripts/check-agent-worktrees.sh scripts/check-worktree-scope.sh \
             scripts/verify-worktree-merge.sh scripts/check-dependency-waves.sh \
-            scripts/demo-agent-workflows.sh
+            scripts/demo-agent-workflows.sh scripts/check-subagent-preflight.sh \
+            scripts/measure-phase3-latency.sh
           bash -n scripts/agent-worktree.sh scripts/agent-worktree-best-of-n.sh \
             scripts/check-agent-worktrees.sh scripts/check-worktree-scope.sh \
             scripts/verify-worktree-merge.sh scripts/check-dependency-waves.sh \
-            scripts/demo-agent-workflows.sh
+            scripts/demo-agent-workflows.sh scripts/check-subagent-preflight.sh \
+            scripts/measure-phase3-latency.sh
           ./scripts/check-agent-worktrees.sh
+
+      - name: OSS publish metadata
+        run: chmod +x scripts/publish-check.sh && bash -n scripts/publish-check.sh && ./scripts/publish-check.sh
 
       - name: Live evals (mechanical)
         run: ./scripts/run-live-evals.sh
