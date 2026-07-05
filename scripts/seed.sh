@@ -18,10 +18,12 @@ if [[ "${ENTITY_COUNT:-0}" -lt 10 ]]; then
   psql "$CORE_URL" -v ON_ERROR_STOP=1 -f mocks/core-banking/seed/seed.sql
   psql "$CORE_URL" -v ON_ERROR_STOP=1 -f mocks/core-banking/seed/002_phase2_exposure.sql
   psql "$CORE_URL" -v ON_ERROR_STOP=1 -f mocks/core-banking/seed/003_liquidity.sql
+  psql "$CORE_URL" -v ON_ERROR_STOP=1 -f mocks/core-banking/seed/004_graph_cdc.sql
 else
   echo "==> Core banking already seeded ($ENTITY_COUNT institutions); skipping seed."
   psql "$CORE_URL" -v ON_ERROR_STOP=1 -f mocks/core-banking/seed/002_phase2_exposure.sql
   psql "$CORE_URL" -v ON_ERROR_STOP=1 -f mocks/core-banking/seed/003_liquidity.sql
+  psql "$CORE_URL" -v ON_ERROR_STOP=1 -f mocks/core-banking/seed/004_graph_cdc.sql
 fi
 
 ALERT_URL="${ALERT_DB_URL:-postgres://alert:alert@localhost:5435/alerts?sslmode=disable}"

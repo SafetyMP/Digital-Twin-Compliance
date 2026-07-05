@@ -71,11 +71,12 @@ BEGIN
   FOR i IN 1..500 LOOP
     owner_idx := 1 + ((i - 1) % array_length(entities, 1));
     cp_idx := 1 + ((i + 4) % array_length(entities, 1));
-    INSERT INTO instruments (isin, instrument_type, counterparty_id, notional_amount, currency, maturity_date, regulatory_class)
+    INSERT INTO instruments (isin, instrument_type, counterparty_id, owner_entity_id, notional_amount, currency, maturity_date, regulatory_class)
     VALUES (
       'XS' || lpad(i::text, 10, '0'),
       inst_types[1 + (i % array_length(inst_types, 1))],
       entities[cp_idx],
+      entities[owner_idx],
       (10000 + (i * 10000))::numeric(20,2),
       CASE (i % 3) WHEN 0 THEN 'EUR' WHEN 1 THEN 'USD' ELSE 'GBP' END,
       (CURRENT_DATE + ((i % 3650) || ' days')::interval),

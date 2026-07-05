@@ -60,6 +60,14 @@ jobs:
         working-directory: services/decision-service
         run: go test ./...
 
+      - name: Go tests (graph-service)
+        working-directory: services/graph-service
+        run: go mod tidy && go test ./...
+
+      - name: Python tests (simulation-service)
+        working-directory: services/simulation-service
+        run: pip install -r requirements.txt && pytest -q
+
       - name: Install Cedar CLI
         run: chmod +x scripts/install-cedar-cli.sh && ./scripts/install-cedar-cli.sh
 
@@ -129,6 +137,13 @@ jobs:
       - name: Wait for outbox drain after restart
         run: chmod +x scripts/wait-outbox-drained.sh scripts/smoke-lib-phase2.sh && ./scripts/wait-outbox-drained.sh
 
+      - name: Restart graph-service after twin pipeline
+        run: |
+          chmod +x scripts/wait-graph-seeded.sh
+          docker compose -f docker-compose.dev.yml restart graph-service
+          docker compose -f docker-compose.dev.yml up -d --wait graph-service simulation-service graph-explorer simulation-console
+          ./scripts/wait-graph-seeded.sh
+
       - name: Verify state twin pipeline
         run: chmod +x scripts/verify-state-twin-pipeline.sh scripts/smoke-lib-phase2.sh && ./scripts/verify-state-twin-pipeline.sh
 
@@ -145,6 +160,14 @@ jobs:
 
       - name: Build audit-explorer
         working-directory: apps/audit-explorer
+        run: npm install && npm run build
+
+      - name: Build graph-explorer
+        working-directory: apps/graph-explorer
+        run: npm install && npm run build
+
+      - name: Build simulation-console
+        working-directory: apps/simulation-console
         run: npm install && npm run build
 
       - name: Submit Flink job and wait for RUNNING
@@ -186,6 +209,12 @@ jobs:
         env:
           GRAFANA_URL: http://localhost:3030
         run: chmod +x scripts/smoke-test-phase3.sh scripts/verify-audit-chain.sh && SMOKE_PHASE3_SKIP_PREREQS=1 ./scripts/smoke-test-phase3.sh
+
+      - name: Smoke test (Phase 4)
+        run: |
+          chmod +x scripts/smoke-test-phase4.sh scripts/wait-graph-seeded.sh
+          bash -n scripts/smoke-test-phase4.sh scripts/wait-graph-seeded.sh
+          SMOKE_PHASE4_SKIP_PREREQS=1 ./scripts/smoke-test-phase4.sh
 
       - name: Coverage gates
         run: ./scripts/check-coverage-gates.sh
