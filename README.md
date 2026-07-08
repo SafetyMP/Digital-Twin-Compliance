@@ -15,6 +15,12 @@ Open-source reference stack for an **event-driven financial digital twin** with 
   <img src="docs/assets/demo.gif" alt="Digital Twin demo — Alert Console compliance alert linked to Audit Explorer integrity proof" width="900" />
 </p>
 
+## Screenshots
+
+| Alert Console | Audit Explorer |
+|---------------|----------------|
+| ![Alert Console](docs/assets/alert-console.png) | ![Audit Explorer](docs/assets/audit-explorer.png) |
+
 ## TL;DR
 
 **Path A — full platform (cold start, ~10–40 min):**

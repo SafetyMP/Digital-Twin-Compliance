@@ -29,8 +29,8 @@ const auditExplorerBase = process.env.AUDIT_EXPLORER_URL ?? "http://localhost:30
 const alertDbUrl =
   process.env.ALERT_DB_URL ?? "postgres://alert:alert@localhost:5435/alerts?sslmode=disable";
 
-/** Frame duration in centiseconds (200 = 2 seconds per screen). */
-const GIF_FRAME_DELAY_CS = 200;
+/** Frame duration in milliseconds (gifenc stores delay/10 as GIF centiseconds). */
+const GIF_FRAME_DELAY_MS = 2_000;
 
 const frameFiles = [
   { file: "alert-console.png", name: "Alert Console" },
@@ -81,7 +81,7 @@ async function writeDemoGif(frames) {
     const { data, width, height } = PNG.sync.read(buffer);
     const palette = quantize(data, 256);
     const index = applyPalette(data, palette);
-    encoder.writeFrame(index, width, height, { palette, delay: GIF_FRAME_DELAY_CS });
+    encoder.writeFrame(index, width, height, { palette, delay: GIF_FRAME_DELAY_MS });
     console.log(`GIF frame: ${name}`);
   }
   encoder.finish();
