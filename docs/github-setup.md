@@ -92,12 +92,12 @@ Recommended for `main`:
 |------|---------|
 | Require a pull request before merging | On (1 approval if team grows) |
 | Require status checks to pass | On |
-| Required checks | `ci`, `schema-compat`, `analyze` (CodeQL) |
+| Required checks | `ci`, `schema-compat`, `analyze` (CodeQL), `Scorecard analysis` (after first run) |
 | Require branches to be up to date | On |
 | Block force pushes | On |
 | Restrict deletions | On |
 
-After the first CodeQL run completes, the `analyze` check name appears under required checks.
+After the first CodeQL run completes, the `analyze` check name appears under required checks. After the first OpenSSF Scorecard run, add `Scorecard analysis` from [.github/workflows/scorecard.yml](../.github/workflows/scorecard.yml).
 
 If branch protection still lists `phase1`, replace it with `ci` after merging the CI job rename (Settings → Branches → edit ruleset).
 
@@ -146,6 +146,7 @@ After the first **Docker Publish** workflow succeeds:
 | Dependabot alerts | Enable |
 | Dependabot security updates | Enable |
 | Code scanning (CodeQL) | Enabled via [.github/workflows/codeql.yml](../.github/workflows/codeql.yml) |
+| OpenSSF Scorecard | Enabled via [.github/workflows/scorecard.yml](../.github/workflows/scorecard.yml); badge on [README](../README.md) after first published run |
 | Secret scanning | Enable (GitHub-provided patterns) |
 
 ---

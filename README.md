@@ -8,6 +8,7 @@ Open-source reference stack for an **event-driven financial digital twin** with 
 [![Schema Compatibility](https://github.com/SafetyMP/Digital-Twin-Compliance/actions/workflows/schema-compat.yml/badge.svg)](https://github.com/SafetyMP/Digital-Twin-Compliance/actions/workflows/schema-compat.yml)
 [![Docker Publish](https://github.com/SafetyMP/Digital-Twin-Compliance/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/SafetyMP/Digital-Twin-Compliance/actions/workflows/docker-publish.yml)
 [![CodeQL](https://github.com/SafetyMP/Digital-Twin-Compliance/actions/workflows/codeql.yml/badge.svg)](https://github.com/SafetyMP/Digital-Twin-Compliance/actions/workflows/codeql.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/SafetyMP/Digital-Twin-Compliance/badge)](https://scorecard.dev/viewer/?uri=github.com/SafetyMP/Digital-Twin-Compliance)
 [![Release](https://img.shields.io/github/v/release/SafetyMP/Digital-Twin-Compliance)](https://github.com/SafetyMP/Digital-Twin-Compliance/releases)
 [![License](https://img.shields.io/github/license/SafetyMP/Digital-Twin-Compliance)](LICENSE)
 
@@ -352,6 +353,7 @@ Full contract: [docs/phase3-implementation-spec.md](docs/phase3-implementation-s
 | **Staging deploy** | Manual workflow — SSH deploy to a host running `docker-compose.deploy.yml` |
 | **Dependabot** | Weekly updates for Go (all services), npm (UIs), Maven (CEP), GitHub Actions, and Docker |
 | **CodeQL** | Go security analysis on push, PR, and weekly schedule |
+| **OpenSSF Scorecard** | Supply-chain security posture on push and weekly schedule ([`.github/workflows/scorecard.yml`](.github/workflows/scorecard.yml)) |
 | **Issue templates** | Structured bug reports and feature requests |
 
 Quick deploy on a host with Docker (requires repo clone for policy bind mounts):
