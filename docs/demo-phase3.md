@@ -172,6 +172,8 @@ Note the printed URLs (alert detail + audit entry), then capture at ~1280px widt
 
 Optional: export `docs/assets/social-preview.png` from [social-preview.svg](./assets/social-preview.svg) (1280×640) for GitHub Settings → Social preview.
 
+**Demo GIF (2s per frame):** after capturing PNGs above, run `npm run screenshots` (live stack) or `npm run screenshots:rebuild-gif` (from existing PNGs). Output: `docs/assets/demo.gif`.
+
 ---
 
 ## References

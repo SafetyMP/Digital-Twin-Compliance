@@ -1,0 +1,14 @@
+{
+  "name": "digital-twin-compliance",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "screenshots": "node scripts/capture-screenshots.mjs",
+    "screenshots:rebuild-gif": "node scripts/capture-screenshots.mjs --from-existing"
+  },
+  "devDependencies": {
+    "gifenc": "^1.0.3",
+    "playwright": "^1.60.0",
+    "pngjs": "^7.0.0"
+  }
+}

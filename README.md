@@ -12,8 +12,7 @@ Open-source reference stack for an **event-driven financial digital twin** with 
 [![License](https://img.shields.io/github/license/SafetyMP/Digital-Twin-Compliance)](LICENSE)
 
 <p align="center">
-  <img src="docs/assets/alert-console.png" alt="Alert Console showing INT-M001 compliance alert with audit evidence link" width="49%" />
-  <img src="docs/assets/audit-explorer.png" alt="Audit Explorer showing tamper-evident ledger entry with integrity OK badge" width="49%" />
+  <img src="docs/assets/demo.gif" alt="Digital Twin demo — Alert Console compliance alert linked to Audit Explorer integrity proof" width="900" />
 </p>
 
 ## TL;DR
