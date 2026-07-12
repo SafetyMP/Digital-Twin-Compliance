@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/digital-twin/platform/services/cedar-service/internal/auth"
 	"github.com/digital-twin/platform/services/cedar-service/internal/decision"
 	"github.com/digital-twin/platform/services/cedar-service/internal/engine"
 )
@@ -77,18 +78,21 @@ func TestHealthPolicyLoadStatus(t *testing.T) {
 	}
 }
 
-func TestEvaluateUsesDevHeaders(t *testing.T) {
-	t.Parallel()
+func TestEvaluateUsesVerifiedJWT(t *testing.T) {
+	t.Setenv("CEDAR_SERVICE_JWT_SECRET", "test-jwt-secret-value-32chars!!")
 	var captured engine.EvaluateRequest
 	srv := NewServer(captureEngine{
 		capture: &captured,
 		status:  engine.Status{Loaded: true},
 	}, nil, PrincipalDefaults{ID: "fallback", Roles: []string{"Analyst"}})
 
-	body := bytes.NewBufferString(`{"ruleCode":"INT-R003","resource":{"type":"TwinData","id":"twin-1","attrs":{"sensitivity":"low"}}}`)
+	body := bytes.NewBufferString(`{"ruleCode":"INT-R003","principal":{"id":"ignored","roles":["Ignored"]},"resource":{"type":"TwinData","id":"twin-1","attrs":{"sensitivity":"low"}}}`)
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/evaluate", body)
-	req.Header.Set("X-Principal", "header-user")
-	req.Header.Set("X-Roles", "Reporter,Analyst")
+	token, err := auth.SignToken("test-jwt-secret-value-32chars!!", "header-user", []string{"Reporter", "Analyst"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
 	rec := httptest.NewRecorder()
 	srv.Handler().ServeHTTP(rec, req)
 
@@ -104,7 +108,7 @@ func TestEvaluateUsesDevHeaders(t *testing.T) {
 }
 
 func TestEvaluateExplicitEmptyRolesSkipsDefaults(t *testing.T) {
-	t.Parallel()
+	t.Setenv("CEDAR_SERVICE_JWT_SECRET", "test-jwt-secret-value-32chars!!")
 	var captured engine.EvaluateRequest
 	srv := NewServer(captureEngine{
 		capture: &captured,
@@ -112,8 +116,14 @@ func TestEvaluateExplicitEmptyRolesSkipsDefaults(t *testing.T) {
 	}, nil, PrincipalDefaults{ID: "fallback", Roles: []string{"Analyst"}})
 
 	body := bytes.NewBufferString(`{"ruleCode":"INT-R003","principal":{"id":"user-1","roles":[]},"resource":{"type":"TwinData","id":"twin-1","attrs":{"sensitivity":"high"}}}`)
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/evaluate", body)
+	token, err := auth.SignToken("test-jwt-secret-value-32chars!!", "user-1", []string{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
 	rec := httptest.NewRecorder()
-	srv.Handler().ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/api/v1/evaluate", body))
+	srv.Handler().ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status %d body=%s", rec.Code, rec.Body.String())
 	}
@@ -123,7 +133,7 @@ func TestEvaluateExplicitEmptyRolesSkipsDefaults(t *testing.T) {
 }
 
 func TestEvaluateDenyPublishesAudit(t *testing.T) {
-	t.Parallel()
+	t.Setenv("CEDAR_SERVICE_JWT_SECRET", "test-jwt-secret-value-32chars!!")
 	pub := &recordingAudit{}
 	srv := NewServer(stubEngine{
 		result: decision.RuleDecision{
@@ -134,8 +144,14 @@ func TestEvaluateDenyPublishesAudit(t *testing.T) {
 	}, pub, PrincipalDefaults{ID: "operator-dev", Roles: []string{"Analyst"}})
 
 	body := bytes.NewBufferString(`{"ruleCode":"INT-R003","principal":{"id":"user-1"},"resource":{"type":"TwinData","id":"twin-1","attrs":{"sensitivity":"high"}}}`)
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/evaluate", body)
+	token, err := auth.SignToken("test-jwt-secret-value-32chars!!", "user-1", []string{"Analyst"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
 	rec := httptest.NewRecorder()
-	srv.Handler().ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/api/v1/evaluate", body))
+	srv.Handler().ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status %d body=%s", rec.Code, rec.Body.String())
 	}
