@@ -384,6 +384,7 @@ services:
       KAFKA_BROKERS: kafka:9092
       CEDAR_SERVICE_HTTP_ADDR: ":8091"
       CEDAR_POLICY_DIR: /policies/cedar
+      CEDAR_SERVICE_JWT_SECRET: dev-cedar-jwt-secret-min-32-chars!!
       KAFKA_AUDIT_PENDING_TOPIC: compliance.audit.pending
       DEFAULT_PRINCIPAL: operator-dev
       DEFAULT_ROLES: Analyst
