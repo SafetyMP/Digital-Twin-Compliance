@@ -338,7 +338,7 @@ services:
       IMMUDB_PORT: "3322"
       IMMUDB_DATABASE: digitaltwin_audit
       IMMUDB_USER: immudb
-      IMMUDB_PASSWORD: immudb
+      IMMUDB_PASSWORD: ${IMMUDB_PASSWORD:?Set IMMUDB_PASSWORD for deploy stacks}
       AUDIT_SERVICE_HTTP_ADDR: ":8090"
       KAFKA_AUDIT_PENDING_TOPIC: compliance.audit.pending
       KAFKA_AUDIT_RECORDED_TOPIC: compliance.audit.recorded

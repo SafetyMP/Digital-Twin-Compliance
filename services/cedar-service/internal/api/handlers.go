@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/digital-twin/platform/services/cedar-service/internal/audit"
+	"github.com/digital-twin/platform/services/cedar-service/internal/auth"
 	"github.com/digital-twin/platform/services/cedar-service/internal/decision"
 	"github.com/digital-twin/platform/services/cedar-service/internal/engine"
 )
@@ -103,18 +104,16 @@ func (s *Server) evaluate(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "BAD_REQUEST", "invalid JSON body")
 		return
 	}
-	if strings.TrimSpace(body.Principal.ID) == "" {
-		body.Principal.ID = headerOrDefault(r.Header.Get("X-Principal"), s.cfg.ID)
+
+	principalID, roles, err := auth.PrincipalFromRequest(r)
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", err.Error())
+		return
 	}
-	if !body.Principal.rolesExplicit {
-		if len(body.Principal.Roles) == 0 {
-			if roles := r.Header.Get("X-Roles"); roles != "" {
-				body.Principal.Roles = splitCSV(roles)
-			} else {
-				body.Principal.Roles = s.cfg.Roles
-			}
-		}
-	}
+	body.Principal.ID = principalID
+	body.Principal.Roles = roles
+	body.Principal.rolesExplicit = true
+
 	if body.Resource.Attrs == nil {
 		body.Resource.Attrs = map[string]any{}
 	}
