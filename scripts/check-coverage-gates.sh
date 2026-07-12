@@ -45,7 +45,7 @@ check_cep_coverage() {
       return 1
     fi
   else
-    if ! docker run --rm -v "$ROOT:/repo" -w /repo/jobs/compliance-cep maven:3.9-eclipse-temurin-17 mvn -q test jacoco:report >/dev/null; then
+    if ! docker run --rm -v "$ROOT:/repo" -w /repo/jobs/compliance-cep maven:3.9-eclipse-temurin-17@sha256:1ed5d1f54416b706707b4f3238f63a20bb06aab27c6d240090a2bb9ad895ed45 mvn -q test jacoco:report >/dev/null; then
       return 1
     fi
   fi

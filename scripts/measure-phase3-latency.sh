@@ -86,7 +86,8 @@ else
 fi
 
 if curl -sf "${FLINK_URL}/overview" >/dev/null 2>&1; then
-  running="$(curl -sf "${FLINK_URL}/jobs/overview" | python3 -c "import json,sys; d=json.load(sys.stdin); print(sum(1 for j in d.get('jobs',[]) if j.get('state')=='RUNNING'))" 2>/dev/null || echo 0)"
+  jobs_overview="$(curl -sf "${FLINK_URL}/jobs/overview")"
+  running="$(printf '%s' "$jobs_overview" | python3 -c "import json,sys; d=json.load(sys.stdin); print(sum(1 for j in d.get('jobs',[]) if j.get('state')=='RUNNING'))" 2>/dev/null || echo 0)"
   ok "Flink JobManager reachable; RUNNING jobs=${running}"
   if [[ "$running" -eq 0 ]]; then
     warn_line "no RUNNING Flink job — submit with ./scripts/submit-flink-job.sh before checkpoint stats matter"
