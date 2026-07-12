@@ -30,7 +30,7 @@ else
     -v "$ROOT/jobs/compliance-cep:/app" \
     -v "$ROOT/contracts:/contracts" \
     -w /app \
-    maven:3.9-eclipse-temurin-17 \
+    maven:3.9-eclipse-temurin-17@sha256:1ed5d1f54416b706707b4f3238f63a20bb06aab27c6d240090a2bb9ad895ed45 \
     mvn -q test -Dtest=KafkaContractTest
 fi
 

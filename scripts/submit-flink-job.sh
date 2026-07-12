@@ -26,7 +26,7 @@ PY
   if command -v mvn >/dev/null 2>&1; then
     (cd "$ROOT/jobs/compliance-cep" && mvn -q package -DskipTests)
   else
-    docker run --rm -v "$ROOT/jobs/compliance-cep:/app" -w /app maven:3.9-eclipse-temurin-17 mvn -q package -DskipTests
+    docker run --rm -v "$ROOT/jobs/compliance-cep:/app" -w /app maven:3.9-eclipse-temurin-17@sha256:1ed5d1f54416b706707b4f3238f63a20bb06aab27c6d240090a2bb9ad895ed45 mvn -q package -DskipTests
   fi
 }
 
@@ -35,7 +35,7 @@ if [[ ! -f "$ROOT/$JAR_REL" ]]; then
   if command -v mvn >/dev/null 2>&1; then
     (cd "$ROOT/jobs/compliance-cep" && mvn -q package -DskipTests)
   else
-    docker run --rm -v "$ROOT/jobs/compliance-cep:/app" -w /app maven:3.9-eclipse-temurin-17 mvn -q package -DskipTests
+    docker run --rm -v "$ROOT/jobs/compliance-cep:/app" -w /app maven:3.9-eclipse-temurin-17@sha256:1ed5d1f54416b706707b4f3238f63a20bb06aab27c6d240090a2bb9ad895ed45 mvn -q package -DskipTests
   fi
 else
   rebuild_if_stale "$ROOT/$JAR_REL"
