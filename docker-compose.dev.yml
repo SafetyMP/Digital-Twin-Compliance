@@ -1,6 +1,6 @@
 services:
   core-banking-db:
-    image: postgres:16
+    image: postgres:16@sha256:be01cf82fc7dbba824acf0a82e150b4b360f3ff93c6631d7844af431e841a95c
     environment:
       POSTGRES_USER: core
       POSTGRES_PASSWORD: core
@@ -17,7 +17,7 @@ services:
       retries: 10
 
   state-db:
-    image: postgres:16
+    image: postgres:16@sha256:be01cf82fc7dbba824acf0a82e150b4b360f3ff93c6631d7844af431e841a95c
     environment:
       POSTGRES_USER: state
       POSTGRES_PASSWORD: state
@@ -33,7 +33,7 @@ services:
       retries: 10
 
   kafka:
-    image: apache/kafka:3.7.0
+    image: apache/kafka:3.7.0@sha256:41c20d65b0a2180b9deca056d47540771752e69fe9225d5748dd65a25a9675d7
     ports:
       - "9092:9092"
     environment:
@@ -57,7 +57,7 @@ services:
       start_period: 30s
 
   schema-registry:
-    image: confluentinc/cp-schema-registry:7.6.0
+    image: confluentinc/cp-schema-registry:7.6.0@sha256:d23d8440708bb44daad5cba4195c070b9713c126375b355afb5ffedf7f1b94e7
     depends_on:
       kafka:
         condition: service_healthy
@@ -74,7 +74,7 @@ services:
       retries: 10
 
   debezium:
-    image: debezium/connect:2.6
+    image: debezium/connect:2.6@sha256:baa0dbbc404eb4da82e07c31482d6c63d8dc4e64c76260dd1933110235ee0809
     depends_on:
       kafka:
         condition: service_healthy
@@ -134,7 +134,7 @@ services:
       start_period: 20s
 
   redis:
-    image: redis:7-alpine
+    image: redis:7-alpine@sha256:6ab0b6e7381779332f97b8ca76193e45b0756f38d4c0dcda72dbb3c32061ab99
     ports:
       - "6380:6379"
     healthcheck:
@@ -144,7 +144,7 @@ services:
       retries: 10
 
   alert-db:
-    image: postgres:16
+    image: postgres:16@sha256:be01cf82fc7dbba824acf0a82e150b4b360f3ff93c6631d7844af431e841a95c
     environment:
       POSTGRES_USER: alert
       POSTGRES_PASSWORD: alert
@@ -189,7 +189,7 @@ services:
       start_period: 15s
 
   flink-jobmanager:
-    image: flink:1.20-java17
+    image: flink:1.20-java17@sha256:5a781c3a3bf694d4befba7709fbc192403a461c2d852fed533587a0970e03f5e
     ports:
       - "8082:8081"
       - "9249:9249"
@@ -212,7 +212,7 @@ services:
       start_period: 20s
 
   flink-taskmanager:
-    image: flink:1.20-java17
+    image: flink:1.20-java17@sha256:5a781c3a3bf694d4befba7709fbc192403a461c2d852fed533587a0970e03f5e
     depends_on:
       flink-jobmanager:
         condition: service_healthy
@@ -233,7 +233,7 @@ services:
       - flink_checkpoints:/tmp/flink-checkpoints
 
   flink-job-submitter:
-    image: maven:3.9-eclipse-temurin-17
+    image: maven:3.9-eclipse-temurin-17@sha256:1ed5d1f54416b706707b4f3238f63a20bb06aab27c6d240090a2bb9ad895ed45
     depends_on:
       flink-taskmanager:
         condition: service_started
@@ -281,7 +281,7 @@ services:
       NEXT_PUBLIC_AUDIT_EXPLORER_URL: http://localhost:3002
 
   kafka-exporter:
-    image: danielqsj/kafka-exporter:v1.7.0
+    image: danielqsj/kafka-exporter:v1.7.0@sha256:e90b7ba06d97717224d67774fc7f208c26d1c4dafd4c8011185b0d45b5b38ace
     depends_on:
       kafka:
         condition: service_healthy
@@ -291,7 +291,7 @@ services:
       - "9308:9308"
 
   prometheus:
-    image: prom/prometheus:v2.52.0
+    image: prom/prometheus:v2.52.0@sha256:5c435642ca4d8427ca26f4901c11114023004709037880cd7860d5b7176aa731
     depends_on:
       kafka-exporter:
         condition: service_started
@@ -303,7 +303,7 @@ services:
       - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
 
   immudb:
-    image: codenotary/immudb:latest
+    image: codenotary/immudb@sha256:1053c2c254473670412b6f7257f61b6c09469b9b53b50c02bc7378ba775dc429
     ports:
       - "3322:3322"
       - "9497:9497"
@@ -321,7 +321,7 @@ services:
       start_period: 20s
 
   audit-db:
-    image: postgres:16
+    image: postgres:16@sha256:be01cf82fc7dbba824acf0a82e150b4b360f3ff93c6631d7844af431e841a95c
     environment:
       POSTGRES_USER: audit
       POSTGRES_PASSWORD: audit
@@ -433,7 +433,7 @@ services:
       AUDIT_SERVICE_URL: http://audit-service:8090
 
   neo4j:
-    image: neo4j:5-community
+    image: neo4j:5-community@sha256:4bae36aff76271e27fd6a6ed0835413f86a284cd179cfb1cb7d188f5f7533aca
     ports:
       - "7474:7474"
       - "7687:7687"
@@ -533,7 +533,7 @@ services:
       NEXT_PUBLIC_AUDIT_EXPLORER_URL: http://localhost:3002
 
   grafana:
-    image: grafana/grafana:10.4.0
+    image: grafana/grafana:10.4.0@sha256:f9811e4e687ffecf1a43adb9b64096c50bc0d7a782f8608530f478b6542de7d5
     depends_on:
       prometheus:
         condition: service_started
