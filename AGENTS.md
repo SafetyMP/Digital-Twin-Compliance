@@ -122,6 +122,14 @@ After verification or eval scoring, run `./scripts/token-efficiency.sh --strict`
 
 ## Commands
 
+**Agent Definition of Done (no Docker):**
+
+```bash
+./scripts/verify.sh
+```
+
+Full stack smoke (Docker required) matches `.github/workflows/ci.yml`.
+
 Run from repository root:
 
 ```bash
@@ -398,14 +406,6 @@ Measure session efficiency separately with `./scripts/token-efficiency.sh --stri
 - **Verification agent** runs [docs/handoff-verification-agent.md](docs/handoff-verification-agent.md); minimal diffs only.
 - **Continuation** across sessions uses [docs/handoff-continuation.md](docs/handoff-continuation.md); outcomes only, no transcript archaeology.
 - After implementation, run review using [docs/review/phase1-review-checklist.md](docs/review/phase1-review-checklist.md).
-
-## Definition of Done
-
-```bash
-./scripts/verify.sh
-```
-
-Unit/policy gate by default. Set `CURSOR_VERIFY_STACK=1` for full Docker smoke (Phase 1–4).
 
 ## References
 
