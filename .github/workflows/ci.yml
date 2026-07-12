@@ -159,19 +159,19 @@ jobs:
 
       - name: Build alert-console
         working-directory: apps/alert-console
-        run: npm install && npm run build
+        run: npm ci && npm run build
 
       - name: Build audit-explorer
         working-directory: apps/audit-explorer
-        run: npm install && npm run build
+        run: npm ci && npm run build
 
       - name: Build graph-explorer
         working-directory: apps/graph-explorer
-        run: npm install && npm run build
+        run: npm ci && npm run build
 
       - name: Build simulation-console
         working-directory: apps/simulation-console
-        run: npm install && npm run build
+        run: npm ci && npm run build
 
       - name: Submit Flink job and wait for RUNNING
         env:
