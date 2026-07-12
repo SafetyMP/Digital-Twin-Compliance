@@ -14,6 +14,11 @@ ALERT_URL="${ALERT_SERVICE_URL:-http://localhost:8085}"
 ALERT_DB_URL="${ALERT_DB_URL:-postgres://alert:alert@localhost:5435/alerts?sslmode=disable}"
 KAFKA_CONTAINER="${KAFKA_CONTAINER:-digitaltwin-kafka-1}"
 REDIS_CONTAINER="${REDIS_CONTAINER:-digitaltwin-redis-1}"
+export CEDAR_SERVICE_JWT_SECRET="${CEDAR_SERVICE_JWT_SECRET:-dev-cedar-jwt-secret-min-32-chars!!}"
+
+cedar_bearer() {
+  python3 "$ROOT/scripts/sign-cedar-jwt.py" "$1" "${2:-}"
+}
 
 phase3_fail() {
   echo "=== Phase 3 smoke failure diagnostics ===" >&2
@@ -63,14 +68,17 @@ for url in "$AUDIT_URL" "$CEDAR_URL" "$DECISION_URL"; do
 done
 
 echo "Step 2: Cedar INT-R003 deny without Reporter role"
+deny_token=$(cedar_bearer smoke-user "")
 deny=$(curl -sf -X POST "${CEDAR_URL}/api/v1/evaluate" \
   -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer ${deny_token}" \
   -d '{"ruleCode":"INT-R003","principal":{"id":"smoke-user","roles":[]},"resource":{"type":"TwinData","id":"t1","attributes":{"sensitivity":"high"}}}')
 echo "$deny" | jq -e '.outcome == "Deny"' >/dev/null || phase3_fail
 
+allow_token=$(cedar_bearer smoke-user Reporter)
 allow=$(curl -sf -X POST "${CEDAR_URL}/api/v1/evaluate" \
   -H 'Content-Type: application/json' \
-  -H 'X-Roles: Reporter' \
+  -H "Authorization: Bearer ${allow_token}" \
   -d '{"ruleCode":"INT-R003","principal":{"id":"smoke-user"},"resource":{"type":"TwinData","id":"t1","attributes":{"sensitivity":"high"}}}')
 echo "$allow" | jq -e '.outcome == "Allow"' >/dev/null || phase3_fail
 

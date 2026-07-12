@@ -13,6 +13,11 @@ ALERT_CONSOLE_URL="${ALERT_CONSOLE_URL:-http://localhost:3000}"
 ALERT_URL="${ALERT_SERVICE_URL:-http://localhost:8085}"
 ALERT_DB_URL="${ALERT_DB_URL:-postgres://alert:alert@localhost:5435/alerts?sslmode=disable}"
 COMPOSE_FILE="${COMPOSE_FILE:-$ROOT/docker-compose.dev.yml}"
+export CEDAR_SERVICE_JWT_SECRET="${CEDAR_SERVICE_JWT_SECRET:-dev-cedar-jwt-secret-min-32-chars!!}"
+
+cedar_bearer() {
+  python3 "$ROOT/scripts/sign-cedar-jwt.py" "$1" "${2:-}"
+}
 
 TRIGGER_ALERT=0
 RESTART_POLICIES=0
@@ -78,17 +83,20 @@ echo "All Phase 3 APIs healthy."
 
 echo ""
 echo "Cedar INT-R003 (deny without role):"
+deny_token=$(cedar_bearer demo "")
 deny=$(curl -sf -X POST "${CEDAR_URL}/api/v1/evaluate" \
   -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer ${deny_token}" \
   -d '{"ruleCode":"INT-R003","principal":{"id":"demo","roles":[]},"resource":{"type":"TwinData","id":"t1","attributes":{"sensitivity":"high"}}}')
 echo "$deny" | jq '{ruleCode, outcome, rationale}'
 echo "$deny" | jq -e '.outcome == "Deny"' >/dev/null
 
 echo ""
 echo "Cedar INT-R003 (allow with Reporter role):"
+allow_token=$(cedar_bearer demo Reporter)
 allow=$(curl -sf -X POST "${CEDAR_URL}/api/v1/evaluate" \
   -H 'Content-Type: application/json' \
-  -H 'X-Roles: Reporter' \
+  -H "Authorization: Bearer ${allow_token}" \
   -d '{"ruleCode":"INT-R003","principal":{"id":"demo"},"resource":{"type":"TwinData","id":"t1","attributes":{"sensitivity":"high"}}}')
 echo "$allow" | jq '{ruleCode, outcome}'
 echo "$allow" | jq -e '.outcome == "Allow"' >/dev/null
