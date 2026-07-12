@@ -11,6 +11,7 @@ DECISION_URL="${DECISION_SERVICE_URL:-http://localhost:8092}"
 FLINK_URL="${FLINK_JOBMANAGER_URL:-http://localhost:8082}"
 RULE_P99_BUDGET_MS="${PHASE3_RULE_EVAL_P99_MS:-5}"
 ALERT_P99_BUDGET_MS="${PHASE3_ALERT_P99_MS:-2000}"
+export CEDAR_SERVICE_JWT_SECRET="${CEDAR_SERVICE_JWT_SECRET:-dev-cedar-jwt-secret-min-32-chars!!}"
 
 fail=0
 warn=0
@@ -30,15 +31,16 @@ require_health() {
 }
 
 bench_post_ms() {
-  local url="$1" payload="$2" samples="$3"
-  python3 - "$url" "$samples" "$payload" <<'PY'
+  local url="$1" payload="$2" samples="$3" bearer="${4:-}"
+  python3 - "$url" "$samples" "$payload" "$bearer" <<'PY'
 import json, sys, time, urllib.request
 
-url, n, payload = sys.argv[1], int(sys.argv[2]), sys.argv[3]
+url, n, payload, bearer = sys.argv[1], int(sys.argv[2]), sys.argv[3], sys.argv[4]
 data = payload.encode()
-req = urllib.request.Request(
-    url, data=data, method="POST", headers={"Content-Type": "application/json"}
-)
+headers = {"Content-Type": "application/json"}
+if bearer:
+    headers["Authorization"] = f"Bearer {bearer}"
+req = urllib.request.Request(url, data=data, method="POST", headers=headers)
 times = []
 for _ in range(n):
     t0 = time.perf_counter()
@@ -65,8 +67,9 @@ require_health "$DECISION_URL" "decision-service" || exit 1
 
 cedar_payload='{"ruleCode":"INT-R003","principal":{"id":"bench-user","roles":["Reporter"]},"resource":{"type":"TwinData","id":"t1","attributes":{"sensitivity":"high"}}}'
 zen_payload='{"ruleCode":"BASEL-R001","input":{"lcr":0.9,"personaId":"44444444-4444-4444-4444-444444444401"}}'
+cedar_bearer=$(python3 "$ROOT/scripts/sign-cedar-jwt.py" bench-user Reporter)
 
-cedar_stats="$(bench_post_ms "${CEDAR_URL}/api/v1/evaluate" "$cedar_payload" "$SAMPLES")"
+cedar_stats="$(bench_post_ms "${CEDAR_URL}/api/v1/evaluate" "$cedar_payload" "$SAMPLES" "$cedar_bearer")"
 zen_stats="$(bench_post_ms "${DECISION_URL}/api/v1/evaluate" "$zen_payload" "$SAMPLES")"
 
 echo "Cedar INT-R003: $cedar_stats"
