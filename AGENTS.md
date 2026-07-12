@@ -399,6 +399,14 @@ Measure session efficiency separately with `./scripts/token-efficiency.sh --stri
 - **Continuation** across sessions uses [docs/handoff-continuation.md](docs/handoff-continuation.md); outcomes only, no transcript archaeology.
 - After implementation, run review using [docs/review/phase1-review-checklist.md](docs/review/phase1-review-checklist.md).
 
+## Definition of Done
+
+```bash
+./scripts/verify.sh
+```
+
+Unit/policy gate by default. Set `CURSOR_VERIFY_STACK=1` for full Docker smoke (Phase 1–4).
+
 ## References
 
 - [docs/roadmap.md](docs/roadmap.md) — Phases and exit criteria
