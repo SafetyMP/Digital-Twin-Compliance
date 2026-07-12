@@ -1,6 +1,10 @@
 {
   "name": "digital-twin-compliance",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SafetyMP/Digital-Twin-Compliance.git"
+  },
   "type": "module",
   "scripts": {
     "screenshots": "node scripts/capture-screenshots.mjs",
