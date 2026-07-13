@@ -202,7 +202,7 @@ jobs:
         run: ./scripts/smoke-test.sh
 
       - name: Adversarial tier (Phase 1)
-        run: ./scripts/adversarial.sh
+        run: bash ./scripts/adversarial.sh
 
       - name: Smoke test (Phase 2)
         env:
