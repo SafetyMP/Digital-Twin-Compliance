@@ -1,0 +1,22 @@
+schema: threat-model/v1
+product: Digital Twin
+updated: "2026-07-13"
+
+cells:
+  - id: cedar_evaluate
+    method: POST
+    path: /api/v1/evaluate
+    principals: [service_jwt]
+    auth_mechanism: bearer_jwt
+    trust_boundary: verified_principal_only
+    establishment_failure: "401 missing bearer token"
+
+deny_cases:
+  - id: anonymous_cedar_evaluate
+    cell: cedar_evaluate
+    principal: anonymous
+    fixture:
+      path: /api/v1/evaluate
+      body: '{"ruleCode":"BASEL-R001","input":{}}'
+    expect:
+      status: 401
