@@ -8,6 +8,11 @@ echo "==> publish-check"
 chmod +x scripts/publish-check.sh
 ./scripts/publish-check.sh
 
+if [[ -x ./scripts/check-stub-canary.sh ]]; then
+  echo "==> stub canary"
+  ./scripts/check-stub-canary.sh
+fi
+
 echo "==> agent-worktree scripts"
 chmod +x scripts/check-agent-worktrees.sh
 ./scripts/check-agent-worktrees.sh
