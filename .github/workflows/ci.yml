@@ -201,6 +201,9 @@ jobs:
       - name: Smoke test (Phase 1)
         run: ./scripts/smoke-test.sh
 
+      - name: Adversarial tier (Phase 1)
+        run: ./scripts/adversarial.sh
+
       - name: Smoke test (Phase 2)
         env:
           SMOKE_PHASE2_ALERT_WAIT_SEC: 90

@@ -27,3 +27,8 @@ else
 fi
 
 echo "verify: ok (static parity; full smoke requires Docker — see AGENTS.md)"
+
+if [[ -f ./scripts/check-threat-model.sh ]]; then
+  echo "==> threat model gate"
+  bash ./scripts/check-threat-model.sh
+fi
