@@ -4,10 +4,11 @@ const ALERT_API = process.env.ALERT_SERVICE_URL || "http://localhost:8085";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { alertId: string } }
+  context: { params: Promise<{ alertId: string }> }
 ) {
+  const { alertId } = await context.params;
   const body = await request.text();
-  const res = await fetch(`${ALERT_API}/api/v1/alerts/${params.alertId}/acknowledge`, {
+  const res = await fetch(`${ALERT_API}/api/v1/alerts/${alertId}/acknowledge`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body,

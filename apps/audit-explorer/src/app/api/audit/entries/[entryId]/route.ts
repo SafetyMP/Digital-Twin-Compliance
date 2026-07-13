@@ -4,9 +4,10 @@ const AUDIT_API = process.env.AUDIT_SERVICE_URL || "http://localhost:8090";
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { entryId: string } }
+  context: { params: Promise<{ entryId: string }> }
 ) {
-  const res = await fetch(`${AUDIT_API}/api/v1/audit/entries/${params.entryId}`, {
+  const { entryId } = await context.params;
+  const res = await fetch(`${AUDIT_API}/api/v1/audit/entries/${entryId}`, {
     cache: "no-store",
   });
   const body = await res.text();
