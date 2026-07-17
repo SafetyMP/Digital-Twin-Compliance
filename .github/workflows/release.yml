@@ -34,6 +34,10 @@ jobs:
             ghcr.io/safetymp/digital-twin-compliance/cedar-service:${{ github.ref_name }}
             ghcr.io/safetymp/digital-twin-compliance/decision-service:${{ github.ref_name }}
             ghcr.io/safetymp/digital-twin-compliance/audit-explorer:${{ github.ref_name }}
+            ghcr.io/safetymp/digital-twin-compliance/graph-service:${{ github.ref_name }}
+            ghcr.io/safetymp/digital-twin-compliance/simulation-service:${{ github.ref_name }}
+            ghcr.io/safetymp/digital-twin-compliance/graph-explorer:${{ github.ref_name }}
+            ghcr.io/safetymp/digital-twin-compliance/simulation-console:${{ github.ref_name }}
             ```
 
             Semver tags also publish `:latest` on application images.
@@ -50,6 +54,10 @@ jobs:
             export CEDAR_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/cedar-service:${IMAGE_TAG}
             export DECISION_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/decision-service:${IMAGE_TAG}
             export AUDIT_EXPLORER_IMAGE=ghcr.io/safetymp/digital-twin-compliance/audit-explorer:${IMAGE_TAG}
+            export GRAPH_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/graph-service:${IMAGE_TAG}
+            export SIMULATION_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/simulation-service:${IMAGE_TAG}
+            export GRAPH_EXPLORER_IMAGE=ghcr.io/safetymp/digital-twin-compliance/graph-explorer:${IMAGE_TAG}
+            export SIMULATION_CONSOLE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/simulation-console:${IMAGE_TAG}
             ./scripts/deploy-stack.sh pull
             ```
 

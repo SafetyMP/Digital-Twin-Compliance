@@ -78,7 +78,7 @@ Open [Alert Console](http://localhost:3000) and [Audit Explorer](http://localhos
 | **Monitoring** | Flink CEP, Redis features, Alert Service, WebSocket, alert console, Grafana |
 | **Policy & audit** | Cedar + GoRules Zen, immudb hash chain, Audit Explorer, alert `evidenceRef` |
 
-Full stack smoke: `./scripts/smoke-test.sh` → `./scripts/smoke-test-phase2.sh` → `./scripts/smoke-test-phase3.sh`.
+Full stack smoke: `./scripts/smoke-test.sh` → `./scripts/smoke-test-phase2.sh` → `./scripts/smoke-test-phase3.sh` → `./scripts/smoke-test-phase4.sh`.
 
 **Roadmap & gaps:** [ROADMAP.md](ROADMAP.md) · **Support expectations:** [SUPPORT.md](SUPPORT.md)
 
@@ -89,8 +89,9 @@ Full stack smoke: `./scripts/smoke-test.sh` → `./scripts/smoke-test-phase2.sh`
 | Ingestion & twin API | Stable on `main` | CI + `./scripts/smoke-test.sh` |
 | Flink CEP + alerts | Stable on `main` | INT-M001, INT-M002, BASEL-M001 |
 | Policy + audit ledger | Stable on `main` | CI + `./scripts/smoke-test-phase3.sh` · [demo runbook](docs/demo-phase3.md) |
-| GHCR deploy (8 images) | Stable | Full Phase 1–3 via `docker-compose.deploy.yml` |
-| Graph, simulation, XBRL reporting | Planned | See [ROADMAP.md](ROADMAP.md) |
+| GHCR deploy (12 images) | Stable | Full Phase 1–4 via `docker-compose.deploy.yml` |
+| Graph + simulation | CI implemented; deploy images included | `./scripts/smoke-test-phase4.sh` · Neo4j + stress sim |
+| XBRL reporting | Planned | See [ROADMAP.md](ROADMAP.md) |
 
 Release history: [CHANGELOG.md](CHANGELOG.md) · [GitHub Releases](https://github.com/SafetyMP/Digital-Twin-Compliance/releases)
 

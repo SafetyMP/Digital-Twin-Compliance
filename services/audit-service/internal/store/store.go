@@ -47,6 +47,9 @@ func New(pool *pgxpool.Pool, tenantID string) *Store {
 	return &Store{pool: pool, tenantID: tenantID}
 }
 
+// chainAdvisoryLock is a cluster-wide lock key serializing ledger append + index writes.
+const chainAdvisoryLock int64 = 0x617564697443484E // "auditCHN"
+
 func (s *Store) IsProcessed(ctx context.Context, idempotencyKey string) (string, bool, error) {
 	if idempotencyKey == "" {
 		return "", false, nil
@@ -62,6 +65,24 @@ func (s *Store) IsProcessed(ctx context.Context, idempotencyKey string) (string,
 		return "", false, err
 	}
 	return entryID, true, nil
+}
+
+// WithChainLock runs fn while holding a Postgres transaction-scoped advisory lock
+// so only one audit append pipeline advances the hash chain at a time.
+func (s *Store) WithChainLock(ctx context.Context, fn func(ctx context.Context) error) error {
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock($1)`, chainAdvisoryLock); err != nil {
+		return fmt.Errorf("acquire chain lock: %w", err)
+	}
+	if err := fn(ctx); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
 }
 
 func (s *Store) RecordEntry(ctx context.Context, entry events.AuditEntry, ruleCode string) error {
@@ -98,6 +119,7 @@ func (s *Store) RecordEntry(ctx context.Context, entry events.AuditEntry, ruleCo
 			subject_id, subject_type, correlation_id, recorded_at,
 			payload_hash, previous_hash, idempotency_key
 		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+		ON CONFLICT (entry_id) DO NOTHING
 	`, entry.EntryID, s.tenantID, entry.SequenceNumber, entry.EntryType, ruleCodeVal,
 		subjectID, subjectType, entry.CorrelationID, recordedAt,
 		entry.PayloadHash, entry.PreviousHash, entry.IdempotencyKey); err != nil {

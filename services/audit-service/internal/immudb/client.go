@@ -102,7 +102,10 @@ func (c *Client) ResetHead(ctx context.Context) error {
 func (c *Client) GetHead(ctx context.Context) (HeadState, error) {
 	entry, err := c.cli.Get(ctx, []byte(headKeyPrefix))
 	if err != nil {
-		return HeadState{}, nil
+		if IsKeyNotFound(err) {
+			return HeadState{}, nil
+		}
+		return HeadState{}, fmt.Errorf("get head: %w", err)
 	}
 	var head HeadState
 	if err := json.Unmarshal(entry.Value, &head); err != nil {
@@ -112,6 +115,15 @@ func (c *Client) GetHead(ctx context.Context) (HeadState, error) {
 }
 
 func (c *Client) AppendEntry(ctx context.Context, entry events.AuditEntry) error {
+	if existing, err := c.GetEntry(ctx, entry.EntryID); err == nil {
+		if existing.PayloadHash == entry.PayloadHash && existing.SequenceNumber == entry.SequenceNumber {
+			return nil
+		}
+		return fmt.Errorf("entry %s already exists with different content", entry.EntryID)
+	} else if !IsKeyNotFound(err) {
+		return err
+	}
+
 	body, err := json.Marshal(entry)
 	if err != nil {
 		return err
@@ -138,6 +150,9 @@ func (c *Client) AppendEntry(ctx context.Context, entry events.AuditEntry) error
 func (c *Client) GetEntry(ctx context.Context, entryID string) (events.AuditEntry, error) {
 	entry, err := c.cli.Get(ctx, []byte(entryKeyPrefix+entryID))
 	if err != nil {
+		if IsKeyNotFound(err) {
+			return events.AuditEntry{}, fmt.Errorf("get entry %s: %w", entryID, err)
+		}
 		return events.AuditEntry{}, fmt.Errorf("get entry %s: %w", entryID, err)
 	}
 	var out events.AuditEntry

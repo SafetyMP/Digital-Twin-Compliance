@@ -3,6 +3,8 @@ package consumer
 import (
 	"context"
 	"log/slog"
+	"strings"
+	"time"
 
 	"github.com/segmentio/kafka-go"
 )
@@ -31,6 +33,25 @@ func NewRunner(brokers []string, group, topic, dlqTopic string, handler *Handler
 	}
 }
 
+func isPoison(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := strings.ToLower(err.Error())
+	for _, needle := range []string{
+		"invalid character",
+		"unexpected end of json",
+		"cannot unmarshal",
+		"missing event",
+		"unknown event",
+	} {
+		if strings.Contains(msg, needle) {
+			return true
+		}
+	}
+	return false
+}
+
 func (r *Runner) Run(ctx context.Context) error {
 	for {
 		msg, err := r.reader.FetchMessage(ctx)
@@ -39,11 +60,20 @@ func (r *Runner) Run(ctx context.Context) error {
 		}
 		if err := r.handler.HandleMessage(ctx, msg.Value); err != nil {
 			slog.Error("handle alert message", "error", err, "offset", msg.Offset)
+			if !isPoison(err) {
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				case <-time.After(500 * time.Millisecond):
+				}
+				continue
+			}
 			if r.dlq == nil {
 				slog.Warn("dlq disabled; committing poison message to avoid consumer stall", "offset", msg.Offset)
 			} else if dlqErr := r.dlq.PublishDLQ(ctx, msg, err); dlqErr != nil {
-				slog.Error("publish dlq message; committing offset to avoid consumer stall",
+				slog.Error("publish dlq message; not committing",
 					"dlq_error", dlqErr, "handle_error", err, "offset", msg.Offset)
+				continue
 			} else {
 				slog.Warn("routed poison message to dlq", "offset", msg.Offset)
 			}

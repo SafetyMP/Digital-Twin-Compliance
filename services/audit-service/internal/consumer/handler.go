@@ -17,12 +17,14 @@ import (
 type ledger interface {
 	GetHead(ctx context.Context) (immudb.HeadState, error)
 	AppendEntry(ctx context.Context, entry events.AuditEntry) error
+	GetEntry(ctx context.Context, entryID string) (events.AuditEntry, error)
 }
 
 type entryStore interface {
 	IsProcessed(ctx context.Context, idempotencyKey string) (string, bool, error)
 	RecordEntry(ctx context.Context, entry events.AuditEntry, ruleCode string) error
 	InsertDLQ(ctx context.Context, idempotencyKey, topic string, partition int, offset int64, errMsg string, payload json.RawMessage) error
+	WithChainLock(ctx context.Context, fn func(ctx context.Context) error) error
 }
 
 type recordedPublisher interface {
@@ -40,6 +42,12 @@ func NewHandler(ledger ledger, st entryStore, pub recordedPublisher, source stri
 	return &Handler{ledger: ledger, store: st, publisher: pub, source: source}
 }
 
+// entryIDFromIdempotency makes retries reuse the same ledger key after a crash
+// between immudb append and Postgres index write.
+func entryIDFromIdempotency(idempotencyKey string) string {
+	return uuid.NewSHA1(uuid.NameSpaceOID, []byte("audit-entry:"+idempotencyKey)).String()
+}
+
 func (h *Handler) HandleMessage(ctx context.Context, data []byte) error {
 	env, err := events.ParseEnvelope(data)
 	if err != nil {
@@ -52,10 +60,15 @@ func (h *Handler) HandleMessage(ctx context.Context, data []byte) error {
 		return fmt.Errorf("missing idempotencyKey")
 	}
 
-	if _, processed, err := h.store.IsProcessed(ctx, env.IdempotencyKey); err != nil {
+	if entryID, processed, err := h.store.IsProcessed(ctx, env.IdempotencyKey); err != nil {
 		return err
 	} else if processed {
-		return nil
+		entry, err := h.ledger.GetEntry(ctx, entryID)
+		if err != nil {
+			return fmt.Errorf("reload processed entry: %w", err)
+		}
+		// At-least-once: re-publish recorded if prior attempt failed after index write.
+		return h.publisher.PublishRecorded(ctx, entry)
 	}
 
 	pending, err := events.ParseAuditPending(env.Payload)
@@ -63,14 +76,38 @@ func (h *Handler) HandleMessage(ctx context.Context, data []byte) error {
 		return err
 	}
 
+	var entry events.AuditEntry
+	if err := h.store.WithChainLock(ctx, func(lockCtx context.Context) error {
+		built, err := h.buildAndAppend(lockCtx, env, pending)
+		if err != nil {
+			return err
+		}
+		entry = built
+		ruleCode := store.ExtractRuleCode(pending.Payload)
+		return h.store.RecordEntry(lockCtx, entry, ruleCode)
+	}); err != nil {
+		return err
+	}
+
+	return h.publisher.PublishRecorded(ctx, entry)
+}
+
+func (h *Handler) buildAndAppend(ctx context.Context, env events.Envelope, pending events.AuditPending) (events.AuditEntry, error) {
+	entryID := entryIDFromIdempotency(env.IdempotencyKey)
+	if existing, err := h.ledger.GetEntry(ctx, entryID); err == nil {
+		return existing, nil
+	} else if !immudb.IsKeyNotFound(err) {
+		return events.AuditEntry{}, err
+	}
+
 	head, err := h.ledger.GetHead(ctx)
 	if err != nil {
-		return err
+		return events.AuditEntry{}, err
 	}
 
 	payloadHash, err := chain.PayloadHash(pending.Payload, pending.Metadata)
 	if err != nil {
-		return err
+		return events.AuditEntry{}, err
 	}
 
 	previousHash := ""
@@ -86,7 +123,7 @@ func (h *Handler) HandleMessage(ctx context.Context, data []byte) error {
 	}
 
 	entry := events.AuditEntry{
-		EntryID:        uuid.NewString(),
+		EntryID:        entryID,
 		EntryType:      pending.EntryType,
 		SequenceNumber: sequence,
 		RecordedAt:     time.Now().UTC().Format(time.RFC3339Nano),
@@ -102,19 +139,12 @@ func (h *Handler) HandleMessage(ctx context.Context, data []byte) error {
 	}
 
 	if err := store.ValidateEntryForIndex(entry); err != nil {
-		return fmt.Errorf("validate audit entry: %w", err)
+		return events.AuditEntry{}, fmt.Errorf("validate audit entry: %w", err)
 	}
-
 	if err := h.ledger.AppendEntry(ctx, entry); err != nil {
-		return err
+		return events.AuditEntry{}, err
 	}
-
-	ruleCode := store.ExtractRuleCode(pending.Payload)
-	if err := h.store.RecordEntry(ctx, entry, ruleCode); err != nil {
-		return err
-	}
-
-	return h.publisher.PublishRecorded(ctx, entry)
+	return entry, nil
 }
 
 type RecordedProducer struct {

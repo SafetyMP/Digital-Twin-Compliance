@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
@@ -7,7 +9,16 @@ from simulation_service.decision import evaluate_corep
 from simulation_service.graph_client import GraphClient
 from simulation_service.scenario import SCENARIO_ECB_ADVERSE_V1, run_ecb_adverse_v1, stable_run_id
 
-app = FastAPI(title="Simulation Service", version="0.1.0")
+_docs = None if os.getenv("SIMULATION_DISABLE_DOCS", "1") == "1" else "/docs"
+_openapi = None if os.getenv("SIMULATION_DISABLE_DOCS", "1") == "1" else "/openapi.json"
+
+app = FastAPI(
+    title="Simulation Service",
+    version="0.1.0",
+    docs_url=_docs,
+    redoc_url=None,
+    openapi_url=_openapi,
+)
 graph_client = GraphClient()
 
 
@@ -23,7 +34,7 @@ async def health():
     try:
         graph_health = await graph_client.health()
     except Exception as exc:  # noqa: BLE001
-        raise HTTPException(status_code=503, detail={"status": "degraded", "graph": str(exc)}) from exc
+        raise HTTPException(status_code=503, detail={"status": "degraded", "graph": "unreachable"}) from exc
     return {"status": "ok", "graph": graph_health.get("status", "unknown")}
 
 
@@ -49,7 +60,10 @@ async def run_simulation(body: RunRequest):
         correlation_id,
     )
 
-    publish_simulation_run(run_id, correlation_id, metrics)
+    try:
+        publish_simulation_run(run_id, correlation_id, metrics)
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=503, detail="audit publish failed") from exc
 
     return {
         "runId": run_id,

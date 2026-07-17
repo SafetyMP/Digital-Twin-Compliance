@@ -86,6 +86,8 @@ func (r *RecordedRunner) Run(ctx context.Context) error {
 		}
 		if err := r.handler.HandleMessage(ctx, msg.Value); err != nil {
 			slog.Error("handle audit recorded", "error", err)
+			// Do not commit retryable store failures — evidence_ref must land.
+			continue
 		}
 		if err := r.reader.CommitMessages(ctx, msg); err != nil {
 			slog.Error("commit audit recorded offset", "error", err)

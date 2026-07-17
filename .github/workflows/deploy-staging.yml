@@ -54,12 +54,21 @@ jobs:
             export CEDAR_SERVICE_IMAGE=${PREFIX}/cedar-service:${TAG}
             export DECISION_SERVICE_IMAGE=${PREFIX}/decision-service:${TAG}
             export AUDIT_EXPLORER_IMAGE=${PREFIX}/audit-explorer:${TAG}
+            export GRAPH_SERVICE_IMAGE=${PREFIX}/graph-service:${TAG}
+            export SIMULATION_SERVICE_IMAGE=${PREFIX}/simulation-service:${TAG}
+            export GRAPH_EXPLORER_IMAGE=${PREFIX}/graph-explorer:${TAG}
+            export SIMULATION_CONSOLE_IMAGE=${PREFIX}/simulation-console:${TAG}
+            export NEO4J_PASSWORD="${{ secrets.NEO4J_PASSWORD }}"
+            export IMMUDB_PASSWORD="${{ secrets.IMMUDB_PASSWORD }}"
+            export CEDAR_SERVICE_JWT_SECRET="${{ secrets.CEDAR_SERVICE_JWT_SECRET }}"
             chmod +x scripts/deploy-stack.sh
             ./scripts/deploy-stack.sh ${{ inputs.action }}
+            ./scripts/deploy-stack.sh smoke
 
       - name: Deployment summary
         run: |
           echo "### Staging deployment" >> "$GITHUB_STEP_SUMMARY"
           echo "- **Image tag:** \`${{ inputs.image_tag }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- **Action:** \`${{ inputs.action }}\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **Images:** state, alert, alert-console, compliance-cep, audit, cedar, decision, audit-explorer" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Images:** state, alert, alert-console, compliance-cep, audit, cedar, decision, audit-explorer, graph, simulation, graph-explorer, simulation-console" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Post-deploy:** \`deploy-stack.sh smoke\` (Phase 1–4)" >> "$GITHUB_STEP_SUMMARY"

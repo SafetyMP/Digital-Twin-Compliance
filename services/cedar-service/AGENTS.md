@@ -31,7 +31,7 @@ go run ./cmd/server
 - **Five Cedar rules** — `INT-R003`, `INT-R004`, `COREP-R005`, `EMIR-R004`, `DORA-R001` mapped to `policies/cedar/*.cedar`
 - **Role membership** — policies use `principal in DigitalTwin::Role::"..."` (cedar-go compatible)
 - **Deny audit** — `outcome=Deny` publishes `AuditPending` (`entryType=RuleDecision`) to `compliance.audit.pending`
-- **Dev auth** — when `principal` omitted in body, use `X-Principal` + `X-Roles` headers
+- **Dev auth** — Cedar `/evaluate` uses verified `Authorization: Bearer` JWT (`CEDAR_SERVICE_JWT_SECRET`); do not rely on legacy `X-Principal` / `X-Roles` headers
 - **REST error shape** — `{"error":"...", "code":"BAD_REQUEST"}` matching alert-service
 
 ## Gotchas

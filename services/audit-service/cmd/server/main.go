@@ -60,6 +60,7 @@ func main() {
 	go func() {
 		if err := runner.Run(ctx); err != nil && ctx.Err() == nil {
 			slog.Error("consumer stopped", "error", err)
+			cancel()
 		}
 	}()
 

@@ -30,16 +30,18 @@ func main() {
 	defer func() { _ = store.Close(context.Background()) }()
 
 	handler := consumer.NewHandler(store)
-	twinRunner := consumer.NewRunner(cfg.KafkaBrokers, cfg.ConsumerGroup, cfg.TwinTopic, handler)
-	instrumentsRunner := consumer.NewInstrumentsRunner(cfg.KafkaBrokers, cfg.InstrumentsConsumerGroup(), cfg.InstrumentsTopic, handler)
+	twinRunner := consumer.NewRunner(cfg.KafkaBrokers, cfg.ConsumerGroup, cfg.TwinTopic, cfg.TwinDLQTopic, handler)
+	instrumentsRunner := consumer.NewInstrumentsRunner(cfg.KafkaBrokers, cfg.InstrumentsConsumerGroup(), cfg.InstrumentsTopic, cfg.InstrumentsDLQ, handler)
 	go func() {
 		if err := twinRunner.Run(ctx); err != nil && ctx.Err() == nil {
 			slog.Error("twin consumer stopped", "error", err)
+			cancel()
 		}
 	}()
 	go func() {
 		if err := instrumentsRunner.Run(ctx); err != nil && ctx.Err() == nil {
 			slog.Error("instruments consumer stopped", "error", err)
+			cancel()
 		}
 	}()
 

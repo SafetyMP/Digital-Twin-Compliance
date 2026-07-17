@@ -68,7 +68,7 @@ public final class LcrChecker {
                     Map.of("zenRuleCode", "BASEL-R001", "zenOutcome", outcome)
             ));
         } catch (Exception e) {
-            LOG.warning("Zen BASEL-R001 evaluation failed; falling back to inline LCR threshold: " + e.getMessage());
+            com.digitaltwin.jobs.cep.ZenFallbackMetrics.record("BASEL-R001", e);
             if (!shouldAlert(lcr, config.lcrMinimum)) {
                 return Optional.empty();
             }

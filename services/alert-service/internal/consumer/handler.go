@@ -75,18 +75,20 @@ func (h *Handler) HandleMessage(ctx context.Context, data []byte) error {
 	}
 	if created {
 		h.hub.Broadcast("alert.raised", saved)
-		if h.auditPub != nil {
-			sourceEventID := env.EventID
-			_ = h.auditPub.PublishAlertRaised(ctx, audit.AlertAuditInput{
-				AlertID:        saved.AlertID,
-				RuleCode:       saved.RuleCode,
-				Regime:         saved.Regime,
-				Severity:       saved.Severity,
-				Summary:        saved.Summary,
-				SourceEventID:  sourceEventID,
-				IdempotencyKey: env.IdempotencyKey,
-				CorrelationID:  env.CorrelationID,
-			})
+	}
+	// Always publish audit (idempotent by key) so a failed publish after upsert retries.
+	if h.auditPub != nil {
+		if err := h.auditPub.PublishAlertRaised(ctx, audit.AlertAuditInput{
+			AlertID:        saved.AlertID,
+			RuleCode:       saved.RuleCode,
+			Regime:         saved.Regime,
+			Severity:       saved.Severity,
+			Summary:        saved.Summary,
+			SourceEventID:  env.EventID,
+			IdempotencyKey: env.IdempotencyKey,
+			CorrelationID:  env.CorrelationID,
+		}); err != nil {
+			return err
 		}
 	}
 	return nil

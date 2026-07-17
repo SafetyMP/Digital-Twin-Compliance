@@ -13,7 +13,9 @@ type Config struct {
 	HTTPAddr         string
 	DefaultTenantID  string
 	TwinTopic        string
+	TwinDLQTopic     string
 	InstrumentsTopic string
+	InstrumentsDLQ   string
 	ConsumerGroup    string
 	ServiceSource    string
 }
@@ -27,7 +29,9 @@ func Load() Config {
 		HTTPAddr:         env("GRAPH_SERVICE_HTTP_ADDR", ":8093"),
 		DefaultTenantID:  env("DEFAULT_TENANT_ID", "00000000-0000-0000-0000-000000000001"),
 		TwinTopic:        env("TWIN_STATE_TOPIC", "twin.state.updated"),
+		TwinDLQTopic:     env("TWIN_STATE_DLQ_TOPIC", "twin.state.updated.dlq"),
 		InstrumentsTopic: env("DOMAIN_INSTRUMENTS_TOPIC", "domain.events.public.instruments"),
+		InstrumentsDLQ:   env("DOMAIN_INSTRUMENTS_DLQ_TOPIC", "domain.events.public.instruments.dlq"),
 		ConsumerGroup:    env("GRAPH_CONSUMER_GROUP", "graph-service"),
 		ServiceSource:    env("GRAPH_SERVICE_SOURCE", "graph-service"),
 	}

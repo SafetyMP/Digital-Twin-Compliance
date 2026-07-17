@@ -77,7 +77,7 @@ public final class ExposureChecker {
                     Map.of("zenRuleCode", "INT-R002", "zenOutcome", outcome)
             ));
         } catch (Exception e) {
-            LOG.warning("Zen INT-R002 evaluation failed; falling back to inline exposure threshold: " + e.getMessage());
+            com.digitaltwin.jobs.cep.ZenFallbackMetrics.record("INT-R002", e);
             if (!shouldAlert(total, config.exposureLimitEur)) {
                 return Optional.empty();
             }

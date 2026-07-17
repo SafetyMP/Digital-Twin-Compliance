@@ -12,21 +12,21 @@ Detailed planning, risks, and phase specs: [docs/roadmap.md](docs/roadmap.md).
 | **Real-time monitoring** | Flink CEP, Redis features, Alert Service, alert console, Grafana | `./scripts/smoke-test-phase2.sh` |
 | **Policy & audit** | Cedar + GoRules Zen, immudb ledger, Audit Explorer, `evidenceRef` on alerts | `./scripts/smoke-test-phase3.sh` · [demo runbook](docs/demo-phase3.md) |
 
-CI on every PR runs all three smoke suites plus policy CI ([README § CI](README.md#ci)).
+CI on every PR runs all four smoke suites plus policy CI ([README § CI](README.md#ci)).
 
 **Release [v0.1.0](https://github.com/SafetyMP/Digital-Twin-Compliance/releases/tag/v0.1.0)** — Phase 1–3 smoke-stable; Flink 1.20 runtime aligned.
 
-## Next up: Phase 4
+## Phase 4 (graph + simulation)
 
-Graph + simulation planning is complete. Implementation handoff: [docs/handoff-phase4-agent.md](docs/handoff-phase4-agent.md) · [docs/phase4-implementation-spec.md](docs/phase4-implementation-spec.md).
+Neo4j exposure graph, deterministic stress simulation, Graph Explorer and Simulation Console UIs. CI smoke + GHCR images published on merge to `main`. Handoff: [docs/handoff-phase4-agent.md](docs/handoff-phase4-agent.md).
 
 ## Stability
 
 | Area | Status |
 |------|--------|
 | Local dev stack (`docker-compose.dev.yml`) | **Active** — primary development path |
-| GHCR images (8 services) | **Published** on merge to `main` and semver tags |
-| GHCR deploy (`docker-compose.deploy.yml`) | **Phase 1–3 runtime** — policy bundles bind-mounted from repo clone |
+| GHCR images (12 services) | **Published** on merge to `main` and semver tags |
+| GHCR deploy (`docker-compose.deploy.yml`) | **Phase 1–4 runtime** — policy bundles bind-mounted from repo clone |
 | Production hardening (TLS, OIDC, secrets) | **Not yet** — mock principals and dev credentials only |
 
 See [docs/deployment.md](docs/deployment.md#production-readiness) for the honest production gap list.
@@ -35,7 +35,7 @@ See [docs/deployment.md](docs/deployment.md#production-readiness) for the honest
 
 | Theme | Examples | Tracking |
 |-------|----------|----------|
-| **Graph & simulation** *(in progress — spec ready)* | Neo4j exposure graph, deterministic stress simulation | [phase4-implementation-spec.md](docs/phase4-implementation-spec.md) |
+| **Graph & simulation** | Neo4j exposure graph, deterministic stress simulation, Graph Explorer + Simulation Console | `./scripts/smoke-test-phase4.sh` · [phase4-implementation-spec.md](docs/phase4-implementation-spec.md) |
 | **Regulatory reporting** | XBRL / SDMX outputs, report UI | [docs/roadmap.md § Phase 5](docs/roadmap.md#phase-5-regulatory-reporting) |
 | **Hardening** | Keycloak/OIDC, production Compose/K8s paths | [docs/roadmap.md](docs/roadmap.md) |
 

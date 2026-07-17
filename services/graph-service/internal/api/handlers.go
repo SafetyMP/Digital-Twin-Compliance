@@ -30,7 +30,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /api/v1/graph/summary", s.summary)
 	mux.HandleFunc("GET /api/v1/graph/nodes", s.nodes)
 	mux.HandleFunc("GET /api/v1/graph/edges", s.edges)
-	return mux
+	return withOptionalInternalToken(mux)
 }
 
 func (s *Server) health(w http.ResponseWriter, r *http.Request) {
@@ -38,7 +38,7 @@ func (s *Server) health(w http.ResponseWriter, r *http.Request) {
 	if err := s.store.VerifyConnectivity(r.Context()); err != nil {
 		writeJSON(w, http.StatusServiceUnavailable, map[string]string{
 			"status": "degraded",
-			"neo4j":  err.Error(),
+			"neo4j":  "unreachable",
 		})
 		return
 	}
@@ -48,7 +48,7 @@ func (s *Server) health(w http.ResponseWriter, r *http.Request) {
 func (s *Server) summary(w http.ResponseWriter, r *http.Request) {
 	sum, err := s.store.Summary(r.Context())
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "INTERNAL", err.Error())
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "internal error")
 		return
 	}
 	writeJSON(w, http.StatusOK, sum)
@@ -58,7 +58,7 @@ func (s *Server) nodes(w http.ResponseWriter, r *http.Request) {
 	limit := parseIntDefault(r.URL.Query().Get("limit"), 100)
 	nodes, err := s.store.ListNodes(r.Context(), r.URL.Query().Get("name"), limit)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "INTERNAL", err.Error())
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "internal error")
 		return
 	}
 	if nodes == nil {
@@ -71,7 +71,7 @@ func (s *Server) edges(w http.ResponseWriter, r *http.Request) {
 	limit := parseIntDefault(r.URL.Query().Get("limit"), 500)
 	edges, err := s.store.ListEdges(r.Context(), r.URL.Query().Get("layer"), limit)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "INTERNAL", err.Error())
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "internal error")
 		return
 	}
 	if edges == nil {

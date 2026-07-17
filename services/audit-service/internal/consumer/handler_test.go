@@ -3,6 +3,7 @@ package consumer
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"testing"
 
 	"github.com/digital-twin/platform/services/audit-service/internal/events"
@@ -12,15 +13,24 @@ import (
 type fakeLedger struct {
 	head    immudb.HeadState
 	entries []events.AuditEntry
+	getErr  error
 }
 
 func (f *fakeLedger) Ping(ctx context.Context) error { return nil }
 
 func (f *fakeLedger) GetHead(ctx context.Context) (immudb.HeadState, error) {
+	if f.getErr != nil {
+		return immudb.HeadState{}, f.getErr
+	}
 	return f.head, nil
 }
 
 func (f *fakeLedger) AppendEntry(ctx context.Context, entry events.AuditEntry) error {
+	for _, e := range f.entries {
+		if e.EntryID == entry.EntryID {
+			return nil
+		}
+	}
 	f.entries = append(f.entries, entry)
 	f.head = immudb.HeadState{LastSequence: entry.SequenceNumber, LastPayloadHash: entry.PayloadHash}
 	return nil
@@ -32,7 +42,7 @@ func (f *fakeLedger) GetEntry(ctx context.Context, entryID string) (events.Audit
 			return e, nil
 		}
 	}
-	return events.AuditEntry{}, context.Canceled
+	return events.AuditEntry{}, errors.New("key not found")
 }
 
 type fakeStore struct {
@@ -53,6 +63,10 @@ func (f *fakeStore) RecordEntry(ctx context.Context, entry events.AuditEntry, ru
 
 func (f *fakeStore) InsertDLQ(ctx context.Context, idempotencyKey, topic string, partition int, offset int64, errMsg string, payload json.RawMessage) error {
 	return nil
+}
+
+func (f *fakeStore) WithChainLock(ctx context.Context, fn func(ctx context.Context) error) error {
+	return fn(ctx)
 }
 
 type fakePublisher struct {
@@ -105,8 +119,11 @@ func TestHandlerIdempotency(t *testing.T) {
 	if err := h.HandleMessage(context.Background(), data); err != nil {
 		t.Fatalf("second handle: %v", err)
 	}
-	if len(ledger.entries) != 1 || len(pub.entries) != 1 {
-		t.Fatalf("duplicate should be skipped, ledger=%d pub=%d", len(ledger.entries), len(pub.entries))
+	if len(ledger.entries) != 1 {
+		t.Fatalf("duplicate should not append again, ledger=%d", len(ledger.entries))
+	}
+	if len(pub.entries) != 2 {
+		t.Fatalf("processed path should re-publish recorded, pub=%d", len(pub.entries))
 	}
 }
 
@@ -126,5 +143,27 @@ func TestHandlerChainsPreviousHash(t *testing.T) {
 	}
 	if ledger.entries[0].SequenceNumber != 2 {
 		t.Fatalf("sequence = %d", ledger.entries[0].SequenceNumber)
+	}
+}
+
+func TestHandlerPropagatesGetHeadErrors(t *testing.T) {
+	t.Parallel()
+
+	ledger := &fakeLedger{getErr: errors.New("connection refused")}
+	st := &fakeStore{processed: map[string]string{}}
+	pub := &fakePublisher{}
+	h := NewHandler(ledger, st, pub, "audit-service")
+
+	if err := h.HandleMessage(context.Background(), buildPendingEnvelope("idem-3")); err == nil {
+		t.Fatal("expected GetHead error to fail handle")
+	}
+}
+
+func TestEntryIDFromIdempotencyStable(t *testing.T) {
+	t.Parallel()
+	a := entryIDFromIdempotency("idem-x")
+	b := entryIDFromIdempotency("idem-x")
+	if a != b || a == "" {
+		t.Fatalf("unstable entry id: %q vs %q", a, b)
 	}
 }

@@ -29,6 +29,9 @@ type InstitutionState struct {
 	LegalName  string         `json:"legal_name"`
 	EntityType string         `json:"entity_type"`
 	Liquidity  map[string]any `json:"liquidity"`
+	Capital    map[string]any `json:"capital"`
+	CET1Ratio  *float64       `json:"cet1_ratio"`
+	CET1       *float64       `json:"cet1"`
 }
 
 type InstrumentState struct {

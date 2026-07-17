@@ -36,6 +36,10 @@ PY
 echo "== Coverage gates =="
 check_service_coverage state-service 35
 check_service_coverage alert-service 25
+check_service_coverage audit-service 20
+check_service_coverage cedar-service 20
+check_service_coverage decision-service 20
+check_service_coverage graph-service 15
 
 check_cep_coverage() {
   local min_pct="$1"

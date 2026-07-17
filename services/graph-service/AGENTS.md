@@ -35,9 +35,12 @@ cd services/graph-service && go test ./...
 ## Invariants
 
 - Consumer group `graph-service` on `twin.state.updated`
+- Instruments consumer on `domain.events.public.instruments` (Debezium CDC)
+- Poison / parse failures publish to DLQ topics (`TWIN_STATE_DLQ_TOPIC`, `DOMAIN_INSTRUMENTS_DLQ_TOPIC`) — defaults `twin.state.updated.dlq`, `domain.events.public.instruments.dlq`
 - Idempotent upserts keyed by `tenantId + entityId` / `edgeKey`
 - Default tenant `00000000-0000-0000-0000-000000000001`
-- Always commit Kafka offsets (poison messages logged, not stalled)
+- Transient Neo4j/store errors: do not commit (retry). Poison parse errors: DLQ then commit (`twin.state.updated.dlq`, `domain.events.public.instruments.dlq`)
+- CET1 comes from twin `capital.cet1` / `cet1_ratio` (never invent 0.12)
 - Browser UIs proxy via Next.js — no CORS on `:8093`
 
 ## Gotchas

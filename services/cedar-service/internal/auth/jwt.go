@@ -9,11 +9,18 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 )
+
+const defaultTokenTTL = time.Hour
 
 type Claims struct {
 	Sub   string   `json:"sub"`
 	Roles []string `json:"roles"`
+	Exp   int64    `json:"exp"`
+	Iat   int64    `json:"iat,omitempty"`
+	Iss   string   `json:"iss,omitempty"`
+	Aud   string   `json:"aud,omitempty"`
 }
 
 // PrincipalFromRequest extracts verified principal id + roles from Authorization bearer JWT.
@@ -51,13 +58,39 @@ func PrincipalFromRequest(r *http.Request) (id string, roles []string, err error
 	if strings.TrimSpace(claims.Sub) == "" {
 		return "", nil, errors.New("token missing sub")
 	}
+	if claims.Exp == 0 {
+		return "", nil, errors.New("token missing exp")
+	}
+	if time.Now().UTC().Unix() >= claims.Exp {
+		return "", nil, errors.New("token expired")
+	}
+	if iss := strings.TrimSpace(os.Getenv("CEDAR_SERVICE_JWT_ISS")); iss != "" && claims.Iss != iss {
+		return "", nil, errors.New("token issuer mismatch")
+	}
+	if aud := strings.TrimSpace(os.Getenv("CEDAR_SERVICE_JWT_AUD")); aud != "" && claims.Aud != aud {
+		return "", nil, errors.New("token audience mismatch")
+	}
 	return claims.Sub, claims.Roles, nil
 }
 
-// SignToken creates an HS256-style JWT for tests and internal callers.
+// SignToken creates an HS256 JWT with exp (default 1h) for tests and internal callers.
 func SignToken(secret, sub string, roles []string) (string, error) {
+	return SignTokenTTL(secret, sub, roles, defaultTokenTTL)
+}
+
+// SignTokenTTL creates an HS256 JWT with a custom TTL (may be negative for tests).
+func SignTokenTTL(secret, sub string, roles []string, ttl time.Duration) (string, error) {
+	now := time.Now().UTC()
+	claims := Claims{
+		Sub:   sub,
+		Roles: roles,
+		Iat:   now.Unix(),
+		Exp:   now.Add(ttl).Unix(),
+		Iss:   strings.TrimSpace(os.Getenv("CEDAR_SERVICE_JWT_ISS")),
+		Aud:   strings.TrimSpace(os.Getenv("CEDAR_SERVICE_JWT_AUD")),
+	}
 	header := base64.RawURLEncoding.EncodeToString([]byte(`{"alg":"HS256","typ":"JWT"}`))
-	body, err := json.Marshal(Claims{Sub: sub, Roles: roles})
+	body, err := json.Marshal(claims)
 	if err != nil {
 		return "", err
 	}

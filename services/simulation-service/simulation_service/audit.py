@@ -6,6 +6,18 @@ from kafka import KafkaProducer
 
 from simulation_service import config
 
+_producer: KafkaProducer | None = None
+
+
+def _get_producer() -> KafkaProducer:
+    global _producer
+    if _producer is None:
+        _producer = KafkaProducer(
+            bootstrap_servers=config.KAFKA_BROKERS.split(","),
+            value_serializer=lambda v: json.dumps(v).encode("utf-8"),
+        )
+    return _producer
+
 
 def publish_simulation_run(
     run_id: str,
@@ -41,12 +53,7 @@ def publish_simulation_run(
         "idempotencyKey": f"audit-simulation-{run_id}",
         "payload": pending,
     }
-    producer = KafkaProducer(
-        bootstrap_servers=config.KAFKA_BROKERS.split(","),
-        value_serializer=lambda v: json.dumps(v).encode("utf-8"),
-    )
-    try:
-        producer.send(config.KAFKA_AUDIT_PENDING_TOPIC, value=envelope, key=run_id.encode())
-        producer.flush(timeout=10)
-    finally:
-        producer.close()
+    producer = _get_producer()
+    future = producer.send(config.KAFKA_AUDIT_PENDING_TOPIC, value=envelope, key=run_id.encode())
+    future.get(timeout=10)
+    producer.flush(timeout=10)

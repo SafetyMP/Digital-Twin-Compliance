@@ -2,7 +2,7 @@
 
 Guide for publishing and running the Digital Twin Compliance Platform outside local development.
 
-**Scope:** Docker Compose on a single host (VM or bare metal). **Local dev and CI** run Phase 1–3 (`docker-compose.dev.yml`). **GHCR deploy** publishes all eight application images and runs the full Phase 1–3 stack via [docker-compose.deploy.yml](../docker-compose.deploy.yml). Kubernetes, Flink Kubernetes Operator, and managed Kafka are future phases — see [roadmap.md](./roadmap.md), [ADR-007](./adr/007-phase1-foundation-decisions.md), and [ADR-008](./adr/008-phase2-foundation-decisions.md).
+**Scope:** Docker Compose on a single host (VM or bare metal). **Local dev and CI** run Phase 1–4 (`docker-compose.dev.yml`). **GHCR deploy** publishes all twelve application images and runs the full Phase 1–4 stack via [docker-compose.deploy.yml](../docker-compose.deploy.yml). Kubernetes, Flink Kubernetes Operator, and managed Kafka are future phases — see [roadmap.md](./roadmap.md), [ADR-007](./adr/007-phase1-foundation-decisions.md), and [ADR-008](./adr/008-phase2-foundation-decisions.md).
 
 ---
 
@@ -10,12 +10,12 @@ Guide for publishing and running the Digital Twin Compliance Platform outside lo
 
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
-| [CI](../.github/workflows/ci.yml) | Push, PR | Unit tests, policy CI, eval fixtures, Compose stack, Phase 1–3 smoke, coverage gates |
+| [CI](../.github/workflows/ci.yml) | Push, PR | Unit tests, policy CI, eval fixtures, Compose stack, Phase 1–4 smoke, UI proxy smoke, coverage gates |
 | [Schema Compatibility](../.github/workflows/schema-compat.yml) | Push, PR | Avro BACKWARD compatibility |
 | [Policy gates](../.github/workflows/policy-gates.yml) | PR (path-filtered) | Cedar/Zen policy CI when `policies/**` or policy services change |
-| [Docker Publish](../.github/workflows/docker-publish.yml) | Push to `main`, version tags, manual | Build and push eight application images to GHCR |
+| [Docker Publish](../.github/workflows/docker-publish.yml) | Push to `main`, version tags, manual | Build and push twelve application images to GHCR |
 | [Release](../.github/workflows/release.yml) | Tag `v*.*.*` | GitHub Release with generated notes |
-| [Deploy Staging](../.github/workflows/deploy-staging.yml) | Manual | SSH deploy to staging host |
+| [Deploy Staging](../.github/workflows/deploy-staging.yml) | Manual | SSH deploy to staging host + Phase 1–4 smoke |
 | [Eval Nightly](../.github/workflows/eval-nightly.yml) | Daily schedule, manual | Eval fixture regression, harness calibration, extended smoke |
 | [CodeQL](../.github/workflows/codeql.yml) | Push, PR, weekly | Go security analysis |
 
@@ -37,6 +37,10 @@ Images are published under `ghcr.io/safetymp/digital-twin-compliance/`:
 | `cedar-service` | Phase 3 Cedar policy evaluate |
 | `decision-service` | Phase 3 GoRules Zen evaluate |
 | `audit-explorer` | Phase 3 Audit Explorer UI |
+| `graph-service` | Phase 4 Neo4j graph REST + Kafka consumer |
+| `simulation-service` | Phase 4 deterministic stress simulation |
+| `graph-explorer` | Phase 4 Graph Explorer UI |
+| `simulation-console` | Phase 4 Simulation Console UI |
 
 Example pull:
 
@@ -86,6 +90,13 @@ export AUDIT_SERVICE_IMAGE=${PREFIX}/audit-service:${TAG}
 export CEDAR_SERVICE_IMAGE=${PREFIX}/cedar-service:${TAG}
 export DECISION_SERVICE_IMAGE=${PREFIX}/decision-service:${TAG}
 export AUDIT_EXPLORER_IMAGE=${PREFIX}/audit-explorer:${TAG}
+export GRAPH_SERVICE_IMAGE=${PREFIX}/graph-service:${TAG}
+export SIMULATION_SERVICE_IMAGE=${PREFIX}/simulation-service:${TAG}
+export GRAPH_EXPLORER_IMAGE=${PREFIX}/graph-explorer:${TAG}
+export SIMULATION_CONSOLE_IMAGE=${PREFIX}/simulation-console:${TAG}
+export NEO4J_PASSWORD="${NEO4J_PASSWORD:?set NEO4J_PASSWORD}"
+export IMMUDB_PASSWORD="${IMMUDB_PASSWORD:?set IMMUDB_PASSWORD}"
+export CEDAR_SERVICE_JWT_SECRET="${CEDAR_SERVICE_JWT_SECRET:?set CEDAR_SERVICE_JWT_SECRET}"
 docker compose -f docker-compose.deploy.yml up -d --wait
 ```
 
@@ -102,9 +113,16 @@ export AUDIT_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/audit-servic
 export CEDAR_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/cedar-service:main
 export DECISION_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/decision-service:main
 export AUDIT_EXPLORER_IMAGE=ghcr.io/safetymp/digital-twin-compliance/audit-explorer:main
+export GRAPH_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/graph-service:main
+export SIMULATION_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/simulation-service:main
+export GRAPH_EXPLORER_IMAGE=ghcr.io/safetymp/digital-twin-compliance/graph-explorer:main
+export SIMULATION_CONSOLE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/simulation-console:main
+export NEO4J_PASSWORD=changeme
+export IMMUDB_PASSWORD=changeme
+export CEDAR_SERVICE_JWT_SECRET=dev-jwt-secret-change-me
 ./scripts/deploy-stack.sh bootstrap   # first-time: up + seed + schemas + debezium
 ./scripts/deploy-stack.sh pull        # rolling update of all deployed images
-./scripts/deploy-stack.sh smoke       # Phase 1 + 2 + 3 smoke tests against running stack
+./scripts/deploy-stack.sh smoke       # Phase 1–4 smoke tests against running stack
 ```
 
 ---
@@ -133,6 +151,13 @@ export AUDIT_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/audit-servic
 export CEDAR_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/cedar-service:main
 export DECISION_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/decision-service:main
 export AUDIT_EXPLORER_IMAGE=ghcr.io/safetymp/digital-twin-compliance/audit-explorer:main
+export GRAPH_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/graph-service:main
+export SIMULATION_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/simulation-service:main
+export GRAPH_EXPLORER_IMAGE=ghcr.io/safetymp/digital-twin-compliance/graph-explorer:main
+export SIMULATION_CONSOLE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/simulation-console:main
+export NEO4J_PASSWORD=changeme
+export IMMUDB_PASSWORD=changeme
+export CEDAR_SERVICE_JWT_SECRET=dev-jwt-secret-change-me
 ./scripts/deploy-stack.sh bootstrap
 ./scripts/deploy-stack.sh smoke
 ```
@@ -150,6 +175,10 @@ export AUDIT_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/audit-servic
 export CEDAR_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/cedar-service:main
 export DECISION_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/decision-service:main
 export AUDIT_EXPLORER_IMAGE=ghcr.io/safetymp/digital-twin-compliance/audit-explorer:main
+export GRAPH_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/graph-service:main
+export SIMULATION_SERVICE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/simulation-service:main
+export GRAPH_EXPLORER_IMAGE=ghcr.io/safetymp/digital-twin-compliance/graph-explorer:main
+export SIMULATION_CONSOLE_IMAGE=ghcr.io/safetymp/digital-twin-compliance/simulation-console:main
 ./scripts/deploy-stack.sh pull
 ```
 
@@ -166,11 +195,14 @@ Configure a GitHub **Environment** named `staging` (Settings → Environments) w
 | `DEPLOY_SSH_KEY` | Private key (PEM) for SSH |
 | `DEPLOY_PATH` | Absolute path to repo clone on the host |
 | `DEPLOY_PORT` | Optional SSH port (default 22) |
+| `NEO4J_PASSWORD` | Neo4j auth for deploy stack (required by `docker-compose.deploy.yml`) |
+| `IMMUDB_PASSWORD` | immudb password for audit-service |
+| `CEDAR_SERVICE_JWT_SECRET` | JWT verification secret for cedar-service |
 
 Run **Deploy Staging** from Actions → workflow dispatch:
 
-- **pull** — fetch latest repo, pull all GHCR images, restart stack
-- **bootstrap** — full stack up + seed + schema/connector registration (use on first deploy or after infra reset)
+- **pull** — fetch latest repo, pull all GHCR images, restart stack, run Phase 1–4 smoke
+- **bootstrap** — full stack up + seed + schema/connector registration (use on first deploy or after infra reset), then Phase 1–4 smoke
 
 ---
 
@@ -201,6 +233,10 @@ export AUDIT_SERVICE_IMAGE=${PREFIX}/audit-service:${TAG}
 export CEDAR_SERVICE_IMAGE=${PREFIX}/cedar-service:${TAG}
 export DECISION_SERVICE_IMAGE=${PREFIX}/decision-service:${TAG}
 export AUDIT_EXPLORER_IMAGE=${PREFIX}/audit-explorer:${TAG}
+export GRAPH_SERVICE_IMAGE=${PREFIX}/graph-service:${TAG}
+export SIMULATION_SERVICE_IMAGE=${PREFIX}/simulation-service:${TAG}
+export GRAPH_EXPLORER_IMAGE=${PREFIX}/graph-explorer:${TAG}
+export SIMULATION_CONSOLE_IMAGE=${PREFIX}/simulation-console:${TAG}
 ./scripts/deploy-stack.sh pull
 ```
 
@@ -208,9 +244,9 @@ export AUDIT_EXPLORER_IMAGE=${PREFIX}/audit-explorer:${TAG}
 
 After tagging and waiting for **Docker Publish** to finish:
 
-1. Confirm all eight packages exist under `ghcr.io/safetymp/digital-twin-compliance/` for the tag.
+1. Confirm all twelve packages exist under `ghcr.io/safetymp/digital-twin-compliance/` for the tag.
 2. On a host with Docker, clone the repo (policy bind mounts) and export all `*_IMAGE` vars with `TAG=v0.1.0` (see deploy example above).
-3. Run `./scripts/deploy-stack.sh bootstrap` then `./scripts/deploy-stack.sh smoke` (Phase 1–3).
+3. Run `./scripts/deploy-stack.sh bootstrap` then `./scripts/deploy-stack.sh smoke` (Phase 1–4).
 4. Optional: run **Deploy Staging** workflow with `image_tag=v0.1.0`.
 
 For day-to-day `:main` images, repeat with `TAG=main` after merges.
@@ -235,9 +271,9 @@ Before exposing any environment to untrusted networks, read [SECURITY.md](../SEC
 
 | Concern | Where it runs |
 |---------|----------------|
-| Unit + integration smoke | GitHub Actions CI on every PR (`smoke-test.sh`, `smoke-test-phase2.sh`, `smoke-test-phase3.sh`) |
+| Unit + integration smoke | GitHub Actions CI on every PR (`smoke-test.sh` … `smoke-test-phase4.sh`, `smoke-ui-proxies.sh`) |
 | Policy CI | Full CI always; [policy-gates.yml](../.github/workflows/policy-gates.yml) also on path-filtered PRs |
-| Image build | Docker Publish on merge to `main` (eight application images) |
+| Image build | Docker Publish on merge to `main` (twelve application images) |
 | Staging deploy | Manual Deploy Staging workflow |
 | Production | Not defined — extend with environments + approval gates in a later phase |
 
@@ -245,8 +281,9 @@ Before exposing any environment to untrusted networks, read [SECURITY.md](../SEC
 
 ## Security notes
 
-- Deploy stacks use **default dev credentials** in Compose — not production-safe.
-- Do not expose ports 5433–5436, 3322, 6380, 9092, 8080–8092, 3000–3002 to the public internet without TLS, auth, and secret rotation.
+- Deploy stacks use **default dev credentials** in Compose for PostgreSQL — not production-safe. Neo4j (`NEO4J_PASSWORD`), immudb (`IMMUDB_PASSWORD`), Cedar JWT (`CEDAR_SERVICE_JWT_SECRET`), and Grafana admin (`GRAFANA_ADMIN_PASSWORD`) must be set for deploy stacks.
+- On `docker-compose.deploy.yml`, sensitive infra ports bind to **127.0.0.1** only (Kafka `:9092`, PostgreSQL `:5433–5436`, Redis `:6380`, immudb `:3322`, Neo4j `:7474`/`:7687`, schema-registry `:8081`, Debezium `:8083`, Grafana `:3001`). Application HTTP ports remain reachable on all interfaces unless you add a reverse proxy.
+- Do not expose ports 5433–5436, 3322, 6380, 7474, 7687, 9092, 8080–8094, 3000–3004, 8081, 8083 to the public internet without TLS, auth, and secret rotation.
 - Store real credentials in GitHub Environment secrets or a secrets manager; never commit `.env`.
 - Review [SECURITY.md](../SECURITY.md) before exposing any environment.
 
@@ -254,12 +291,14 @@ Before exposing any environment to untrusted networks, read [SECURITY.md](../SEC
 
 ## Next.js UIs and Go APIs
 
-`alert-console` (`:3000`) and `audit-explorer` (`:3002`) must **not** call Go services on other ports from browser `fetch` — there is no CORS on `alert-service`, `audit-service`, etc.
+`alert-console` (`:3000`), `audit-explorer` (`:3002`), `graph-explorer` (`:3003`), and `simulation-console` (`:3004`) must **not** call Go/Python services on other ports from browser `fetch` — there is no CORS on backend APIs.
 
 | UI | Browser calls | Compose env (server-side) |
 |----|---------------|---------------------------|
 | Alert Console | `/api/alerts`, `/api/alerts/{id}/acknowledge` | `ALERT_SERVICE_URL=http://alert-service:8085` |
 | Audit Explorer | `/api/audit/entries`, `/api/audit/verify` | `AUDIT_SERVICE_URL=http://audit-service:8090` |
+| Graph Explorer | `/api/graph/summary`, `/api/graph/nodes`, `/api/graph/edges` | `GRAPH_SERVICE_URL=http://graph-service:8093` |
+| Simulation Console | `/api/simulations/run` (POST) | `SIMULATION_SERVICE_URL=http://simulation-service:8094` |
 
 Cross-links (`NEXT_PUBLIC_AUDIT_EXPLORER_URL`) are navigation `href` only. Live alert feed uses **polling** (not browser WebSocket to `:8085`).
 
@@ -281,6 +320,8 @@ Flink CEP on deploy calls Decision Service when `CEP_DECISION_SERVICE_URL` is se
 | WebSocket ack not received (smoke script) | Set `ALERT_SERVICE_WS_URL=ws://localhost:8085/ws/alerts`; verify `alert-service` health at `:8085` |
 | Phase 3 smoke fails on audit chain | Verify `audit-service` at `:8090`; check `compliance.audit.pending` consumer; run `./scripts/verify-audit-chain.sh` |
 | Cedar/Zen policies empty in container | `git pull` policies on host; restart `cedar-service` and `decision-service` (bind mount) |
-| `*_IMAGE` unset | Export all eight image variables before `docker compose -f docker-compose.deploy.yml` |
+| Phase 4 smoke fails on graph counts | Restart `graph-service` after seed/outbox drain; run `./scripts/wait-graph-seeded.sh`; verify Neo4j at `localhost:7474` |
+| `NEO4J_PASSWORD` unset on deploy | Export before `docker compose -f docker-compose.deploy.yml` (required by Neo4j + graph-service) |
+| `*_IMAGE` unset | Export all twelve image variables before `docker compose -f docker-compose.deploy.yml` |
 
 For local development issues, see [README.md](../README.md#quick-start).

@@ -146,7 +146,7 @@ func (s *Store) ListNodes(ctx context.Context, nameQuery string, limit int) ([]N
 		query := `
 			MATCH (e:LegalEntity {tenantId: $tenantId})
 			WHERE $nameQuery = '' OR toLower(e.name) CONTAINS toLower($nameQuery)
-			RETURN e.entityId AS entityId, e.name AS name, coalesce(e.lcr, 0.0) AS lcr, coalesce(e.cet1Ratio, 0.12) AS cet1Ratio
+			RETURN e.entityId AS entityId, e.name AS name, coalesce(e.lcr, 0.0) AS lcr, coalesce(e.cet1Ratio, 0.0) AS cet1Ratio
 			ORDER BY e.name
 			LIMIT $limit
 		`

@@ -219,5 +219,11 @@ jobs:
           bash -n scripts/smoke-test-phase4.sh scripts/wait-graph-seeded.sh
           SMOKE_PHASE4_SKIP_PREREQS=1 ./scripts/smoke-test-phase4.sh
 
+      - name: Smoke test (UI proxies)
+        run: |
+          chmod +x scripts/smoke-ui-proxies.sh
+          bash -n scripts/smoke-ui-proxies.sh
+          ./scripts/smoke-ui-proxies.sh
+
       - name: Coverage gates
         run: ./scripts/check-coverage-gates.sh
