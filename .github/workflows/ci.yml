@@ -29,7 +29,7 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "20"
 
@@ -37,7 +37,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y jq postgresql-client curl ripgrep
-          python3 -m pip install --user pytest
+          python3 -m pip install --user --require-hashes -r scripts/ci-bootstrap-requirements.txt
 
       - name: Go vet (state-service)
         working-directory: services/state-service
@@ -69,7 +69,7 @@ jobs:
 
       - name: Python tests (simulation-service)
         working-directory: services/simulation-service
-        run: pip install -r requirements.txt && pytest -q
+        run: pip install --require-hashes -r requirements.txt && pytest -q
 
       - name: Install Cedar CLI
         run: chmod +x scripts/install-cedar-cli.sh && ./scripts/install-cedar-cli.sh
@@ -159,19 +159,19 @@ jobs:
 
       - name: Build alert-console
         working-directory: apps/alert-console
-        run: npm install && npm run build
+        run: npm ci && npm run build
 
       - name: Build audit-explorer
         working-directory: apps/audit-explorer
-        run: npm install && npm run build
+        run: npm ci && npm run build
 
       - name: Build graph-explorer
         working-directory: apps/graph-explorer
-        run: npm install && npm run build
+        run: npm ci && npm run build
 
       - name: Build simulation-console
         working-directory: apps/simulation-console
-        run: npm install && npm run build
+        run: npm ci && npm run build
 
       - name: Submit Flink job and wait for RUNNING
         env:

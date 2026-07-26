@@ -4,13 +4,14 @@ on:
   push:
     tags: ["v*.*.*"]
 
-permissions:
-  contents: write
-  packages: read
+permissions: read-all
 
 jobs:
   release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: read
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
