@@ -1,0 +1,16 @@
+:root {
+  --dt-bg: #020617;
+  --dt-surface: #0f172a;
+  --dt-border: #1e293b;
+  --dt-text: #f1f5f9;
+  --dt-muted: #94a3b8;
+  --dt-accent: #38bdf8;
+  --dt-font-sans: "IBM Plex Sans", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+}
+
+.dt-shell {
+  font-family: var(--dt-font-sans);
+  color: var(--dt-text);
+  background: radial-gradient(1200px 600px at 10% -10%, #0c4a6e33, transparent),
+    radial-gradient(900px 500px at 90% 0%, #1e293b55, transparent), var(--dt-bg);
+}

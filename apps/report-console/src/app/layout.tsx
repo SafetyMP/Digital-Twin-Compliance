@@ -1,19 +1,27 @@
+import { AppShell, consoleUrlsFromEnv } from "@digital-twin/console-shell";
 import type { Metadata } from "next";
+import { IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 
+const plex = IBM_Plex_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+});
+
 export const metadata: Metadata = {
-  title: "Report Console",
-  description: "Phase 5 regulatory report lifecycle",
+  title: "Report Console · Digital Twin",
+  description: "Regulatory reporting · Phase 5 report lifecycle",
+  icons: { icon: "/favicon.svg" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const urls = consoleUrlsFromEnv();
   return (
-    <html lang="en">
+    <html lang="en" className={plex.className}>
       <body>
-        <div className="border-b border-teal-500/40 bg-teal-950/40 px-4 py-2 text-sm text-teal-200">
-          Report Console — draft → validated → submitted (Phase 5)
-        </div>
-        {children}
+        <AppShell activeApp="report" urls={urls}>
+          {children}
+        </AppShell>
       </body>
     </html>
   );

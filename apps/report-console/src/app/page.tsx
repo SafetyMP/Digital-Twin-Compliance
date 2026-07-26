@@ -1,5 +1,6 @@
 "use client";
 
+import { EmptyState, ErrorState, LoadingState } from "@digital-twin/console-shell";
 import { useState } from "react";
 
 type ReportMeta = {
@@ -117,7 +118,15 @@ export default function ReportConsolePage() {
         </button>
       </div>
 
-      {error && <p className="mb-4 text-sm text-red-300">{error}</p>}
+      {error && (
+        <div className="mb-4">
+          <ErrorState>{error}</ErrorState>
+        </div>
+      )}
+      {loading && <LoadingState label="Working…" />}
+      {!loading && !error && !report && (
+        <EmptyState>No report in progress. Create a draft to start the lifecycle.</EmptyState>
+      )}
 
       {report && (
         <dl className="space-y-2 rounded border border-slate-800 bg-slate-900/60 p-4 text-sm">

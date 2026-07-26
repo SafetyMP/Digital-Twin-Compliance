@@ -1,5 +1,6 @@
 "use client";
 
+import { EmptyState, ErrorState, LoadingState } from "@digital-twin/console-shell";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
@@ -24,16 +25,24 @@ export default function HomePage() {
   const [ruleCode, setRuleCode] = useState("");
   const [verify, setVerify] = useState<VerifyResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const q = new URLSearchParams();
       if (ruleCode) q.set("ruleCode", ruleCode);
       q.set("limit", "50");
       const res = await fetch(`/api/audit/entries?${q}`);
+      if (!res.ok) {
+        throw new Error(`audit API ${res.status}`);
+      }
       const data = await res.json();
       setEntries(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : "failed to load entries");
+      setEntries([]);
     } finally {
       setLoading(false);
     }
@@ -94,24 +103,45 @@ export default function HomePage() {
         </button>
       </form>
 
-      {loading && <p className="text-slate-400">Loading…</p>}
-      <ul className="space-y-3">
-        {entries.map((e) => (
-          <li key={e.entryId} className="rounded-lg border border-slate-800 bg-slate-900 p-4">
-            <div className="mb-2 flex flex-wrap items-center gap-2">
-              <span className="rounded bg-emerald-800 px-2 py-0.5 text-xs">integrity OK</span>
-              <span className="font-mono text-xs text-slate-400">{e.entryType}</span>
-              {e.ruleCode && <span className="font-mono text-xs text-amber-400">{e.ruleCode}</span>}
-            </div>
-            <Link href={`/entries/${e.entryId}`} className="font-medium hover:underline">
-              {e.entryId}
-            </Link>
-            <p className="mt-1 text-xs text-slate-500">{new Date(e.recordedAt).toLocaleString()}</p>
-            <p className="mt-2 truncate font-mono text-xs text-slate-500">{e.payloadHash}</p>
-          </li>
-        ))}
-        {!loading && entries.length === 0 && <p className="text-slate-400">No audit entries found.</p>}
-      </ul>
+      {loadError && (
+        <div className="mb-4">
+          <ErrorState
+            action={
+              <button
+                type="button"
+                onClick={() => load()}
+                className="rounded bg-slate-700 px-3 py-1 text-sm hover:bg-slate-600"
+              >
+                Retry
+              </button>
+            }
+          >
+            {loadError}
+          </ErrorState>
+        </div>
+      )}
+      {loading && <LoadingState label="Loading audit entries…" />}
+      {!loading && !loadError && (
+        <ul className="space-y-3">
+          {entries.map((e) => (
+            <li key={e.entryId} className="rounded-lg border border-slate-800 bg-slate-900 p-4">
+              <div className="mb-2 flex flex-wrap items-center gap-2">
+                <span className="rounded bg-emerald-800 px-2 py-0.5 text-xs">integrity OK</span>
+                <span className="font-mono text-xs text-slate-400">{e.entryType}</span>
+                {e.ruleCode && <span className="font-mono text-xs text-amber-400">{e.ruleCode}</span>}
+              </div>
+              <Link href={`/entries/${e.entryId}`} className="font-medium hover:underline">
+                {e.entryId}
+              </Link>
+              <p className="mt-1 text-xs text-slate-500">{new Date(e.recordedAt).toLocaleString()}</p>
+              <p className="mt-2 truncate font-mono text-xs text-slate-500">{e.payloadHash}</p>
+            </li>
+          ))}
+          {entries.length === 0 && (
+            <EmptyState>No audit entries found. Trigger an alert or policy decision first.</EmptyState>
+          )}
+        </ul>
+      )}
     </main>
   );
 }

@@ -283,7 +283,11 @@ services:
     environment:
       # Server-side proxy only — browser must not call alert-service :8085 directly (no CORS).
       ALERT_SERVICE_URL: http://alert-service:8085
+      NEXT_PUBLIC_ALERT_CONSOLE_URL: http://localhost:3000
       NEXT_PUBLIC_AUDIT_EXPLORER_URL: http://localhost:3002
+      NEXT_PUBLIC_GRAPH_EXPLORER_URL: http://localhost:3003
+      NEXT_PUBLIC_SIMULATION_CONSOLE_URL: http://localhost:3004
+      NEXT_PUBLIC_REPORT_CONSOLE_URL: http://localhost:3005
 
   immudb:
     image: codenotary/immudb@sha256:1053c2c254473670412b6f7257f61b6c09469b9b53b50c02bc7378ba775dc429

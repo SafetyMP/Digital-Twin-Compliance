@@ -1,24 +1,26 @@
 # Roadmap
 
-Public roadmap for the **Digital Twin Compliance Platform** — an open-source **cutting-edge OSS supervisory** financial-compliance digital-twin reference.
+Public roadmap for the **Digital Twin Compliance Platform** — an open-source supervisory financial-compliance digital-twin reference.
 
-Detailed planning, risks, and phase specs: [docs/roadmap.md](docs/roadmap.md).
+**Phase journeys (canonical map):** [docs/phase-journeys.md](docs/phase-journeys.md). Detailed engineering plan: [docs/roadmap.md](docs/roadmap.md).
+
+**CECT** is the corporate delivery program that landed Phases 5–7 on this site; it is not a product tier.
 
 ## On `main` today
 
-| Capability | What you get | Try it |
-|------------|--------------|--------|
-| **Ingestion & twin** | Debezium CDC → Kafka → State Service, transactional outbox, persona REST API | `./scripts/smoke-test.sh` |
-| **Real-time monitoring** | Flink CEP, Redis features, Alert Service, alert console, Grafana | `./scripts/smoke-test-phase2.sh` |
-| **Policy & audit** | Cedar + GoRules Zen, immudb ledger, Audit Explorer, `evidenceRef` on alerts | `./scripts/smoke-test-phase3.sh` · [demo runbook](docs/demo-phase3.md) |
-| **Graph & simulation** | Neo4j exposure graph, deterministic stress simulation, Graph Explorer + Simulation Console | `./scripts/smoke-test-phase4.sh` |
-| **Regulatory reporting** | FINREP F01 (XBRL), AnaCredit Table 2 (SDMX), DORA ICT Register (XML); MinIO Object Lock; Report Console lifecycle | `./scripts/smoke-test-phase5.sh` · [ADR-011](docs/adr/011-phase5-reporting-foundation.md) |
-| **Hardening overlay** | Keycloak/OIDC edge, TLS nginx edge, OpenTelemetry collector, DR runbooks, explainability pack | `docker-compose.hardening.yml` · `./scripts/smoke-test-phase6-*.sh` · [ADR-012](docs/adr/012-phase6-hardening-foundation.md) |
-| **Phase 7 leapfrog** | Control-effectiveness twin, contagion→audit, reg→policy proposals (CI reject/accept, no auto-deploy), graph path/centrality | `./scripts/smoke-test-phase7-*.sh` · [ADR-013](docs/adr/013-phase7-cutting-edge-foundation.md) |
+| Journey | Phase | What you get | Try it |
+|---------|-------|--------------|--------|
+| **Ingestion & twin** | 1 | Debezium CDC → Kafka → State Service, transactional outbox, persona REST API | `./scripts/smoke-test.sh` |
+| **Monitoring & alerts** | 2 | Flink CEP, Redis features, Alert Service, Alert Console, Grafana | `./scripts/smoke-test-phase2.sh` |
+| **Policy & audit** | 3 | Cedar + GoRules Zen, immudb ledger, Audit Explorer, `evidenceRef` on alerts | `./scripts/smoke-test-phase3.sh` · [demo](docs/demo-phase3.md) |
+| **Graph & simulation** | 4 | Neo4j exposure graph, deterministic stress simulation, Graph Explorer + Simulation Console | `./scripts/smoke-test-phase4.sh` · [demo](docs/demo-phase4.md) |
+| **Regulatory reporting** | 5 | FINREP F01 / AnaCredit / DORA; MinIO Object Lock; Report Console lifecycle | `./scripts/smoke-test-phase5.sh` · [demo](docs/demo-phase5.md) · [ADR-011](docs/adr/011-phase5-reporting-foundation.md) |
+| **Hardening** | 6 | Keycloak/OIDC edge, TLS nginx, OpenTelemetry, DR runbooks, explainability pack | `docker-compose.hardening.yml` · `./scripts/smoke-test-phase6-*.sh` · [ADR-012](docs/adr/012-phase6-hardening-foundation.md) |
+| **Cutting-edge analytics** | 7 | Control-effectiveness twin, contagion→audit, reg→policy proposals (no auto-deploy), graph path/centrality | `./scripts/smoke-test-phase7-*.sh` · [ADR-013](docs/adr/013-phase7-cutting-edge-foundation.md) |
 
-CI on every PR runs Phase 1–4 smoke suites plus policy CI ([README § CI](README.md#ci)). Phase 5–7 smokes and `./scripts/harness/verify.sh` are local/CECT gates (CI wiring is a follow-up).
+CI on every PR runs Phase 1–4 smoke suites plus policy CI ([README § CI](README.md#ci)). Phase 5–7 smokes and `./scripts/harness/verify.sh` are local/harness gates (CI wiring is a follow-up).
 
-**Release [v0.1.0](https://github.com/SafetyMP/Digital-Twin-Compliance/releases/tag/v0.1.0)** — Phase 1–3 smoke-stable; Flink 1.20 runtime aligned. CECT Phase 5–7 lands under `[Unreleased]` until the next semver tag.
+**Release [v0.1.0](https://github.com/SafetyMP/Digital-Twin-Compliance/releases/tag/v0.1.0)** — Phase 1–3 smoke-stable; Flink 1.20 runtime aligned. Phases 5–7 (CECT delivery) land under `[Unreleased]` until the next semver tag.
 
 ## Stability
 
@@ -30,7 +32,7 @@ CI on every PR runs Phase 1–4 smoke suites plus policy CI ([README § CI](READ
 | GHCR deploy (`docker-compose.deploy.yml`) | **Phase 1–4 runtime** — Phase 5–7 images not yet in docker-publish |
 | Production multi-tenant SaaS / Vault injection | **Not yet** — see [docs/deployment.md](docs/deployment.md#residuals-honest) |
 
-## Honest residuals (shipped with CECT r1)
+## Honest residuals (shipped with Phases 5–7)
 
 | Residual | Notes |
 |----------|-------|
@@ -44,9 +46,9 @@ CI on every PR runs Phase 1–4 smoke suites plus policy CI ([README § CI](READ
 
 | Theme | Examples | Tracking |
 |-------|----------|----------|
-| **Phase 5–7 CI + GHCR** | Wire phase5–7 smokes into `ci.yml`; publish reporting/oidc/report-console images | Follow-up after CECT r1 merge |
+| **Phase 5–7 CI + GHCR** | Wire phase5–7 smokes into `ci.yml`; publish reporting/oidc/report-console images | Follow-up after Phases 5–7 merge |
 | **Staging secrets** | Vault (or equivalent) injection; drop documented Keycloak demo secrets | [docs/deployment.md](docs/deployment.md) |
-| **HA / multi-AZ** | HA immudb, multi-AZ Kafka, full K8s/Terraform reference | Out of CECT r1 scope |
+| **HA / multi-AZ** | HA immudb, multi-AZ Kafka, full K8s/Terraform reference | Out of current delivery scope |
 
 Features outside this roadmap: open a [feature request](https://github.com/SafetyMP/Digital-Twin-Compliance/issues/new/choose) for discussion before large PRs.
 

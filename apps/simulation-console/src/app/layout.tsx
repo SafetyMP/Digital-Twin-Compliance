@@ -1,19 +1,27 @@
+import { AppShell, consoleUrlsFromEnv } from "@digital-twin/console-shell";
 import type { Metadata } from "next";
+import { IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 
+const plex = IBM_Plex_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+});
+
 export const metadata: Metadata = {
-  title: "Simulation Console",
-  description: "Phase 4 deterministic stress simulation",
+  title: "Simulation Console · Digital Twin",
+  description: "Graph & simulation · Phase 4 deterministic stress simulation",
+  icons: { icon: "/favicon.svg" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const urls = consoleUrlsFromEnv();
   return (
-    <html lang="en">
+    <html lang="en" className={plex.className}>
       <body>
-        <div className="border-b border-violet-500/40 bg-violet-950/40 px-4 py-2 text-sm text-violet-200">
-          Simulation Console — ECB Adverse scenario (Phase 4)
-        </div>
-        {children}
+        <AppShell activeApp="simulation" urls={urls}>
+          {children}
+        </AppShell>
       </body>
     </html>
   );

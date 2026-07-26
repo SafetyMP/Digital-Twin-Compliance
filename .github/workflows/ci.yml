@@ -173,6 +173,10 @@ jobs:
         working-directory: apps/simulation-console
         run: npm ci && npm run build
 
+      - name: Build report-console
+        working-directory: apps/report-console
+        run: npm ci && npm run build
+
       - name: Submit Flink job and wait for RUNNING
         env:
           CEP_PAYMENTS_OFFSET: latest

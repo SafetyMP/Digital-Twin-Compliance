@@ -1,19 +1,27 @@
+import { AppShell, consoleUrlsFromEnv } from "@digital-twin/console-shell";
 import type { Metadata } from "next";
+import { IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 
+const plex = IBM_Plex_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+});
+
 export const metadata: Metadata = {
-  title: "Graph Explorer",
-  description: "Phase 4 exposure network visualization",
+  title: "Graph Explorer · Digital Twin",
+  description: "Graph & simulation · Phase 4 exposure network visualization",
+  icons: { icon: "/favicon.svg" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const urls = consoleUrlsFromEnv();
   return (
-    <html lang="en">
+    <html lang="en" className={plex.className}>
       <body>
-        <div className="border-b border-sky-500/40 bg-sky-950/40 px-4 py-2 text-sm text-sky-200">
-          Graph Explorer — institution exposure network (Phase 4)
-        </div>
-        {children}
+        <AppShell activeApp="graph" urls={urls}>
+          {children}
+        </AppShell>
       </body>
     </html>
   );
