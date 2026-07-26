@@ -57,13 +57,46 @@ func (h *Handler) handleInstitution(ctx context.Context, payload events.TwinStat
 	if entityID == "" {
 		return fmt.Errorf("institution missing entity id")
 	}
-	lcr := 0.0
-	if state.Liquidity != nil {
-		if v, ok := state.Liquidity["lcr"].(float64); ok {
-			lcr = v
+	lcr := mapFloat(state.Liquidity, "lcr")
+	cet1 := institutionCET1(state)
+	return h.store.UpsertInstitution(ctx, entityID, state.LegalName, lcr, cet1)
+}
+
+func institutionCET1(state events.InstitutionState) float64 {
+	if state.CET1Ratio != nil {
+		return *state.CET1Ratio
+	}
+	if state.CET1 != nil {
+		return *state.CET1
+	}
+	if v := mapFloat(state.Capital, "cet1", "cet1_ratio", "CET1"); v > 0 {
+		return v
+	}
+	if v := mapFloat(state.Liquidity, "cet1", "cet1_ratio"); v > 0 {
+		return v
+	}
+	// Explicit zero when twin omits capital — callers must not invent 0.12.
+	return 0
+}
+
+func mapFloat(m map[string]any, keys ...string) float64 {
+	if m == nil {
+		return 0
+	}
+	for _, k := range keys {
+		switch v := m[k].(type) {
+		case float64:
+			return v
+		case float32:
+			return float64(v)
+		case int:
+			return float64(v)
+		case json.Number:
+			f, _ := v.Float64()
+			return f
 		}
 	}
-	return h.store.UpsertInstitution(ctx, entityID, state.LegalName, lcr, 0.12)
+	return 0
 }
 
 func (h *Handler) handleInstrument(ctx context.Context, payload events.TwinStatePayload) error {

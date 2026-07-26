@@ -37,7 +37,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /api/v1/health", s.health)
 	mux.HandleFunc("GET /api/v1/rules", s.listRules)
 	mux.HandleFunc("POST /api/v1/evaluate", s.evaluate)
-	return mux
+	return withOptionalInternalToken(mux)
 }
 
 func (s *Server) health(w http.ResponseWriter, r *http.Request) {

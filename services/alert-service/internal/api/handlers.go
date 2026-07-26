@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/digital-twin/platform/services/alert-service/internal/store"
 )
@@ -38,7 +39,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /api/v1/alerts/{alertId}", s.getAlert)
 	mux.HandleFunc("POST /api/v1/alerts/{alertId}/acknowledge", s.acknowledge)
 	mux.HandleFunc("GET "+s.wsPath, s.wsAlerts)
-	return mux
+	return withOptionalInternalToken(mux)
 }
 
 // health is a liveness probe: it returns 200 OK to signal the process is up.
@@ -60,7 +61,7 @@ func (s *Server) listAlerts(w http.ResponseWriter, r *http.Request) {
 	}
 	alerts, err := s.store.ListAlerts(r.Context(), r.URL.Query().Get("status"), r.URL.Query().Get("severity"), limit, offset)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "INTERNAL", err.Error())
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "failed to list alerts")
 		return
 	}
 	if alerts == nil {
@@ -76,7 +77,7 @@ func (s *Server) getAlert(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusNotFound, "NOT_FOUND", "alert not found")
 			return
 		}
-		writeError(w, http.StatusInternalServerError, "INTERNAL", err.Error())
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "failed to get alert")
 		return
 	}
 	writeJSON(w, http.StatusOK, alert)
@@ -88,8 +89,20 @@ type acknowledgeRequest struct {
 
 func (s *Server) acknowledge(w http.ResponseWriter, r *http.Request) {
 	var req acknowledgeRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.AcknowledgedBy == "" {
-		writeError(w, http.StatusBadRequest, "BAD_REQUEST", "acknowledgedBy required")
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "BAD_REQUEST", "invalid JSON body")
+		return
+	}
+	// Prefer authenticated principal header when present; reject spoofed body mismatch.
+	if principal := strings.TrimSpace(r.Header.Get("X-Principal")); principal != "" {
+		if req.AcknowledgedBy != "" && req.AcknowledgedBy != principal {
+			writeError(w, http.StatusForbidden, "FORBIDDEN", "acknowledgedBy must match X-Principal")
+			return
+		}
+		req.AcknowledgedBy = principal
+	}
+	if req.AcknowledgedBy == "" {
+		writeError(w, http.StatusBadRequest, "BAD_REQUEST", "acknowledgedBy or X-Principal required")
 		return
 	}
 	alert, err := s.store.Acknowledge(r.Context(), r.PathValue("alertId"), req.AcknowledgedBy)
@@ -98,7 +111,7 @@ func (s *Server) acknowledge(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusNotFound, "NOT_FOUND", "alert not found")
 			return
 		}
-		writeError(w, http.StatusInternalServerError, "INTERNAL", err.Error())
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "failed to acknowledge alert")
 		return
 	}
 	s.hub.Broadcast("alert.acknowledged", alert)
@@ -110,7 +123,7 @@ func (s *Server) wsAlerts(w http.ResponseWriter, r *http.Request) {
 	limit := 50
 	alerts, err := s.store.ListAlerts(r.Context(), status, "", limit, 0)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "INTERNAL", err.Error())
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "failed to list alerts")
 		return
 	}
 	s.hub.ServeHTTP(w, r, alerts)

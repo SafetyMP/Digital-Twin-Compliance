@@ -44,7 +44,7 @@ func (s *Server) getPersona(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusNotFound, "NOT_FOUND", "persona not found")
 			return
 		}
-		writeError(w, http.StatusInternalServerError, "INTERNAL", err.Error())
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "internal error")
 		return
 	}
 	writeJSON(w, http.StatusOK, persona)
@@ -60,7 +60,7 @@ func (s *Server) listPersonas(w http.ResponseWriter, r *http.Request) {
 
 	personas, err := s.store.ListPersonas(r.Context(), personaType, limit, offset)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "INTERNAL", err.Error())
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "internal error")
 		return
 	}
 	if personas == nil {

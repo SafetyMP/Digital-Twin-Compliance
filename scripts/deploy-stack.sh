@@ -33,9 +33,11 @@ case "$ACTION" in
     "$ROOT/scripts/register-debezium-connector.sh"
     "$ROOT/scripts/create-kafka-topics.sh"
     docker compose -f "$COMPOSE_FILE" restart \
-      state-service alert-service audit-service cedar-service decision-service
+      state-service alert-service audit-service cedar-service decision-service \
+      graph-service simulation-service
     docker compose -f "$COMPOSE_FILE" up -d --wait \
-      state-service alert-service audit-service cedar-service decision-service
+      state-service alert-service audit-service cedar-service decision-service \
+      graph-service simulation-service
     ;;
   smoke)
     "$ROOT/scripts/smoke-test.sh"
@@ -45,12 +47,15 @@ case "$ACTION" in
     if [[ -n "${AUDIT_SERVICE_IMAGE:-}" ]]; then
       "$ROOT/scripts/smoke-test-phase3.sh"
     fi
+    if [[ -n "${GRAPH_SERVICE_IMAGE:-}" || -n "${SIMULATION_SERVICE_IMAGE:-}" ]]; then
+      SMOKE_PHASE4_SKIP_PREREQS=1 "$ROOT/scripts/smoke-test-phase4.sh"
+    fi
     ;;
   down)
     docker compose -f "$COMPOSE_FILE" down
     ;;
   *)
-    echo "Usage: STATE_SERVICE_IMAGE=... [ALERT_* / AUDIT_* / CEDAR_* / DECISION_* / COMPLIANCE_CEP_*] $0 [up|pull|bootstrap|smoke|down]" >&2
+    echo "Usage: STATE_SERVICE_IMAGE=... [ALERT_* / AUDIT_* / CEDAR_* / DECISION_* / GRAPH_* / SIMULATION_* / COMPLIANCE_CEP_*] $0 [up|pull|bootstrap|smoke|down]" >&2
     exit 1
     ;;
 esac

@@ -1,0 +1,15 @@
+{
+  auto_https off
+  admin off
+}
+
+# Local TLS edge (self-signed). Prove with: curl -k https://localhost:8443/healthz
+localhost:8443 {
+  tls internal
+  handle /healthz {
+    respond "ok" 200
+  }
+  handle {
+    reverse_proxy oidc-edge:8180
+  }
+}

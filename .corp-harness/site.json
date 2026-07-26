@@ -1,0 +1,12 @@
+{
+  "schema": "corporate-site-site/v1",
+  "site_id": "digital-twin",
+  "corporate_program": "cect",
+  "corporate_handoff_sha256": "f49b57dbac1f9c33ff0f9bcfbdb4203aa604ec55ad313a6e4e3e48d609875e00",
+  "verify_argv": [
+    "./scripts/harness/verify.sh"
+  ],
+  "adversarial_argv": [
+    "./scripts/harness/adversarial.sh"
+  ]
+}

@@ -29,9 +29,12 @@ jobs:
           languages: go
           build-mode: manual
 
-      - name: Build State Service for analysis
-        working-directory: services/state-service
-        run: go build -o /dev/null ./...
+      - name: Build Go services for analysis
+        run: |
+          for svc in state-service alert-service audit-service cedar-service decision-service graph-service; do
+            echo "Building services/$svc..."
+            (cd "services/$svc" && go build -o /dev/null ./...)
+          done
 
       - name: Perform CodeQL analysis
         uses: github/codeql-action/analyze@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1

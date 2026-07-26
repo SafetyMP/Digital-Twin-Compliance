@@ -4,19 +4,20 @@ Operational contract for coding agents working in this repository.
 
 ## Current phase
 
-**Phase 4** — Graph model and simulation (planning → implementation). Full spec: [docs/phase4-implementation-spec.md](docs/phase4-implementation-spec.md). **Phase 3 complete** (v0.1.0): [docs/review/phase3-exit-checklist.md](docs/review/phase3-exit-checklist.md). Earlier specs: [phase3](docs/phase3-implementation-spec.md), [phase2](docs/phase2-implementation-spec.md), [phase1](docs/phase1-implementation-spec.md).
+**Phase 5–7 (CECT site delivery)** — Reporting, hardening, and cutting-edge overlays on a Phase 4 baseline. Corporate program `cect` handoff authorizes this work. Specs: [phase5](docs/phase5-implementation-spec.md) (ADR-011), Phase 6/7 via ADR-012/013 when authored. **Phase 4** graph/simulation baseline: [docs/phase4-implementation-spec.md](docs/phase4-implementation-spec.md). **Phase 3 complete** (v0.1.0): [docs/review/phase3-exit-checklist.md](docs/review/phase3-exit-checklist.md). Earlier: [phase3](docs/phase3-implementation-spec.md), [phase2](docs/phase2-implementation-spec.md), [phase1](docs/phase1-implementation-spec.md).
 
-Architecture and domain docs live under [docs/](docs/). Do not implement Phase 5+ components unless explicitly requested.
+Architecture and domain docs live under [docs/](docs/). Do not claim Phase 5–7 complete or “cutting-edge” marketing until CECT gates have executable evidence.
 
 ## Context loading
 
 Minimize token use — load only what the task requires:
 
-- **Always load**: this file, [docs/phase4-implementation-spec.md](docs/phase4-implementation-spec.md) (Phase 4) or [docs/phase3-implementation-spec.md](docs/phase3-implementation-spec.md) (Phase 3 maintenance) / [docs/phase2-implementation-spec.md](docs/phase2-implementation-spec.md) / [docs/phase1-implementation-spec.md](docs/phase1-implementation-spec.md) when earlier-phase-only work
+- **Always load**: this file; for CECT Phase 5+ work also [docs/phase5-implementation-spec.md](docs/phase5-implementation-spec.md) + [ADR-011](docs/adr/011-phase5-reporting-foundation.md); for Phase 4 maintenance [docs/phase4-implementation-spec.md](docs/phase4-implementation-spec.md); earlier-phase-only: [phase3](docs/phase3-implementation-spec.md) / [phase2](docs/phase2-implementation-spec.md) / [phase1](docs/phase1-implementation-spec.md)
 - **For Go State Service work**: [services/state-service/AGENTS.md](services/state-service/AGENTS.md)
 - **For Go Alert Service work**: [services/alert-service/AGENTS.md](services/alert-service/AGENTS.md)
 - **For Go Audit / Cedar / Decision Service work**: `services/<svc>/AGENTS.md`
-- **For Graph / Simulation Service work** (Phase 4): `services/graph-service/AGENTS.md`, `services/simulation-service/AGENTS.md` (created during Phase 4 implementation)
+- **For Graph / Simulation Service work** (Phase 4): `services/graph-service/AGENTS.md`, `services/simulation-service/AGENTS.md`
+- **For Reporting Service / Report Console** (Phase 5): [docs/phase5-implementation-spec.md](docs/phase5-implementation-spec.md), [docs/handoff-phase5-agent.md](docs/handoff-phase5-agent.md)
 - **For envelope / idempotency / outbox / audit Kafka tasks**: [docs/data-flow.md](docs/data-flow.md)
 - **Do not load unless the task explicitly requires**: [docs/architecture.md](docs/architecture.md), [docs/domain-model.md](docs/domain-model.md), [docs/compliance-mapping.md](docs/compliance-mapping.md), [docs/roadmap.md](docs/roadmap.md), ADRs other than [ADR-007](docs/adr/007-phase1-foundation-decisions.md)
 - **Never load for implementation or verification** (unless user pastes a path for scoring):
@@ -286,12 +287,21 @@ CI runs Go + `mvn test` + `check-kafka-contracts.sh` before `docker compose up`;
 
 ## Scope by phase
 
-### Phase 4 (current)
+### Phase 5–7 (current — CECT site delivery)
 
-In scope unless a task is explicitly Phase 3 maintenance or earlier:
+In scope under corporate program `cect` / site_id `digital-twin`:
+
+- Phase 5: Reporting Service, MinIO Object Lock, taxonomy mapper, Report Console, `smoke-test-phase5.sh` ([ADR-011](docs/adr/011-phase5-reporting-foundation.md))
+- Phase 6: Keycloak/OIDC, TLS edge, OTel, DR/explainability residuals ([ADR-012](docs/adr/012-phase6-hardening-foundation.md) when authored)
+- Phase 7: control-effectiveness, continuous contagion→audit, reg→policy proposals, graph analytics ([ADR-013](docs/adr/013-phase7-cutting-edge-foundation.md) when authored)
+- Site harness: `scripts/harness/verify.sh`, `scripts/harness/adversarial.sh`
+
+Preserve Phase 1–4 smoke green. No cutting-edge marketing claims before CECT gates pass.
+
+### Phase 4 (baseline — maintenance)
 
 - Graph Service (`services/graph-service/`) + Neo4j in Compose
-- Simulation Service (`services/simulation-service/`) — deterministic stress only (ADR-010 D23)
+- Simulation Service (`services/simulation-service/`) — deterministic stress (ADR-010 D23); agentic/continuous contagion is Phase 7 under ADR-013
 - Graph Explorer UI (`apps/graph-explorer/`), Simulation Console UI (`apps/simulation-console/`)
 - `smoke-test-phase4.sh`, `wait-graph-seeded.sh`, CI Phase 4 smoke
 
@@ -302,13 +312,12 @@ Handoff: [docs/handoff-phase4-agent.md](docs/handoff-phase4-agent.md) · readine
 - Cedar, Decision, Audit services, Audit Explorer, policy CI, `smoke-test-phase3.sh`
 - Exit evidence: [docs/review/phase3-exit-checklist.md](docs/review/phase3-exit-checklist.md) (v0.1.0)
 
-### Out of scope (Phase 5+)
+### Still out of scope (unless a later handoff says otherwise)
 
-Do **not** add unless the task explicitly targets a later phase:
-
-- Regulatory reporting (XBRL/SDMX/ClickHouse pipeline)
-- Agent-based contagion simulation (Phase 6+)
-- Keycloak / full OIDC auth middleware (mock principal per ADR-009 D20)
+- Industrial OT/ICS twin pivot
+- Full multi-tenant supervisory SaaS
+- Replacing Cedar or GoRules Zen
+- Commercial Basel/XBRL suite parity claims
 
 Phase/deferral rationale: [docs/roadmap.md](docs/roadmap.md).
 

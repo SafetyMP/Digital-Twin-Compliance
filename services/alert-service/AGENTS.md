@@ -11,7 +11,7 @@ Parent contract: [AGENTS.md](../../AGENTS.md). Alert envelope fields: [docs/data
 | `cmd/server/` | HTTP server, Kafka consumer, WebSocket hub wiring |
 | `internal/api/` | REST + WebSocket handlers |
 | `internal/consumer/` | `compliance.alerts` → alert upsert |
-| `internal/hub/` | WebSocket broadcast with backpressure channel |
+| `internal/hub/` | WebSocket broadcast with per-connection write mutex |
 | `internal/store/` | PostgreSQL alert store + idempotency |
 | `internal/config/` | Environment configuration |
 | `internal/events/` | Envelope and alert payload parsing |

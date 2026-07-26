@@ -146,7 +146,7 @@ func (s *Store) ListNodes(ctx context.Context, nameQuery string, limit int) ([]N
 		query := `
 			MATCH (e:LegalEntity {tenantId: $tenantId})
 			WHERE $nameQuery = '' OR toLower(e.name) CONTAINS toLower($nameQuery)
-			RETURN e.entityId AS entityId, e.name AS name, coalesce(e.lcr, 0.0) AS lcr, coalesce(e.cet1Ratio, 0.12) AS cet1Ratio
+			RETURN e.entityId AS entityId, e.name AS name, coalesce(e.lcr, 0.0) AS lcr, coalesce(e.cet1Ratio, 0.0) AS cet1Ratio
 			ORDER BY e.name
 			LIMIT $limit
 		`
@@ -233,6 +233,119 @@ func (s *Store) ListEdges(ctx context.Context, layer string, limit int) ([]Edge,
 		return []Edge{}, nil
 	}
 	return result.([]Edge), nil
+}
+
+type PathResult struct {
+	FromEntityID string   `json:"fromEntityId"`
+	ToEntityID   string   `json:"toEntityId"`
+	Hops         int      `json:"hops"`
+	NodeIDs      []string `json:"nodeIds"`
+}
+
+type CentralityRow struct {
+	EntityID string  `json:"entityId"`
+	Name     string  `json:"name"`
+	Degree   int     `json:"degree"`
+	Score    float64 `json:"score"`
+}
+
+// ShortestPath returns an undirected exposure path (max 6 hops) between two institutions.
+func (s *Store) ShortestPath(ctx context.Context, fromID, toID string) (PathResult, error) {
+	session := s.driver.NewSession(ctx, neo4j.SessionConfig{})
+	defer session.Close(ctx)
+	result, err := session.ExecuteRead(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
+		rec, err := tx.Run(ctx, `
+			MATCH (a:LegalEntity {tenantId: $tenantId, entityId: $fromId})
+			MATCH (b:LegalEntity {tenantId: $tenantId, entityId: $toId})
+			MATCH p = shortestPath((a)-[:EXPOSURE*..6]-(b))
+			RETURN [n IN nodes(p) | n.entityId] AS nodeIds, length(p) AS hops
+			LIMIT 1
+		`, map[string]any{
+			"tenantId": s.tenantID,
+			"fromId":   fromID,
+			"toId":     toID,
+		})
+		if err != nil {
+			return PathResult{}, err
+		}
+		if !rec.Next(ctx) {
+			return PathResult{}, fmt.Errorf("no path")
+		}
+		row := rec.Record()
+		rawIDs, _ := row.Get("nodeIds")
+		hops, _ := row.Get("hops")
+		var ids []string
+		if arr, ok := rawIDs.([]any); ok {
+			for _, v := range arr {
+				ids = append(ids, fmt.Sprint(v))
+			}
+		}
+		return PathResult{
+			FromEntityID: fromID,
+			ToEntityID:   toID,
+			Hops:         int(asInt64(hops)),
+			NodeIDs:      ids,
+		}, rec.Err()
+	})
+	if err != nil {
+		return PathResult{}, err
+	}
+	return result.(PathResult), nil
+}
+
+// DegreeCentrality returns degree centrality over the exposure graph (no GDS plugin required).
+func (s *Store) DegreeCentrality(ctx context.Context, limit int) ([]CentralityRow, error) {
+	if limit <= 0 {
+		limit = 20
+	}
+	session := s.driver.NewSession(ctx, neo4j.SessionConfig{})
+	defer session.Close(ctx)
+	result, err := session.ExecuteRead(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
+		rec, err := tx.Run(ctx, `
+			MATCH (e:LegalEntity {tenantId: $tenantId})
+			OPTIONAL MATCH (e)-[r:EXPOSURE {tenantId: $tenantId}]-(:LegalEntity {tenantId: $tenantId})
+			RETURN e.entityId AS entityId, coalesce(e.name, '') AS name, count(r) AS degree
+			ORDER BY degree DESC, entityId
+			LIMIT $limit
+		`, map[string]any{"tenantId": s.tenantID, "limit": limit})
+		if err != nil {
+			return nil, err
+		}
+		var out []CentralityRow
+		maxDeg := 0
+		for rec.Next(ctx) {
+			row := rec.Record()
+			id, _ := row.Get("entityId")
+			name, _ := row.Get("name")
+			degRaw, _ := row.Get("degree")
+			deg := int(asInt64(degRaw))
+			if deg > maxDeg {
+				maxDeg = deg
+			}
+			out = append(out, CentralityRow{
+				EntityID: fmt.Sprint(id),
+				Name:     fmt.Sprint(name),
+				Degree:   deg,
+			})
+		}
+		if err := rec.Err(); err != nil {
+			return nil, err
+		}
+		if maxDeg == 0 {
+			maxDeg = 1
+		}
+		for i := range out {
+			out[i].Score = float64(out[i].Degree) / float64(maxDeg)
+		}
+		return out, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	if result == nil {
+		return []CentralityRow{}, nil
+	}
+	return result.([]CentralityRow), nil
 }
 
 func asFloat64(v any) float64 {

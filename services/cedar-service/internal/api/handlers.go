@@ -137,7 +137,7 @@ func (s *Server) evaluate(w http.ResponseWriter, r *http.Request) {
 	if result.Outcome == "Deny" {
 		correlationID := r.Header.Get("X-Correlation-Id")
 		if err := s.audit.PublishDeny(r.Context(), result, body.Principal.ID, body.Resource.ID, correlationID); err != nil {
-			writeError(w, http.StatusInternalServerError, "INTERNAL", err.Error())
+			writeError(w, http.StatusInternalServerError, "INTERNAL", "internal error")
 			return
 		}
 	}

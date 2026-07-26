@@ -5,6 +5,25 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
 public class RedisFeatureStore implements AutoCloseable {
+    private static final String EXPOSURE_LUA =
+            "local versionKey = KEYS[1]\n"
+                    + "local lastNotionalKey = KEYS[2]\n"
+                    + "local aggregateKey = KEYS[3]\n"
+                    + "local stateVersion = tonumber(ARGV[1])\n"
+                    + "local newNotional = tonumber(ARGV[2])\n"
+                    + "local lastVersion = tonumber(redis.call('GET', versionKey) or '0')\n"
+                    + "if stateVersion > 0 and stateVersion <= lastVersion then\n"
+                    + "  return tonumber(redis.call('GET', aggregateKey) or '0')\n"
+                    + "end\n"
+                    + "local previous = tonumber(redis.call('GET', lastNotionalKey) or '0')\n"
+                    + "local delta = newNotional - previous\n"
+                    + "local total = redis.call('INCRBYFLOAT', aggregateKey, delta)\n"
+                    + "redis.call('SET', lastNotionalKey, tostring(newNotional))\n"
+                    + "if stateVersion > 0 then\n"
+                    + "  redis.call('SET', versionKey, tostring(stateVersion))\n"
+                    + "end\n"
+                    + "return tonumber(total)\n";
+
     private final JedisPool pool;
     private final String tenantId;
 
@@ -26,6 +45,7 @@ public class RedisFeatureStore implements AutoCloseable {
 
     /**
      * Applies notional delta for an instrument persona, skipping stale stateVersion replays.
+     * Uses a Lua script so version/last-notional/aggregate updates are atomic.
      */
     public double applyExposureDelta(
             String personaId,
@@ -38,18 +58,25 @@ public class RedisFeatureStore implements AutoCloseable {
         String lastNotionalKey = "exp-last:" + tenantId + ":" + personaId;
         String versionKey = "exp-ver:" + tenantId + ":" + personaId;
         try (Jedis jedis = pool.getResource()) {
-            int lastVersion = parseIntOrZero(jedis.get(versionKey));
-            if (stateVersion > 0 && stateVersion <= lastVersion) {
-                return parseDoubleOrZero(jedis.get(aggregateKey));
+            Object result = jedis.eval(
+                    EXPOSURE_LUA,
+                    3,
+                    versionKey,
+                    lastNotionalKey,
+                    aggregateKey,
+                    Integer.toString(stateVersion),
+                    Double.toString(newNotionalEur)
+            );
+            if (result instanceof Double) {
+                return (Double) result;
             }
-            double previousNotional = parseDoubleOrZero(jedis.get(lastNotionalKey));
-            double delta = exposureDeltaAmount(previousNotional, newNotionalEur, lastVersion, stateVersion);
-            double total = jedis.incrByFloat(aggregateKey, delta);
-            jedis.set(lastNotionalKey, Double.toString(newNotionalEur));
-            if (stateVersion > 0) {
-                jedis.set(versionKey, Integer.toString(stateVersion));
+            if (result instanceof Long) {
+                return ((Long) result).doubleValue();
             }
-            return total;
+            if (result instanceof String) {
+                return Double.parseDouble((String) result);
+            }
+            return 0.0;
         }
     }
 
@@ -63,28 +90,6 @@ public class RedisFeatureStore implements AutoCloseable {
             return 0.0;
         }
         return newNotionalEur - previousNotional;
-    }
-
-    private static int parseIntOrZero(String raw) {
-        if (raw == null || raw.isEmpty()) {
-            return 0;
-        }
-        try {
-            return Integer.parseInt(raw);
-        } catch (NumberFormatException e) {
-            return 0;
-        }
-    }
-
-    private static double parseDoubleOrZero(String raw) {
-        if (raw == null || raw.isEmpty()) {
-            return 0.0;
-        }
-        try {
-            return Double.parseDouble(raw);
-        } catch (NumberFormatException e) {
-            return 0.0;
-        }
     }
 
     public void setLcr(String institutionId, double lcr) {

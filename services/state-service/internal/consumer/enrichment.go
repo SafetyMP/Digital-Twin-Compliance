@@ -12,6 +12,21 @@ var institutionLiquidityColumns = map[string]struct{}{
 	"liquidity_currency":    {},
 }
 
+var institutionCapitalColumns = map[string]struct{}{
+	"cet1_ratio": {},
+}
+
+func institutionCapitalFromRow(row map[string]any) (map[string]any, bool) {
+	cet1, ok := floatField(row, "cet1_ratio")
+	if !ok {
+		return nil, false
+	}
+	return map[string]any{
+		"cet1":      cet1,
+		"cet1_ratio": cet1,
+	}, true
+}
+
 func institutionLiquidityFromRow(row map[string]any) (map[string]any, bool) {
 	lcr, ok := floatField(row, "lcr")
 	if !ok {
@@ -68,15 +83,21 @@ func enrichInstrumentState(row map[string]any) map[string]any {
 }
 
 func enrichInstitutionState(row map[string]any) map[string]any {
-	out := make(map[string]any, len(row)+1)
+	out := make(map[string]any, len(row)+2)
 	for k, v := range row {
 		if _, skip := institutionLiquidityColumns[k]; skip {
+			continue
+		}
+		if _, skip := institutionCapitalColumns[k]; skip {
 			continue
 		}
 		out[k] = v
 	}
 	if liq, ok := institutionLiquidityFromRow(row); ok {
 		out["liquidity"] = liq
+	}
+	if capital, ok := institutionCapitalFromRow(row); ok {
+		out["capital"] = capital
 	}
 	return out
 }

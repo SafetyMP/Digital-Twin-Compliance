@@ -58,12 +58,14 @@ func main() {
 	go func() {
 		if err := runner.Run(ctx); err != nil && ctx.Err() == nil {
 			slog.Error("consumer stopped", "error", err)
+			cancel()
 		}
 	}()
 
 	go func() {
 		if err := publisher.Run(ctx); err != nil && ctx.Err() == nil {
 			slog.Error("outbox publisher stopped", "error", err)
+			cancel()
 		}
 	}()
 

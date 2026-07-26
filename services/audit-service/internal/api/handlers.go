@@ -80,7 +80,7 @@ func (s *Server) listEntries(w http.ResponseWriter, r *http.Request) {
 
 	entries, err := s.index.ListEntries(r.Context(), filter)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "INTERNAL", err.Error())
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "internal error")
 		return
 	}
 	if entries == nil {
@@ -115,7 +115,7 @@ func (s *Server) verify(w http.ResponseWriter, r *http.Request) {
 
 	indexRows, err := s.index.ListForVerify(r.Context(), fromSeq, toSeq)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "INTERNAL", err.Error())
+		writeError(w, http.StatusInternalServerError, "INTERNAL", "internal error")
 		return
 	}
 
@@ -123,7 +123,7 @@ func (s *Server) verify(w http.ResponseWriter, r *http.Request) {
 	for _, idx := range indexRows {
 		entry, err := s.ledger.GetEntry(r.Context(), idx.EntryID)
 		if err != nil {
-			writeError(w, http.StatusInternalServerError, "INTERNAL", err.Error())
+			writeError(w, http.StatusInternalServerError, "INTERNAL", "internal error")
 			return
 		}
 		entries = append(entries, entry)

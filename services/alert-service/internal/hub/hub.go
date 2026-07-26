@@ -16,7 +16,9 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		origin := r.Header.Get("Origin")
 		if origin == "" {
-			return true // non-browser clients
+			// Deny empty Origin: browsers always send Origin on WS upgrades.
+			// Non-browser clients should use the REST API or same-host Origin.
+			return false
 		}
 		return strings.HasPrefix(origin, "http://"+r.Host) || strings.HasPrefix(origin, "https://"+r.Host)
 	},
@@ -27,13 +29,30 @@ type Message struct {
 	Payload store.Alert `json:"payload"`
 }
 
+type client struct {
+	conn *websocket.Conn
+	mu   sync.Mutex
+}
+
 type Hub struct {
 	mu      sync.RWMutex
-	clients map[*websocket.Conn]bool
+	clients map[*client]bool
 }
 
 func New() *Hub {
-	return &Hub{clients: make(map[*websocket.Conn]bool)}
+	return &Hub{clients: make(map[*client]bool)}
+}
+
+func (c *client) writeMessage(messageType int, data []byte) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.conn.WriteMessage(messageType, data)
+}
+
+func (c *client) writeControl(messageType int, data []byte, deadline time.Time) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.conn.WriteControl(messageType, data, deadline)
 }
 
 func (h *Hub) Broadcast(msgType string, alert store.Alert) {
@@ -44,18 +63,18 @@ func (h *Hub) Broadcast(msgType string, alert store.Alert) {
 	}
 
 	h.mu.RLock()
-	conns := make([]*websocket.Conn, 0, len(h.clients))
-	for conn := range h.clients {
-		conns = append(conns, conn)
+	clients := make([]*client, 0, len(h.clients))
+	for c := range h.clients {
+		clients = append(clients, c)
 	}
 	h.mu.RUnlock()
-	for _, conn := range conns {
-		if err := conn.WriteMessage(websocket.TextMessage, data); err != nil {
+	for _, c := range clients {
+		if err := c.writeMessage(websocket.TextMessage, data); err != nil {
 			slog.Warn("ws write failed", "error", err)
 			h.mu.Lock()
-			delete(h.clients, conn)
+			delete(h.clients, c)
 			h.mu.Unlock()
-			_ = conn.Close()
+			_ = c.conn.Close()
 		}
 	}
 }
@@ -67,20 +86,27 @@ func (h *Hub) ServeHTTP(w http.ResponseWriter, r *http.Request, initial []store.
 		return
 	}
 
+	c := &client{conn: conn}
 	h.mu.Lock()
-	h.clients[conn] = true
+	h.clients[c] = true
 	h.mu.Unlock()
 
 	defer func() {
 		h.mu.Lock()
-		delete(h.clients, conn)
+		delete(h.clients, c)
 		h.mu.Unlock()
 		_ = conn.Close()
 	}()
 
 	for _, alert := range initial {
-		data, _ := json.Marshal(Message{Type: "alert.raised", Payload: alert})
-		_ = conn.WriteMessage(websocket.TextMessage, data)
+		data, err := json.Marshal(Message{Type: "alert.raised", Payload: alert})
+		if err != nil {
+			slog.Error("marshal ws snapshot", "error", err)
+			continue
+		}
+		if err := c.writeMessage(websocket.TextMessage, data); err != nil {
+			return
+		}
 	}
 
 	conn.SetReadDeadline(time.Now().Add(60 * time.Second))
@@ -103,7 +129,7 @@ func (h *Hub) ServeHTTP(w http.ResponseWriter, r *http.Request, initial []store.
 	for {
 		select {
 		case <-ticker.C:
-			if err := conn.WriteControl(websocket.PingMessage, []byte("ping"), time.Now().Add(5*time.Second)); err != nil {
+			if err := c.writeControl(websocket.PingMessage, []byte("ping"), time.Now().Add(5*time.Second)); err != nil {
 				return
 			}
 		}
