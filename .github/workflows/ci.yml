@@ -157,6 +157,10 @@ jobs:
           sudo rm -rf target
           mvn -q package -DskipTests
 
+      - name: Install console-shell types
+        working-directory: packages/console-shell
+        run: npm ci --legacy-peer-deps
+
       - name: Build alert-console
         working-directory: apps/alert-console
         run: npm ci && npm run build
