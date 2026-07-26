@@ -1,5 +1,6 @@
 "use client";
 
+import { EmptyState, ErrorState, LoadingState } from "@digital-twin/console-shell";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -51,7 +52,9 @@ export default function SimulationConsolePage() {
   return (
     <main className="mx-auto max-w-3xl p-6">
       <h1 className="mb-2 text-2xl font-semibold">Stress Simulation</h1>
-      <p className="mb-6 text-sm text-slate-400">Deterministic ECB Adverse-style scenario on seed graph</p>
+      <p className="mb-6 text-sm text-slate-400">
+        Deterministic ECB Adverse-style scenario on seed graph
+      </p>
 
       <div className="mb-6 flex flex-wrap gap-3">
         <select
@@ -70,7 +73,27 @@ export default function SimulationConsolePage() {
         </button>
       </div>
 
-      {error && <p className="mb-4 text-sm text-red-300">{error}</p>}
+      {error && (
+        <div className="mb-4">
+          <ErrorState
+            action={
+              <button
+                type="button"
+                onClick={runSimulation}
+                className="rounded bg-slate-700 px-3 py-1 text-sm hover:bg-slate-600"
+              >
+                Retry
+              </button>
+            }
+          >
+            {error}
+          </ErrorState>
+        </div>
+      )}
+      {loading && <LoadingState label="Running stress scenario…" />}
+      {!loading && !error && !result && (
+        <EmptyState>No run yet. Choose a scenario and click Run simulation.</EmptyState>
+      )}
 
       {result && (
         <div className="space-y-4">
@@ -86,12 +109,16 @@ export default function SimulationConsolePage() {
               <tr className="border-b border-slate-800">
                 <td className="py-2">CET1 ratio</td>
                 <td>{(result.metrics.baselineCet1 * 100).toFixed(2)}%</td>
-                <td className="text-amber-300">{(result.metrics.stressedCet1 * 100).toFixed(2)}%</td>
+                <td className="text-amber-300">
+                  {(result.metrics.stressedCet1 * 100).toFixed(2)}%
+                </td>
               </tr>
               <tr className="border-b border-slate-800">
                 <td className="py-2">Total capital</td>
                 <td>{(result.metrics.baselineTotalCapital * 100).toFixed(2)}%</td>
-                <td className="text-amber-300">{(result.metrics.stressedTotalCapital * 100).toFixed(2)}%</td>
+                <td className="text-amber-300">
+                  {(result.metrics.stressedTotalCapital * 100).toFixed(2)}%
+                </td>
               </tr>
             </tbody>
           </table>
@@ -102,7 +129,8 @@ export default function SimulationConsolePage() {
             <ul className="mt-3 space-y-1">
               {result.decisions.map((d) => (
                 <li key={d.ruleCode}>
-                  <span className="font-mono text-violet-300">{d.ruleCode}</span>: {d.outcome} — {d.rationale}
+                  <span className="font-mono text-violet-300">{d.ruleCode}</span>: {d.outcome} —{" "}
+                  {d.rationale}
                 </li>
               ))}
             </ul>

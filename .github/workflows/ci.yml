@@ -157,6 +157,10 @@ jobs:
           sudo rm -rf target
           mvn -q package -DskipTests
 
+      - name: Install console-shell types
+        working-directory: packages/console-shell
+        run: npm ci --legacy-peer-deps
+
       - name: Build alert-console
         working-directory: apps/alert-console
         run: npm ci && npm run build
@@ -171,6 +175,10 @@ jobs:
 
       - name: Build simulation-console
         working-directory: apps/simulation-console
+        run: npm ci && npm run build
+
+      - name: Build report-console
+        working-directory: apps/report-console
         run: npm ci && npm run build
 
       - name: Submit Flink job and wait for RUNNING

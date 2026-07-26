@@ -1,5 +1,6 @@
 "use client";
 
+import { EmptyState, ErrorState, LoadingState } from "@digital-twin/console-shell";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
@@ -26,6 +27,7 @@ export default function HomePage() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [connected, setConnected] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   const loadAlerts = useCallback(async () => {
     const res = await fetch("/api/alerts?status=Open&limit=50", { cache: "no-store" });
@@ -49,6 +51,8 @@ export default function HomePage() {
           setConnected(false);
           setLoadError(err instanceof Error ? err.message : "failed to load alerts");
         }
+      } finally {
+        if (!cancelled) setInitialLoading(false);
       }
     };
 
@@ -77,47 +81,76 @@ export default function HomePage() {
       <header className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Compliance Alerts</h1>
         <span className={`text-sm ${connected ? "text-emerald-400" : "text-slate-400"}`}>
-          {connected ? "Live" : "Reconnecting…"}
+          {connected ? "Polling" : "Reconnecting…"}
         </span>
       </header>
       {loadError && (
-        <p className="mb-4 rounded border border-red-800 bg-red-950/40 p-3 text-sm text-red-200">
-          {loadError}
-        </p>
+        <div className="mb-4">
+          <ErrorState
+            action={
+              <button
+                type="button"
+                onClick={() => {
+                  setInitialLoading(true);
+                  loadAlerts()
+                    .catch((err) =>
+                      setLoadError(err instanceof Error ? err.message : "failed to load alerts")
+                    )
+                    .finally(() => setInitialLoading(false));
+                }}
+                className="rounded bg-slate-700 px-3 py-1 text-sm hover:bg-slate-600"
+              >
+                Retry
+              </button>
+            }
+          >
+            {loadError}
+          </ErrorState>
+        </div>
       )}
-      <ul className="space-y-3">
-        {alerts.map((alert) => (
-          <li key={alert.alertId} className="rounded-lg border border-slate-800 bg-slate-900 p-4">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <div className="mb-2 flex items-center gap-2">
-                  <span className={`rounded px-2 py-0.5 text-xs font-medium ${severityClass(alert.severity)}`}>
-                    {alert.severity}
-                  </span>
-                  <span className="font-mono text-xs text-slate-400">{alert.ruleCode}</span>
-                  <span className="text-xs text-slate-500">{alert.status}</span>
+      {initialLoading && !loadError ? (
+        <LoadingState label="Loading open alerts…" />
+      ) : (
+        <ul className="space-y-3">
+          {alerts.map((alert) => (
+            <li key={alert.alertId} className="rounded-lg border border-slate-800 bg-slate-900 p-4">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="mb-2 flex items-center gap-2">
+                    <span
+                      className={`rounded px-2 py-0.5 text-xs font-medium ${severityClass(alert.severity)}`}
+                    >
+                      {alert.severity}
+                    </span>
+                    <span className="font-mono text-xs text-slate-400">{alert.ruleCode}</span>
+                    <span className="text-xs text-slate-500">{alert.status}</span>
+                  </div>
+                  <Link href={`/alerts/${alert.alertId}`} className="font-medium hover:underline">
+                    {alert.summary}
+                  </Link>
+                  <p className="mt-1 text-sm text-slate-400">
+                    {alert.personaType} · {alert.personaId}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    {new Date(alert.detectedAt).toLocaleString()}
+                  </p>
                 </div>
-                <Link href={`/alerts/${alert.alertId}`} className="font-medium hover:underline">
-                  {alert.summary}
-                </Link>
-                <p className="mt-1 text-sm text-slate-400">
-                  {alert.personaType} · {alert.personaId}
-                </p>
-                <p className="text-xs text-slate-500">{new Date(alert.detectedAt).toLocaleString()}</p>
+                {alert.status === "Open" && (
+                  <button
+                    onClick={() => acknowledge(alert.alertId)}
+                    className="rounded bg-slate-700 px-3 py-1 text-sm hover:bg-slate-600"
+                  >
+                    Acknowledge
+                  </button>
+                )}
               </div>
-              {alert.status === "Open" && (
-                <button
-                  onClick={() => acknowledge(alert.alertId)}
-                  className="rounded bg-slate-700 px-3 py-1 text-sm hover:bg-slate-600"
-                >
-                  Acknowledge
-                </button>
-              )}
-            </div>
-          </li>
-        ))}
-        {!loadError && alerts.length === 0 && <p className="text-slate-400">No open alerts.</p>}
-      </ul>
+            </li>
+          ))}
+          {!loadError && alerts.length === 0 && (
+            <EmptyState>No open alerts. Fire a CEP rule or wait for the next poll.</EmptyState>
+          )}
+        </ul>
+      )}
     </main>
   );
 }

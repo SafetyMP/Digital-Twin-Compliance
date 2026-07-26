@@ -2,6 +2,8 @@
 
 Phased implementation plan, risks, and open decisions for the Financial Digital Twin + Compliance Platform.
 
+> **Status of record for what is shipped on `main`:** [ROADMAP.md](../ROADMAP.md) and [phase-journeys.md](./phase-journeys.md). This file is engineering detail (durations, risks, open decisions); the gantt below is historical planning, not live completion status.
+
 See also: [architecture.md](./architecture.md), [compliance-mapping.md](./compliance-mapping.md), [adr/](./adr/).
 
 ---

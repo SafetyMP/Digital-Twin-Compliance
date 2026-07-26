@@ -4,9 +4,10 @@ const API = process.env.REPORTING_SERVICE_URL || "http://localhost:8095";
 
 export async function POST(
   _request: NextRequest,
-  context: { params: { id: string } },
+  context: { params: Promise<{ id: string }> }
 ) {
-  const res = await fetch(`${API}/api/v1/reports/${context.params.id}/validate`, {
+  const { id } = await context.params;
+  const res = await fetch(`${API}/api/v1/reports/${id}/validate`, {
     method: "POST",
     cache: "no-store",
   });

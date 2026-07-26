@@ -1,19 +1,27 @@
+import { AppShell, consoleUrlsFromEnv } from "@digital-twin/console-shell";
 import type { Metadata } from "next";
+import { IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 
+const plex = IBM_Plex_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+});
+
 export const metadata: Metadata = {
-  title: "Audit Explorer",
-  description: "Phase 3 tamper-evident audit ledger search",
+  title: "Audit Explorer · Digital Twin",
+  description: "Policy & audit · Phase 3 tamper-evident ledger search",
+  icons: { icon: "/favicon.svg" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const urls = consoleUrlsFromEnv();
   return (
-    <html lang="en">
+    <html lang="en" className={plex.className}>
       <body>
-        <div className="border-b border-emerald-500/40 bg-emerald-950/40 px-4 py-2 text-sm text-emerald-200">
-          Audit Explorer — hash-chain integrity badges (Phase 3)
-        </div>
-        {children}
+        <AppShell activeApp="audit" urls={urls}>
+          {children}
+        </AppShell>
       </body>
     </html>
   );

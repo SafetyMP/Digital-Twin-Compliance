@@ -8,21 +8,21 @@ See also: [domain-model.md](./domain-model.md), [data-flow.md](./data-flow.md), 
 
 ## Implementation status
 
-This document describes the **target** architecture across all phases. Components implemented in the repository today:
+This document describes the architecture across all phases. **Public status of record:** [ROADMAP.md](../ROADMAP.md) · journey map: [phase-journeys.md](./phase-journeys.md).
 
 | Component | Phase | Status |
 |-----------|-------|--------|
-| Kafka, Schema Registry, Debezium CDC | 1 | Implemented |
-| State Service, outbox, persona REST API | 1 | Implemented |
-| Flink CEP (INT-M001, INT-M002, BASEL-M001) | 2 | Implemented |
-| Redis online feature store | 2 | Implemented |
-| Alert Service, WebSocket, alert console, Grafana | 2 | Implemented |
-| Cedar Policy Service, GoRules Zen / Decision Service | 3 | Implemented — see [phase3-implementation-spec.md](./phase3-implementation-spec.md) |
-| immudb audit ledger, Audit Explorer | 3 | Implemented — see [phase3-implementation-spec.md](./phase3-implementation-spec.md) |
-| Neo4j / Graph Service, simulation | 4+ | Planned |
-| Regulatory reporting (XBRL/SDMX) | 5+ | Planned |
-
-Phase 2 is **implemented** on `main` (mechanical smoke + unit tests). Phase 3a (audit path) is **implemented** — [ADR-009](./adr/009-phase3-foundation-decisions.md), [phase3-implementation-spec.md](./phase3-implementation-spec.md).
+| Kafka, Schema Registry, Debezium CDC | 1 | Implemented (CI smoke) |
+| State Service, outbox, persona REST API | 1 | Implemented (CI smoke) |
+| Flink CEP (INT-M001, INT-M002, BASEL-M001) | 2 | Implemented (CI smoke) |
+| Redis online feature store | 2 | Implemented (CI smoke) |
+| Alert Service, WebSocket, Alert Console, Grafana | 2 | Implemented (CI smoke) |
+| Cedar Policy Service, GoRules Zen / Decision Service | 3 | Implemented (CI smoke) — [phase3-implementation-spec.md](./phase3-implementation-spec.md) |
+| immudb audit ledger, Audit Explorer | 3 | Implemented (CI smoke) |
+| Neo4j, Graph Service, Simulation Service, Graph Explorer, Simulation Console | 4 | Implemented (CI smoke) |
+| Reporting Service, MinIO Object Lock, Report Console | 5 | Smoke-gated (local / harness) — [ADR-011](./adr/011-phase5-reporting-foundation.md) |
+| Keycloak/OIDC edge, TLS nginx, OpenTelemetry | 6 | Smoke-gated overlay — [ADR-012](./adr/012-phase6-hardening-foundation.md) |
+| Effectiveness / contagion→audit / reg→policy / graph analytics | 7 | Smoke-gated — [ADR-013](./adr/013-phase7-cutting-edge-foundation.md) |
 
 ---
 

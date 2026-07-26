@@ -18,9 +18,13 @@ Open-source **cutting-edge OSS supervisory** financial-compliance digital-twin r
 
 ## Screenshots
 
-| Alert Console | Audit Explorer |
-|---------------|----------------|
-| ![Alert Console](docs/assets/alert-console.png) | ![Audit Explorer](docs/assets/audit-explorer.png) |
+| Alert Console | Audit Explorer | Graph Explorer |
+|---------------|----------------|----------------|
+| ![Alert Console](docs/assets/alert-console.png) | ![Audit Explorer](docs/assets/audit-explorer.png) | ![Graph Explorer](docs/assets/graph-explorer.png) |
+
+| Simulation Console | Report Console |
+|--------------------|----------------|
+| ![Simulation Console](docs/assets/simulation-console.png) | ![Report Console](docs/assets/report-console.png) |
 
 ## TL;DR
 
@@ -32,7 +36,7 @@ cp .env.example .env
 docker compose -f docker-compose.dev.yml up -d --wait && ./scripts/seed.sh
 ```
 
-Then run phased smoke: [Quick start](#quick-start) (`smoke-test.sh` → `smoke-test-phase2.sh` → `smoke-test-phase3.sh` → `smoke-test-phase4.sh`; Phase 5–7 smokes + `./scripts/harness/verify.sh` when those services are up).
+Then walk [phase journeys](docs/phase-journeys.md) via [Quick start](#quick-start) (Phases 1–5 smokes; Phase 6–7 overlay + harness when needed). Consoles share an app switcher on ports `3000`–`3005`.
 
 **Path B — policy + audit demo (warm stack, ~5 min):** [docs/demo-phase3.md](docs/demo-phase3.md)
 
@@ -41,16 +45,16 @@ Then run phased smoke: [Quick start](#quick-start) (`smoke-test.sh` → `smoke-t
 SMOKE_PHASE3_SKIP_PREREQS=1 ./scripts/smoke-test-phase3.sh
 ```
 
-Open [Alert Console](http://localhost:3000) and [Audit Explorer](http://localhost:3002).
+Open [Alert Console](http://localhost:3000) and [Audit Explorer](http://localhost:3002) — use the header switcher for Graph / Simulation / Report.
 
-**How this differs:** streaming CDC → Kafka → twin state with Flink CEP and policy evaluation — not batch regulatory ETL. Phases 5–7 add fixture-validated reporting, OIDC/TLS/OTel overlays, and Phase 7 analytics (effectiveness, contagion→audit, reg→policy proposals). Dev/CI architecture with mock principals; hardening is an explicit Compose overlay, not a multi-tenant production SaaS.
+**How this differs:** streaming CDC → Kafka → twin state with Flink CEP and policy evaluation — not batch regulatory ETL. Later journeys add fixture-validated reporting, OIDC/TLS/OTel overlays, and analytics (effectiveness, contagion→audit, reg→policy proposals). Dev/CI architecture with mock principals; hardening is an explicit Compose overlay, not a multi-tenant production SaaS.
 
-**Quick links:** [TL;DR](#tldr) · [Demo](docs/demo-phase3.md) · [Architecture](#architecture) · [Quick start](#quick-start) · [REST API](#rest-api) · [Contributing](#contributing)
+**Quick links:** [Phase journeys](docs/phase-journeys.md) · [Demo Phase 3](docs/demo-phase3.md) · [Architecture](#architecture) · [Quick start](#quick-start) · [REST API](#rest-api) · [Contributing](#contributing)
 
 ## Table of contents
 
 - [Who this is for](#who-this-is-for)
-- [Capabilities on `main`](#capabilities-on-main)
+- [Phase journeys](#phase-journeys)
 - [Features & maturity](#features--maturity)
 - [Architecture](#architecture)
 - [Prerequisites](#prerequisites)
@@ -70,35 +74,36 @@ Open [Alert Console](http://localhost:3000) and [Audit Explorer](http://localhos
 - **Compliance / regtech engineers** prototyping CEP rules, policy engines, and audit trails
 - **Contributors** who want a runnable, test-gated reference architecture (not slides)
 
-## Capabilities on `main`
+## Phase journeys
 
-| Layer | Components |
-|-------|------------|
-| **Ingestion & twin** | Debezium, Kafka, Go State Service, transactional outbox, persona API |
-| **Monitoring** | Flink CEP, Redis features, Alert Service, WebSocket, alert console, Grafana |
-| **Policy & audit** | Cedar + GoRules Zen, immudb hash chain, Audit Explorer, alert `evidenceRef` |
-| **Reporting (Phase 5)** | Reporting Service (FINREP F01 / AnaCredit / DORA), MinIO Object Lock, Report Console lifecycle |
-| **Hardening (Phase 6)** | Keycloak/OIDC edge, TLS nginx edge, OpenTelemetry collector — `docker-compose.hardening.yml` |
-| **Cutting-edge (Phase 7)** | Control-effectiveness twin, contagion→audit, reg→policy proposals (no auto-deploy), graph path/centrality |
+Each capability is a **journey name + Phase N** (never Phase alone). Full matrix: [docs/phase-journeys.md](docs/phase-journeys.md).
 
-Phase 1–4 smoke (CI): `./scripts/smoke-test.sh` → `./scripts/smoke-test-phase2.sh` → `./scripts/smoke-test-phase3.sh` → `./scripts/smoke-test-phase4.sh`.
+| Phase | Journey | UI | Smoke |
+|-------|---------|----|-------|
+| 1 | Ingestion & twin | API `:8080` | `./scripts/smoke-test.sh` |
+| 2 | Monitoring & alerts | Alert Console `:3000` | `./scripts/smoke-test-phase2.sh` |
+| 3 | Policy & audit | Audit Explorer `:3002` | `./scripts/smoke-test-phase3.sh` |
+| 4 | Graph & simulation | Graph `:3003` · Simulation `:3004` | `./scripts/smoke-test-phase4.sh` |
+| 5 | Regulatory reporting | Report Console `:3005` | `./scripts/smoke-test-phase5.sh` |
+| 6 | Hardening | OIDC/TLS edge `:8180`/`:8443` | `./scripts/smoke-test-phase6-*.sh` |
+| 7 | Cutting-edge analytics | APIs (no dedicated UI) | `./scripts/smoke-test-phase7-*.sh` |
 
-Phase 5–7 + harness: `./scripts/smoke-test-phase5.sh` … `smoke-test-phase7-*.sh` · `./scripts/harness/verify.sh` · `./scripts/check-cutting-edge-claims.sh`.
+Phases 1–4 smoke in CI. Phases 5–7 + `./scripts/harness/verify.sh` are local/harness gates. **CECT** is the corporate program that delivered Phases 5–7 — not a product tier.
 
-**Roadmap & gaps:** [ROADMAP.md](ROADMAP.md) · **Support expectations:** [SUPPORT.md](SUPPORT.md) · **Explainability:** [docs/explainability.md](docs/explainability.md)
+**Roadmap & gaps:** [ROADMAP.md](ROADMAP.md) · **Support:** [SUPPORT.md](SUPPORT.md) · **Explainability:** [docs/explainability.md](docs/explainability.md)
 
 ## Features & maturity
 
-| Feature | Status | Notes |
+| Journey | Status | Notes |
 |---------|--------|-------|
-| Ingestion & twin API | Stable on `main` | CI + `./scripts/smoke-test.sh` |
-| Flink CEP + alerts | Stable on `main` | INT-M001, INT-M002, BASEL-M001 |
-| Policy + audit ledger | Stable on `main` | CI + `./scripts/smoke-test-phase3.sh` · [demo runbook](docs/demo-phase3.md) |
-| GHCR deploy (12 images) | Stable | Full Phase 1–4 via `docker-compose.deploy.yml` |
-| Graph + simulation | CI implemented; deploy images included | `./scripts/smoke-test-phase4.sh` · Neo4j + stress sim |
-| Regulatory reporting | Smoke-gated (fixture taxonomies) | `./scripts/smoke-test-phase5.sh` · [ADR-011](docs/adr/011-phase5-reporting-foundation.md) — not commercial XBRL suite parity |
-| OIDC / TLS / OTel overlay | Smoke-gated | `docker-compose.hardening.yml` · [ADR-012](docs/adr/012-phase6-hardening-foundation.md); direct ports remain for Phase 1–4 smokes |
-| Effectiveness / contagion / reg→policy / graph analytics | Smoke-gated | `./scripts/smoke-test-phase7-*.sh` · [ADR-013](docs/adr/013-phase7-cutting-edge-foundation.md); contagion is on-demand API, not a scheduled stream |
+| Ingestion & twin | Stable on `main` | CI + `./scripts/smoke-test.sh` |
+| Monitoring & alerts | Stable on `main` | INT-M001, INT-M002, BASEL-M001 |
+| Policy & audit | Stable on `main` | CI + [demo-phase3.md](docs/demo-phase3.md) |
+| Graph & simulation | Stable on `main` (CI) | [demo-phase4.md](docs/demo-phase4.md) |
+| Regulatory reporting | Smoke-gated | [demo-phase5.md](docs/demo-phase5.md) · [ADR-011](docs/adr/011-phase5-reporting-foundation.md) — not commercial XBRL parity |
+| Hardening | Smoke-gated overlay | [ADR-012](docs/adr/012-phase6-hardening-foundation.md) |
+| Cutting-edge analytics | Smoke-gated | [ADR-013](docs/adr/013-phase7-cutting-edge-foundation.md); contagion is on-demand, not a scheduled stream |
+| GHCR deploy (12 images) | Stable | Phase 1–4 via `docker-compose.deploy.yml` |
 
 Release history: [CHANGELOG.md](CHANGELOG.md) · [GitHub Releases](https://github.com/SafetyMP/Digital-Twin-Compliance/releases)
 
@@ -195,12 +200,45 @@ After monitoring smoke passes:
 ./scripts/smoke-test-phase3.sh
 ```
 
-Walkthrough with demo script and port map: [docs/demo-phase3.md](docs/demo-phase3.md).
+Walkthrough: [docs/demo-phase3.md](docs/demo-phase3.md).
 
 **Gotchas**
 
 - UIs proxy Go APIs via Next.js `/api/*` routes — do not `fetch` Cedar/Audit/Alert backends from the browser (no CORS).
 - Cedar bind mounts can appear empty until `docker compose restart cedar-service decision-service` (common when the repo path contains spaces).
+
+### 4. Graph & simulation
+
+```bash
+./scripts/wait-graph-seeded.sh
+./scripts/smoke-test-phase4.sh
+```
+
+Open [Graph Explorer](http://localhost:3003) and [Simulation Console](http://localhost:3004). Demo: [docs/demo-phase4.md](docs/demo-phase4.md).
+
+### 5. Regulatory reporting
+
+```bash
+./scripts/smoke-test-phase5.sh
+```
+
+Open [Report Console](http://localhost:3005). Demo: [docs/demo-phase5.md](docs/demo-phase5.md).
+
+### 6–7. Hardening & cutting-edge analytics
+
+```bash
+# Phase 6 overlay (OIDC / TLS / OTel)
+docker compose -f docker-compose.dev.yml -f docker-compose.hardening.yml up -d --wait
+./scripts/smoke-test-phase6-oidc.sh
+./scripts/smoke-test-phase6-harden.sh
+
+# Phase 7 API journeys + harness
+./scripts/smoke-test-phase7-effectiveness.sh
+./scripts/smoke-test-phase7-contagion.sh
+./scripts/smoke-test-phase7-reg2policy.sh
+./scripts/smoke-test-phase7-graph.sh
+./scripts/harness/verify.sh
+```
 
 ### Verify
 
@@ -223,7 +261,11 @@ open http://localhost:3030   # Grafana (Compose maps 3030:3000)
 cd services/cedar-service && go test ./...
 curl -s http://localhost:8091/api/v1/health | jq
 curl -s http://localhost:8090/api/v1/audit/verify | jq
+open http://localhost:3000   # Alert Console (switcher → other consoles)
 open http://localhost:3002   # Audit Explorer
+open http://localhost:3003   # Graph Explorer
+open http://localhost:3004   # Simulation Console
+open http://localhost:3005   # Report Console
 ```
 
 ### Local service URLs
@@ -234,6 +276,12 @@ open http://localhost:3002   # Audit Explorer
 | Alert Service | `http://localhost:8085` |
 | Alert Console | `http://localhost:3000` |
 | Audit Explorer | `http://localhost:3002` |
+| Graph Explorer | `http://localhost:3003` |
+| Simulation Console | `http://localhost:3004` |
+| Report Console | `http://localhost:3005` |
+| Graph Service | `http://localhost:8093` |
+| Simulation Service | `http://localhost:8094` |
+| Reporting Service | `http://localhost:8095` |
 | Cedar Service | `http://localhost:8091` |
 | Decision Service | `http://localhost:8092` |
 | Audit Service | `http://localhost:8090` |
@@ -318,8 +366,12 @@ Full contract: [docs/phase3-implementation-spec.md](docs/phase3-implementation-s
 | [services/decision-service/](services/decision-service/) | GoRules Zen decision engine |
 | [services/audit-service/](services/audit-service/) | immudb audit ledger + verify API |
 | [jobs/compliance-cep/](jobs/compliance-cep/) | Flink CEP job (Java) — INT-M001, INT-M002, BASEL-M001 |
-| [apps/alert-console/](apps/alert-console/) | Next.js live alert UI |
-| [apps/audit-explorer/](apps/audit-explorer/) | Next.js audit chain explorer |
+| [apps/alert-console/](apps/alert-console/) | Next.js alert UI (Monitoring · Phase 2) |
+| [apps/audit-explorer/](apps/audit-explorer/) | Next.js audit explorer (Policy & audit · Phase 3) |
+| [apps/graph-explorer/](apps/graph-explorer/) | Next.js exposure graph (Graph · Phase 4) |
+| [apps/simulation-console/](apps/simulation-console/) | Next.js stress sim (Simulation · Phase 4) |
+| [apps/report-console/](apps/report-console/) | Next.js report lifecycle (Reporting · Phase 5) |
+| [packages/console-shell/](packages/console-shell/) | Shared console chrome + app switcher |
 | [policies/](policies/) | Cedar (`.cedar`) and Zen (`.zen`) policy bundles |
 | [infra/grafana/](infra/grafana/) | Grafana dashboards and provisioning |
 | [schemas/avro/](schemas/avro/) | Avro event schemas (Schema Registry) |
@@ -343,7 +395,10 @@ Full contract: [docs/phase3-implementation-spec.md](docs/phase3-implementation-s
 | [docs/domain-model.md](docs/domain-model.md) | Entities, personas, glossary |
 | [docs/data-flow.md](docs/data-flow.md) | Event envelopes, idempotency, topics |
 | [docs/deployment.md](docs/deployment.md) | GHCR, releases, staging deploy |
+| [docs/phase-journeys.md](docs/phase-journeys.md) | Canonical Phase 1–7 journey map |
 | [docs/demo-phase3.md](docs/demo-phase3.md) | Policy + audit demo runbook |
+| [docs/demo-phase4.md](docs/demo-phase4.md) | Graph + simulation demo runbook |
+| [docs/demo-phase5.md](docs/demo-phase5.md) | Regulatory reporting demo runbook |
 | [docs/adr/](docs/adr/) | Architecture decision records |
 
 ### Maintainer & implementation references
@@ -354,6 +409,10 @@ Full contract: [docs/phase3-implementation-spec.md](docs/phase3-implementation-s
 | [docs/phase1-implementation-spec.md](docs/phase1-implementation-spec.md) | Ingestion specification |
 | [docs/phase2-implementation-spec.md](docs/phase2-implementation-spec.md) | Monitoring specification |
 | [docs/phase3-implementation-spec.md](docs/phase3-implementation-spec.md) | Policy & audit specification |
+| [docs/phase4-implementation-spec.md](docs/phase4-implementation-spec.md) | Graph & simulation specification |
+| [docs/phase5-implementation-spec.md](docs/phase5-implementation-spec.md) | Reporting specification |
+| [docs/phase6-implementation-spec.md](docs/phase6-implementation-spec.md) | Hardening specification |
+| [docs/phase7-implementation-spec.md](docs/phase7-implementation-spec.md) | Cutting-edge analytics specification |
 | [AGENTS.md](AGENTS.md) | Coding-agent contract (CI scope, smoke order) |
 | [docs/github-setup.md](docs/github-setup.md) | Branch protection, releases, community settings |
 

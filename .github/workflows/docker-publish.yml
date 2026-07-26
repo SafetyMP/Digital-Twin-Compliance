@@ -95,7 +95,7 @@ jobs:
       - name: Build and push Alert Console
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
         with:
-          context: ./apps/alert-console
+          context: .
           file: ./apps/alert-console/Dockerfile
           push: true
           tags: ${{ steps.meta_ui.outputs.tags }}
@@ -208,7 +208,7 @@ jobs:
       - name: Build and push Audit Explorer
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
         with:
-          context: ./apps/audit-explorer
+          context: .
           file: ./apps/audit-explorer/Dockerfile
           push: true
           tags: ${{ steps.meta_audit_explorer.outputs.tags }}
@@ -274,7 +274,7 @@ jobs:
       - name: Build and push Graph Explorer
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
         with:
-          context: ./apps/graph-explorer
+          context: .
           file: ./apps/graph-explorer/Dockerfile
           push: true
           tags: ${{ steps.meta_graph_explorer.outputs.tags }}
@@ -296,7 +296,7 @@ jobs:
       - name: Build and push Simulation Console
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
         with:
-          context: ./apps/simulation-console
+          context: .
           file: ./apps/simulation-console/Dockerfile
           push: true
           tags: ${{ steps.meta_simulation_console.outputs.tags }}

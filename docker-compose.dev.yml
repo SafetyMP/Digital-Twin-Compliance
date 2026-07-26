@@ -269,8 +269,8 @@ services:
 
   alert-console:
     build:
-      context: ./apps/alert-console
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/alert-console/Dockerfile
     depends_on:
       alert-service:
         condition: service_healthy
@@ -278,7 +278,11 @@ services:
       - "3000:3000"
     environment:
       ALERT_SERVICE_URL: http://alert-service:8085
+      NEXT_PUBLIC_ALERT_CONSOLE_URL: http://localhost:3000
       NEXT_PUBLIC_AUDIT_EXPLORER_URL: http://localhost:3002
+      NEXT_PUBLIC_GRAPH_EXPLORER_URL: http://localhost:3003
+      NEXT_PUBLIC_SIMULATION_CONSOLE_URL: http://localhost:3004
+      NEXT_PUBLIC_REPORT_CONSOLE_URL: http://localhost:3005
 
   kafka-exporter:
     image: danielqsj/kafka-exporter:v1.7.0@sha256:e90b7ba06d97717224d67774fc7f208c26d1c4dafd4c8011185b0d45b5b38ace
@@ -422,8 +426,8 @@ services:
 
   audit-explorer:
     build:
-      context: ./apps/audit-explorer
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/audit-explorer/Dockerfile
     depends_on:
       audit-service:
         condition: service_healthy
@@ -431,6 +435,11 @@ services:
       - "3002:3000"
     environment:
       AUDIT_SERVICE_URL: http://audit-service:8090
+      NEXT_PUBLIC_ALERT_CONSOLE_URL: http://localhost:3000
+      NEXT_PUBLIC_AUDIT_EXPLORER_URL: http://localhost:3002
+      NEXT_PUBLIC_GRAPH_EXPLORER_URL: http://localhost:3003
+      NEXT_PUBLIC_SIMULATION_CONSOLE_URL: http://localhost:3004
+      NEXT_PUBLIC_REPORT_CONSOLE_URL: http://localhost:3005
 
   neo4j:
     image: neo4j:5-community@sha256:4bae36aff76271e27fd6a6ed0835413f86a284cd179cfb1cb7d188f5f7533aca
@@ -514,8 +523,8 @@ services:
 
   graph-explorer:
     build:
-      context: ./apps/graph-explorer
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/graph-explorer/Dockerfile
     depends_on:
       graph-service:
         condition: service_healthy
@@ -523,11 +532,16 @@ services:
       - "3003:3000"
     environment:
       GRAPH_SERVICE_URL: http://graph-service:8093
+      NEXT_PUBLIC_ALERT_CONSOLE_URL: http://localhost:3000
+      NEXT_PUBLIC_AUDIT_EXPLORER_URL: http://localhost:3002
+      NEXT_PUBLIC_GRAPH_EXPLORER_URL: http://localhost:3003
+      NEXT_PUBLIC_SIMULATION_CONSOLE_URL: http://localhost:3004
+      NEXT_PUBLIC_REPORT_CONSOLE_URL: http://localhost:3005
 
   simulation-console:
     build:
-      context: ./apps/simulation-console
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/simulation-console/Dockerfile
     depends_on:
       simulation-service:
         condition: service_healthy
@@ -535,7 +549,11 @@ services:
       - "3004:3000"
     environment:
       SIMULATION_SERVICE_URL: http://simulation-service:8094
+      NEXT_PUBLIC_ALERT_CONSOLE_URL: http://localhost:3000
       NEXT_PUBLIC_AUDIT_EXPLORER_URL: http://localhost:3002
+      NEXT_PUBLIC_GRAPH_EXPLORER_URL: http://localhost:3003
+      NEXT_PUBLIC_SIMULATION_CONSOLE_URL: http://localhost:3004
+      NEXT_PUBLIC_REPORT_CONSOLE_URL: http://localhost:3005
 
   minio:
     image: minio/minio:latest
@@ -606,8 +624,8 @@ services:
 
   report-console:
     build:
-      context: ./apps/report-console
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/report-console/Dockerfile
     depends_on:
       reporting-service:
         condition: service_healthy
@@ -615,6 +633,11 @@ services:
       - "3005:3000"
     environment:
       REPORTING_SERVICE_URL: http://reporting-service:8095
+      NEXT_PUBLIC_ALERT_CONSOLE_URL: http://localhost:3000
+      NEXT_PUBLIC_AUDIT_EXPLORER_URL: http://localhost:3002
+      NEXT_PUBLIC_GRAPH_EXPLORER_URL: http://localhost:3003
+      NEXT_PUBLIC_SIMULATION_CONSOLE_URL: http://localhost:3004
+      NEXT_PUBLIC_REPORT_CONSOLE_URL: http://localhost:3005
 
   grafana:
     image: grafana/grafana:10.4.0@sha256:f9811e4e687ffecf1a43adb9b64096c50bc0d7a782f8608530f478b6542de7d5

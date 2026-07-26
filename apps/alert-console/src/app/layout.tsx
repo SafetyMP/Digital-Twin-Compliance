@@ -1,19 +1,27 @@
+import { AppShell, consoleUrlsFromEnv } from "@digital-twin/console-shell";
 import type { Metadata } from "next";
+import { IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 
+const plex = IBM_Plex_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+});
+
 export const metadata: Metadata = {
-  title: "Alert Console",
-  description: "Phase 2 compliance alert feed",
+  title: "Alert Console · Digital Twin",
+  description: "Monitoring & alerts · Phase 2 compliance alert feed",
+  icons: { icon: "/favicon.svg" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const urls = consoleUrlsFromEnv();
   return (
-    <html lang="en">
+    <html lang="en" className={plex.className}>
       <body>
-        <div className="border-b border-amber-500/40 bg-amber-950/40 px-4 py-2 text-sm text-amber-200">
-          Dev mode — no authentication (Phase 2)
-        </div>
-        {children}
+        <AppShell activeApp="alert" urls={urls}>
+          {children}
+        </AppShell>
       </body>
     </html>
   );
