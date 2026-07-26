@@ -6,8 +6,17 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 errors=0
-PROFILE="$(grep '^profile:' .harness/profile.yaml 2>/dev/null | awk '{print $2}' || echo solo)"
-INTEGRATION_CMD="$(grep -A5 'commands:' .harness/profile.yaml 2>/dev/null | grep 'integration:' | head -1 | awk '{print $2}' || true)"
+SITE_JSON=".corp-harness/site.json"
+PROFILE_YAML=".harness/profile.yaml"
+PROFILE="solo"
+INTEGRATION_CMD=""
+
+if [[ -f "$SITE_JSON" ]]; then
+  PROFILE="site"
+elif [[ -f "$PROFILE_YAML" ]]; then
+  PROFILE="$(grep '^profile:' "$PROFILE_YAML" | awk '{print $2}')"
+  INTEGRATION_CMD="$(grep -A5 'commands:' "$PROFILE_YAML" | grep 'integration:' | head -1 | awk '{print $2}' || true)"
+fi
 
 if [[ -z "$INTEGRATION_CMD" || "$INTEGRATION_CMD" == "null" ]]; then
   for candidate in scripts/demo.sh scripts/integration-e2e.sh scripts/integration-smoke.sh scripts/smoke-test.sh; do
@@ -56,8 +65,32 @@ if [[ ! -f docs/adr/0000-threat-model.md && ! -f specs/decisions/0000-threat-mod
 fi
 require_file "scripts/adversarial.sh"
 
-if ! grep -q 'adversarial:' .harness/profile.yaml; then
-  echo "MISSING: requires.commands.adversarial in .harness/profile.yaml" >&2
+if [[ -f "$SITE_JSON" ]]; then
+  ADVERSARIAL_CMD="$(
+    python3 - <<'PY'
+import json, pathlib, sys
+site = json.loads(pathlib.Path(".corp-harness/site.json").read_text())
+argv = site.get("adversarial_argv")
+if not isinstance(argv, list) or not argv:
+    print("", end="")
+    sys.exit(0)
+print(argv[0])
+PY
+  )"
+  if [[ -z "$ADVERSARIAL_CMD" ]]; then
+    echo "MISSING: adversarial_argv in .corp-harness/site.json" >&2
+    errors=$((errors + 1))
+  elif [[ ! -f "$ADVERSARIAL_CMD" ]]; then
+    echo "MISSING: adversarial_argv[0] file: $ADVERSARIAL_CMD (.corp-harness/site.json)" >&2
+    errors=$((errors + 1))
+  fi
+elif [[ -f "$PROFILE_YAML" ]]; then
+  if ! grep -q 'adversarial:' "$PROFILE_YAML"; then
+    echo "MISSING: requires.commands.adversarial in .harness/profile.yaml" >&2
+    errors=$((errors + 1))
+  fi
+else
+  echo "MISSING: declare adversarial via .corp-harness/site.json (adversarial_argv) or .harness/profile.yaml (commands.adversarial)" >&2
   errors=$((errors + 1))
 fi
 
@@ -83,10 +116,36 @@ for cid in deny_cells:
     if cid not in cell_set:
         print(f"BAD deny_case cell: {cid!r}", file=sys.stderr)
         raise SystemExit(1)
-adv = (root / "scripts/adversarial.sh").read_text()
+candidates = []
+site = root / ".corp-harness" / "site.json"
+if site.is_file():
+    import json
+    argv = json.loads(site.read_text()).get("adversarial_argv")
+    if isinstance(argv, list) and argv:
+        candidates.append(pathlib.Path(str(argv[0])))
+candidates.extend(
+    [
+        pathlib.Path("scripts/harness/adversarial.sh"),
+        pathlib.Path("scripts/adversarial.sh"),
+    ]
+)
+adv = ""
+adv_path = None
+for cand in candidates:
+    if cand.is_file():
+        body = cand.read_text()
+        # Skip thin wrappers that only exec another script
+        if "exec" in body and "/harness/" in body and len(body) < 400:
+            continue
+        adv = body
+        adv_path = cand
+        break
+if not adv:
+    print("TRACEABILITY: no adversarial body found", file=sys.stderr)
+    raise SystemExit(1)
 for did in deny_ids:
     if did not in adv:
-        print(f"TRACEABILITY: deny_case {did!r} not in adversarial.sh", file=sys.stderr)
+        print(f"TRACEABILITY: deny_case {did!r} not in {adv_path}", file=sys.stderr)
         raise SystemExit(1)
 print(f"yaml ok: {len(cell_ids)} cells, {len(deny_ids)} deny_cases")
 PY
