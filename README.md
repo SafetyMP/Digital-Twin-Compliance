@@ -13,7 +13,7 @@ Open-source **cutting-edge OSS supervisory** financial-compliance digital-twin r
 [![License](https://img.shields.io/github/license/SafetyMP/Digital-Twin-Compliance)](LICENSE)
 
 <p align="center">
-  <img src="docs/assets/demo.gif" alt="Digital Twin demo — Alert Console compliance alert linked to Audit Explorer integrity proof" width="900" />
+  <img src="docs/assets/demo.gif" alt="Digital Twin demo — Alert, Audit, Graph, Simulation, and Report consoles with shared app switcher" width="900" />
 </p>
 
 ## Screenshots
