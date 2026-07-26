@@ -1,0 +1,9 @@
+{
+  "breaches": [
+    {"id": "br-vel-001", "expectedControl": "INT-M001", "label": "velocity breach"},
+    {"id": "br-exp-001", "expectedControl": "INT-M002", "label": "exposure breach"},
+    {"id": "br-lcr-001", "expectedControl": "BASEL-M001", "label": "lcr breach"},
+    {"id": "br-vel-002", "expectedControl": "INT-M001", "label": "second velocity breach"},
+    {"id": "br-miss-001", "expectedControl": "INT-M999", "label": "intentionally undetected"}
+  ]
+}

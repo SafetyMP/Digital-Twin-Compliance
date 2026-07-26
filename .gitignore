@@ -29,3 +29,11 @@ jobs/compliance-cep/dependency-reduced-pom.xml
 .cursor/mcp.json
 .cursor/hooks.json
 .cursor/agents/
+
+# Dev TLS private keys (public certs under infra/tls/ may be committed)
+infra/tls/*.key
+
+# Ephemeral local smoke / harness logs (claim marker is committed intentionally)
+evidence/*.txt
+evidence/*.json
+!evidence/cutting-edge-claims-allowed.marker

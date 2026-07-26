@@ -1,0 +1,9 @@
+{
+  "schema": "corporate-site-verification-scripts/v1",
+  "site_relative_dir": "scripts/harness",
+  "scripts": [
+    "verify.sh",
+    "adversarial.sh"
+  ],
+  "captured_at": "2026-07-26T02:25:45.936523+00:00"
+}

@@ -1,0 +1,48 @@
+{
+  "realm": "digital-twin",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": false,
+  "editUsernameAllowed": false,
+  "roles": {
+    "realm": [
+      { "name": "Analyst", "description": "Default analyst role" },
+      { "name": "Operator", "description": "Operator role" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "digital-twin-api",
+      "name": "Digital Twin API",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "digital-twin-api-secret",
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": true,
+      "serviceAccountsEnabled": false,
+      "redirectUris": ["*"],
+      "webOrigins": ["*"],
+      "protocol": "openid-connect"
+    }
+  ],
+  "users": [
+    {
+      "username": "analyst",
+      "enabled": true,
+      "email": "analyst@digitaltwin.local",
+      "firstName": "Ada",
+      "lastName": "Analyst",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "analyst",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["Analyst"]
+    }
+  ]
+}

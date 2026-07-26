@@ -19,29 +19,30 @@ def _get_producer() -> KafkaProducer:
     return _producer
 
 
-def publish_simulation_run(
-    run_id: str,
+def publish_audit(
+    *,
+    entry_type: str,
+    subject_type: str,
+    subject_id: str,
+    action: str,
     correlation_id: str,
-    metrics: dict,
-) -> None:
+    payload: dict,
+    idempotency_key: str,
+) -> str:
+    evidence_ref = f"{entry_type.lower()}:{subject_id}"
     pending = {
-        "entryType": "SimulationRun",
+        "entryType": entry_type,
         "correlationId": correlation_id,
         "subject": {
-            "subjectId": run_id,
-            "subjectType": "SimulationRun",
+            "subjectId": subject_id,
+            "subjectType": subject_type,
         },
         "actor": {
             "actorId": config.SERVICE_SOURCE,
             "actorType": "Service",
         },
-        "action": "SimulationRunCompleted",
-        "payload": {
-            "scenarioId": metrics["scenarioId"],
-            "baselineCet1": metrics["baselineCet1"],
-            "stressedCet1": metrics["stressedCet1"],
-            "explainabilityRef": metrics["explainabilityRef"],
-        },
+        "action": action,
+        "payload": {**payload, "evidenceRef": evidence_ref},
     }
     envelope = {
         "eventId": str(uuid.uuid4()),
@@ -50,10 +51,36 @@ def publish_simulation_run(
         "source": config.SERVICE_SOURCE,
         "correlationId": correlation_id,
         "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
-        "idempotencyKey": f"audit-simulation-{run_id}",
+        "idempotencyKey": idempotency_key,
         "payload": pending,
     }
     producer = _get_producer()
-    future = producer.send(config.KAFKA_AUDIT_PENDING_TOPIC, value=envelope, key=run_id.encode())
+    future = producer.send(
+        config.KAFKA_AUDIT_PENDING_TOPIC,
+        value=envelope,
+        key=subject_id.encode(),
+    )
     future.get(timeout=10)
     producer.flush(timeout=10)
+    return evidence_ref
+
+
+def publish_simulation_run(
+    run_id: str,
+    correlation_id: str,
+    metrics: dict,
+) -> None:
+    publish_audit(
+        entry_type="SimulationRun",
+        subject_type="SimulationRun",
+        subject_id=run_id,
+        action="SimulationRunCompleted",
+        correlation_id=correlation_id,
+        payload={
+            "scenarioId": metrics["scenarioId"],
+            "baselineCet1": metrics["baselineCet1"],
+            "stressedCet1": metrics["stressedCet1"],
+            "explainabilityRef": metrics["explainabilityRef"],
+        },
+        idempotency_key=f"audit-simulation-{run_id}",
+    )

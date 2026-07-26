@@ -1,6 +1,6 @@
 # Digital Twin Compliance Platform
 
-Open-source reference stack for an **event-driven financial digital twin** with embedded compliance monitoring: CDC ingestion, stream processing, policy evaluation, and a tamper-evident audit ledger.
+Open-source **cutting-edge OSS supervisory** financial-compliance digital-twin reference: event-driven twin state with CDC ingestion, stream processing, policy evaluation, regulatory reporting, hardening overlays, and a tamper-evident audit ledger.
 
 **Maintainers:** [SafetyMP](https://github.com/SafetyMP) · **License:** [Apache License 2.0](LICENSE)
 
@@ -32,7 +32,7 @@ cp .env.example .env
 docker compose -f docker-compose.dev.yml up -d --wait && ./scripts/seed.sh
 ```
 
-Then run phased smoke: [Quick start](#quick-start) (`smoke-test.sh` → `smoke-test-phase2.sh` → `smoke-test-phase3.sh`).
+Then run phased smoke: [Quick start](#quick-start) (`smoke-test.sh` → … → `smoke-test-phase4.sh`; Phase 5–7 smokes + `./scripts/harness/verify.sh` when those services are up).
 
 **Path B — policy + audit demo (warm stack, ~5 min):** [docs/demo-phase3.md](docs/demo-phase3.md)
 
@@ -43,7 +43,7 @@ SMOKE_PHASE3_SKIP_PREREQS=1 ./scripts/smoke-test-phase3.sh
 
 Open [Alert Console](http://localhost:3000) and [Audit Explorer](http://localhost:3002).
 
-**How this differs:** streaming CDC → Kafka → twin state with Flink CEP and policy evaluation — not batch regulatory ETL. A multi-service reference stack with CI smoke gates — not a single-service demo. Dev/CI architecture with mock principals — not a production-hardened core.
+**How this differs:** streaming CDC → Kafka → twin state with Flink CEP and policy evaluation — not batch regulatory ETL. Phases 5–7 add fixture-validated reporting, OIDC/TLS/OTel overlays, and Phase 7 analytics (effectiveness, contagion→audit, reg→policy proposals). Dev/CI architecture with mock principals; hardening is an explicit Compose overlay, not a multi-tenant production SaaS.
 
 **Quick links:** [TL;DR](#tldr) · [Demo](docs/demo-phase3.md) · [Architecture](#architecture) · [Quick start](#quick-start) · [REST API](#rest-api) · [Contributing](#contributing)
 
@@ -77,10 +77,15 @@ Open [Alert Console](http://localhost:3000) and [Audit Explorer](http://localhos
 | **Ingestion & twin** | Debezium, Kafka, Go State Service, transactional outbox, persona API |
 | **Monitoring** | Flink CEP, Redis features, Alert Service, WebSocket, alert console, Grafana |
 | **Policy & audit** | Cedar + GoRules Zen, immudb hash chain, Audit Explorer, alert `evidenceRef` |
+| **Reporting (Phase 5)** | Reporting Service (FINREP F01 / AnaCredit / DORA), MinIO Object Lock, Report Console lifecycle |
+| **Hardening (Phase 6)** | Keycloak/OIDC edge, TLS nginx edge, OpenTelemetry collector — `docker-compose.hardening.yml` |
+| **Cutting-edge (Phase 7)** | Control-effectiveness twin, contagion→audit, reg→policy proposals (no auto-deploy), graph path/centrality |
 
-Full stack smoke: `./scripts/smoke-test.sh` → `./scripts/smoke-test-phase2.sh` → `./scripts/smoke-test-phase3.sh` → `./scripts/smoke-test-phase4.sh`.
+Phase 1–4 smoke (CI): `./scripts/smoke-test.sh` → `./scripts/smoke-test-phase2.sh` → `./scripts/smoke-test-phase3.sh` → `./scripts/smoke-test-phase4.sh`.
 
-**Roadmap & gaps:** [ROADMAP.md](ROADMAP.md) · **Support expectations:** [SUPPORT.md](SUPPORT.md)
+Phase 5–7 + harness: `./scripts/smoke-test-phase5.sh` … `smoke-test-phase7-*.sh` · `./scripts/harness/verify.sh` · `./scripts/check-cutting-edge-claims.sh`.
+
+**Roadmap & gaps:** [ROADMAP.md](ROADMAP.md) · **Support expectations:** [SUPPORT.md](SUPPORT.md) · **Explainability:** [docs/explainability.md](docs/explainability.md)
 
 ## Features & maturity
 
@@ -91,7 +96,9 @@ Full stack smoke: `./scripts/smoke-test.sh` → `./scripts/smoke-test-phase2.sh`
 | Policy + audit ledger | Stable on `main` | CI + `./scripts/smoke-test-phase3.sh` · [demo runbook](docs/demo-phase3.md) |
 | GHCR deploy (12 images) | Stable | Full Phase 1–4 via `docker-compose.deploy.yml` |
 | Graph + simulation | CI implemented; deploy images included | `./scripts/smoke-test-phase4.sh` · Neo4j + stress sim |
-| XBRL reporting | Planned | See [ROADMAP.md](ROADMAP.md) |
+| Regulatory reporting | Smoke-gated (fixture taxonomies) | `./scripts/smoke-test-phase5.sh` · [ADR-011](docs/adr/011-phase5-reporting-foundation.md) — not commercial XBRL suite parity |
+| OIDC / TLS / OTel overlay | Smoke-gated | `docker-compose.hardening.yml` · [ADR-012](docs/adr/012-phase6-hardening-foundation.md); direct ports remain for Phase 1–4 smokes |
+| Effectiveness / contagion / reg→policy / graph analytics | Smoke-gated | `./scripts/smoke-test-phase7-*.sh` · [ADR-013](docs/adr/013-phase7-cutting-edge-foundation.md); contagion is on-demand API, not a scheduled stream |
 
 Release history: [CHANGELOG.md](CHANGELOG.md) · [GitHub Releases](https://github.com/SafetyMP/Digital-Twin-Compliance/releases)
 

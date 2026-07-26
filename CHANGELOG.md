@@ -8,6 +8,22 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **CECT r1 (Phase 5–7)** — reporting, hardening overlay, and cutting-edge leapfrog capabilities (corporate program `cect` revision 1, user-approved)
+- Reporting Service: FINREP F01 (XBRL), AnaCredit Table 2 (SDMX), DORA ICT Register (XML); MinIO Object Lock; taxonomy fixtures; Report Console lifecycle
+- Hardening: Keycloak/OIDC edge (`oidc-edge`), TLS nginx edge, OpenTelemetry collector, DR runbooks (Kafka/Flink/immudb), [docs/explainability.md](docs/explainability.md)
+- Phase 7: control-effectiveness twin, contagion→audit (on-demand), reg→policy proposal CI (no auto-deploy), graph path/centrality APIs
+- Site harness wrappers: `./scripts/harness/verify.sh`, `./scripts/harness/adversarial.sh`, `./scripts/check-cutting-edge-claims.sh`
+- ADRs 011–013 and phase5–7 implementation specs
+- `evidence/cutting-edge-claims-allowed.marker` authorizing README/ROADMAP cutting-edge positioning after gate PASS + user approval
+
+### Changed
+
+- Public README / ROADMAP / github-setup metadata aligned with Phase 5–7 delivery
+- `docker-compose.dev.yml` wires reporting-service and related deps; hardening via `docker-compose.hardening.yml`
+- Graph Service path/centrality endpoints for Phase 7 analytics
+
 ## [0.1.0] — 2026-06-29
 
 First semver release: Phase 1–3 local stack, GHCR deploy for eight application images, and Phase 3b Decision Service hot path for Flink CEP.

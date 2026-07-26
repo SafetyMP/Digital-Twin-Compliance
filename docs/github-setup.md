@@ -25,23 +25,26 @@ Align topics with the README, About description, and actual dependencies — not
 
 | Field | Value |
 |-------|-------|
-| Description | Open-source reference stack for an event-driven financial digital twin with embedded compliance monitoring: CDC ingestion, stream processing, policy evaluation, and a tamper-evident audit ledger. |
+| Description | Cutting-edge OSS supervisory financial-compliance digital twin: CDC twin state, Flink CEP, Cedar/Zen policy, XBRL/SDMX reporting, OIDC/TLS/OTel hardening, and immudb audit. |
 | Website | `https://github.com/SafetyMP/Digital-Twin-Compliance#readme` (**applied**) |
-| Topics | See table below (**applied** — 14 topics) |
+| Topics | See table below (**19 topics** — apply after CECT r1) |
 | Social preview | Upload [docs/assets/social-preview.png](./assets/social-preview.png) (1280×640 PNG; export from SVG if needed) — **Settings → General → Social preview** |
 
-**Topics** (14 — purpose, stack, domain):
+**Topics** (19 — purpose, stack, domain; all reflect shipped code):
 
 | Category | Topics |
 |----------|--------|
 | Purpose / architecture | `digital-twin`, `compliance`, `event-driven`, `transactional-outbox` |
-| Industry / domain | `regtech`, `fintech`, `core-banking` |
-| Tech stack | `kafka`, `debezium`, `flink`, `postgresql`, `avro`, `immudb`, `cedar` |
+| Industry / domain | `regtech`, `fintech`, `core-banking`, `xbrl` |
+| Tech stack | `kafka`, `debezium`, `flink`, `postgresql`, `avro`, `immudb`, `cedar`, `oidc`, `keycloak`, `opentelemetry`, `minio` |
 
 Apply from a maintainer shell (replaces the full topic list):
 
 ```bash
-printf '%s' '{"names":["digital-twin","compliance","event-driven","transactional-outbox","regtech","fintech","core-banking","kafka","debezium","flink","postgresql","avro","immudb","cedar"]}' \
+gh repo edit SafetyMP/Digital-Twin-Compliance \
+  --description "Cutting-edge OSS supervisory financial-compliance digital twin: CDC twin state, Flink CEP, Cedar/Zen policy, XBRL/SDMX reporting, OIDC/TLS/OTel hardening, and immudb audit."
+
+printf '%s' '{"names":["digital-twin","compliance","event-driven","transactional-outbox","regtech","fintech","core-banking","xbrl","kafka","debezium","flink","postgresql","avro","immudb","cedar","oidc","keycloak","opentelemetry","minio"]}' \
   | gh api -X PUT repos/SafetyMP/Digital-Twin-Compliance/topics --input -
 ```
 
@@ -187,12 +190,12 @@ export AUDIT_EXPLORER_IMAGE=${PREFIX}/audit-explorer:${TAG}
 
 | File / workflow | Purpose |
 |-----------------|---------|
-| [ci.yml](../.github/workflows/ci.yml) | Unit tests, policy CI, eval fixtures, Compose stack, Phase 1–3 smoke, coverage gates |
+| [ci.yml](../.github/workflows/ci.yml) | Unit tests, policy CI, eval fixtures, Compose stack, Phase 1–4 smoke, coverage gates (Phase 5–7 smokes are local/CECT gates; CI wiring follow-up) |
 | [schema-compat.yml](../.github/workflows/schema-compat.yml) | Avro BACKWARD compatibility |
 | [policy-gates.yml](../.github/workflows/policy-gates.yml) | Cedar/Zen policy CI on PRs touching `policies/**` or policy services (also runs inside `ci.yml`) |
 | [codeql.yml](../.github/workflows/codeql.yml) | Go security analysis (`analyze` job) |
 | [eval-nightly.yml](../.github/workflows/eval-nightly.yml) | Nightly eval fixtures, harness calibration, extended smoke |
-| [docker-publish.yml](../.github/workflows/docker-publish.yml) | GHCR images (state, alert, alert-console, compliance-cep, audit, cedar, decision, audit-explorer) |
+| [docker-publish.yml](../.github/workflows/docker-publish.yml) | GHCR images for Phase 1–4 services (reporting-service / oidc-edge / report-console publish is a follow-up) |
 | [release.yml](../.github/workflows/release.yml) | Version releases on `v*.*.*` tags |
 | [deploy-staging.yml](../.github/workflows/deploy-staging.yml) | Manual SSH staging deploy |
 | [dependabot.yml](../.github/dependabot.yml) | Weekly Go, Actions, and Docker dependency PRs |

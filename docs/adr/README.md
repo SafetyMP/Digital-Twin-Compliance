@@ -14,6 +14,9 @@ Architecture Decision Records for the Financial Digital Twin + Compliance Platfo
 | [008](./008-phase2-foundation-decisions.md) | Phase 2 Foundation Decisions (D10–D14) | Accepted |
 | [009](./009-phase3-foundation-decisions.md) | Phase 3 Foundation Decisions (D15–D20) | Accepted |
 | [010](./010-phase4-foundation-decisions.md) | Phase 4 Foundation Decisions (D21–D24) | Accepted (planning) |
+| [011](./011-phase5-reporting-foundation.md) | Phase 5 Reporting Foundation (D25–D29) | Accepted (planning) |
+| [012](./012-phase6-hardening-foundation.md) | Phase 6 Hardening Foundation (D30–D35) | Accepted (planning) |
+| [013](./013-phase7-cutting-edge-foundation.md) | Phase 7 Cutting-Edge Foundation (D36–D39) | Accepted (planning) |
 
 ## ADR Template
 

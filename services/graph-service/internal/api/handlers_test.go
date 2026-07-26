@@ -27,6 +27,12 @@ func (s *stubStore) ListNodes(context.Context, string, int) ([]graph.Node, error
 func (s *stubStore) ListEdges(context.Context, string, int) ([]graph.Edge, error) {
 	return s.edges, nil
 }
+func (s *stubStore) ShortestPath(_ context.Context, fromID, toID string) (graph.PathResult, error) {
+	return graph.PathResult{FromEntityID: fromID, ToEntityID: toID, Hops: 1, NodeIDs: []string{fromID, toID}}, nil
+}
+func (s *stubStore) DegreeCentrality(context.Context, int) ([]graph.CentralityRow, error) {
+	return []graph.CentralityRow{{EntityID: "e1", Name: "Bank", Degree: 3, Score: 1}}, nil
+}
 
 func TestHealthOK(t *testing.T) {
 	srv := NewServer(&stubStore{})
