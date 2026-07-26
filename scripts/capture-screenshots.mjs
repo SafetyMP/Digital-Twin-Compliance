@@ -1,14 +1,13 @@
 /**
- * Capture README screenshots and demo GIF from console UIs.
+ * Capture README screenshots and demo GIF from all five consoles.
  *
- * Live capture (warm stack with linked alert for Path B GIF frames):
- *   ./scripts/demo-phase3.sh --trigger-alert --restart-policies
+ * Default (warm stack; prefers linked alert detail when available):
  *   npm run screenshots
  *
- * Capture only Phase 4/5 home pages (no alert prerequisite):
+ * Home pages only:
  *   npm run screenshots -- --consoles-only
  *
- * Rebuild GIF only from existing alert/audit PNGs (no browser):
+ * Rebuild GIF from existing PNGs (no browser):
  *   npm run screenshots:rebuild-gif
  *
  * CI: set CI=1 to use bundled Chromium instead of system Chrome.
@@ -37,12 +36,18 @@ const alertDbUrl =
   process.env.ALERT_DB_URL ?? "postgres://alert:alert@localhost:5435/alerts?sslmode=disable";
 
 /** Frame duration in milliseconds (gifenc stores delay/10 as GIF centiseconds). */
-const GIF_FRAME_DELAY_MS = 2_000;
+const GIF_FRAME_DELAY_MS = 1_800;
 
 const gifFrameFiles = [
   { file: "alert-console.png", name: "Alert Console" },
   { file: "audit-explorer.png", name: "Audit Explorer" },
+  { file: "graph-explorer.png", name: "Graph Explorer" },
+  { file: "simulation-console.png", name: "Simulation Console" },
+  { file: "report-console.png", name: "Report Console" },
 ];
+
+const ERROR_TEXT_RE =
+  /(API \d{3}|request failed|failed to load|Reconnecting…|\bRetry\b)/i;
 
 function launchOptions() {
   if (process.env.CI) {
@@ -83,6 +88,11 @@ function discoverLinkedAlert() {
 }
 
 async function writeDemoGif(frames) {
+  if (frames.length !== gifFrameFiles.length) {
+    throw new Error(
+      `demo.gif requires ${gifFrameFiles.length} frames, got ${frames.length}`,
+    );
+  }
   const encoder = GIFEncoder();
   for (const { buffer, name } of frames) {
     const { data, width, height } = PNG.sync.read(buffer);
@@ -94,7 +104,7 @@ async function writeDemoGif(frames) {
   encoder.finish();
   const gifPath = path.join(outDir, "demo.gif");
   await writeFile(gifPath, Buffer.from(encoder.bytes()));
-  console.log(`Captured demo GIF -> docs/assets/demo.gif`);
+  console.log(`Captured demo GIF -> docs/assets/demo.gif (${frames.length} frames)`);
 }
 
 async function rebuildGifFromExisting() {
@@ -108,7 +118,16 @@ async function rebuildGifFromExisting() {
   await writeDemoGif(frames);
 }
 
-async function capturePages(pages, { forGif = false } = {}) {
+async function assertHealthyPage(page, name) {
+  const bodyText = await page.locator("body").innerText();
+  if (ERROR_TEXT_RE.test(bodyText)) {
+    throw new Error(
+      `${name} shows an error state in the screenshot surface. Restore backends (audit/graph/APIs) and retry.\nMatched text excerpt: ${bodyText.slice(0, 240)}`,
+    );
+  }
+}
+
+async function capturePages(pages) {
   await mkdir(outDir, { recursive: true });
 
   const browser = await chromium.launch(launchOptions());
@@ -118,71 +137,79 @@ async function capturePages(pages, { forGif = false } = {}) {
   const page = await context.newPage();
   const gifFrames = [];
 
-  for (const { url, file, name } of pages) {
+  for (const { url, file, name, readySelector } of pages) {
     await page.goto(url, { waitUntil: "networkidle" });
-    await page.waitForTimeout(500);
+    if (readySelector) {
+      await page.waitForSelector(readySelector, { timeout: 30_000 });
+    }
+    await page.waitForTimeout(700);
+    await assertHealthyPage(page, name);
     const buffer = await page.screenshot({ fullPage: false });
     const dest = path.join(outDir, file);
     await writeFile(dest, buffer);
-    if (forGif) {
-      gifFrames.push({ buffer, name });
-    }
+    gifFrames.push({ buffer, name });
     console.log(`Captured ${name} -> docs/assets/${file}`);
   }
 
-  if (forGif && gifFrames.length > 0) {
-    await writeDemoGif(gifFrames);
-  }
+  await writeDemoGif(gifFrames);
   await browser.close();
 }
 
-async function captureConsolesOnly() {
-  await capturePages([
-    { url: `${alertConsoleBase}/`, file: "alert-console.png", name: "Alert Console" },
-    { url: `${auditExplorerBase}/`, file: "audit-explorer.png", name: "Audit Explorer" },
-    { url: `${graphExplorerBase}/`, file: "graph-explorer.png", name: "Graph Explorer" },
+function consoleHomePages({ alertUrl, auditUrl } = {}) {
+  return [
+    {
+      url: alertUrl ?? `${alertConsoleBase}/`,
+      file: "alert-console.png",
+      name: "Alert Console",
+      readySelector: "main h1",
+    },
+    {
+      url: auditUrl ?? `${auditExplorerBase}/`,
+      file: "audit-explorer.png",
+      name: "Audit Explorer",
+      readySelector: "main h1",
+    },
+    {
+      url: `${graphExplorerBase}/`,
+      file: "graph-explorer.png",
+      name: "Graph Explorer",
+      readySelector: "main h1",
+    },
     {
       url: `${simulationConsoleBase}/`,
       file: "simulation-console.png",
       name: "Simulation Console",
+      readySelector: "main h1",
     },
-    { url: `${reportConsoleBase}/`, file: "report-console.png", name: "Report Console" },
-  ]);
+    {
+      url: `${reportConsoleBase}/`,
+      file: "report-console.png",
+      name: "Report Console",
+      readySelector: "main h1",
+    },
+  ];
+}
+
+async function captureConsolesOnly() {
+  await capturePages(consoleHomePages());
 }
 
 async function captureLive() {
   const linked = discoverLinkedAlert();
+  const alertUrl = linked
+    ? `${alertConsoleBase}/alerts/${linked.alertId}`
+    : `${alertConsoleBase}/`;
+  const auditUrl = linked
+    ? `${auditExplorerBase}/entries/${linked.evidenceRef}`
+    : `${auditExplorerBase}/`;
+
   if (!linked) {
-    throw new Error(
-      "No linked alert found. Run ./scripts/demo-phase3.sh --trigger-alert or set ALERT_ID and EVIDENCE_REF. For home-page shots only: npm run screenshots -- --consoles-only",
+    console.warn(
+      "No linked alert found; capturing console home pages. Run ./scripts/demo-phase3.sh --trigger-alert for detail views.",
     );
   }
 
-  await capturePages(
-    [
-      {
-        url: `${alertConsoleBase}/alerts/${linked.alertId}`,
-        file: "alert-console.png",
-        name: "Alert Console",
-      },
-      {
-        url: `${auditExplorerBase}/entries/${linked.evidenceRef}`,
-        file: "audit-explorer.png",
-        name: "Audit Explorer",
-      },
-    ],
-    { forGif: true },
-  );
-
-  await capturePages([
-    { url: `${graphExplorerBase}/`, file: "graph-explorer.png", name: "Graph Explorer" },
-    {
-      url: `${simulationConsoleBase}/`,
-      file: "simulation-console.png",
-      name: "Simulation Console",
-    },
-    { url: `${reportConsoleBase}/`, file: "report-console.png", name: "Report Console" },
-  ]);
+  await capturePages(consoleHomePages({ alertUrl, auditUrl }));
 }
 
 async function main() {
