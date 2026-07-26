@@ -32,7 +32,7 @@ cp .env.example .env
 docker compose -f docker-compose.dev.yml up -d --wait && ./scripts/seed.sh
 ```
 
-Then run phased smoke: [Quick start](#quick-start) (`smoke-test.sh` → … → `smoke-test-phase4.sh`; Phase 5–7 smokes + `./scripts/harness/verify.sh` when those services are up).
+Then run phased smoke: [Quick start](#quick-start) (`smoke-test.sh` → `smoke-test-phase2.sh` → `smoke-test-phase3.sh` → `smoke-test-phase4.sh`; Phase 5–7 smokes + `./scripts/harness/verify.sh` when those services are up).
 
 **Path B — policy + audit demo (warm stack, ~5 min):** [docs/demo-phase3.md](docs/demo-phase3.md)
 
@@ -129,6 +129,9 @@ mock core-banking (PostgreSQL)
                     ▼
             Audit Explorer (Next.js) — chain verify + search
 
+Neo4j + Graph Service (:8093) + Simulation Service (:8094)
+Graph Explorer (:3003) + Simulation Console (:3004) — Phase 4 (dev compose)
+
 Grafana ← Flink / Kafka metrics (Compose)
 ```
 
@@ -137,7 +140,10 @@ Details: [docs/architecture.md](docs/architecture.md) · [docs/data-flow.md](doc
 ## Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/) and Docker Compose v2
-- [Go 1.25+](https://go.dev/dl/) (matches CI; for local service tests)
+- [Go 1.25+](https://go.dev/dl/) (`go.mod`; CI/Docker images use 1.25–1.26 per service)
+- [Node 20](https://nodejs.org/) — Next.js app builds (matches CI)
+- Python 3.11+ — `simulation-service` tests (`pytest`; CI uses system `python3`)
+- Java 17 — Flink CEP job (`jobs/compliance-cep`; matches CI)
 - CLI tools: `curl`, `jq`, `psql` (PostgreSQL client)
 - **Maven not required** — run Flink job unit tests via Docker (see [CONTRIBUTING.md](CONTRIBUTING.md))
 
@@ -386,14 +392,14 @@ Full guide: [docs/deployment.md](docs/deployment.md).
 
 GitHub Actions on every push and pull request ([ci.yml](.github/workflows/ci.yml), job `ci`):
 
-1. `go vet` / `go test ./...` — `state-service`, `alert-service`, `audit-service`, `cedar-service`, `decision-service`
-2. Cedar CLI + `./scripts/run-policy-ci.sh`
+1. `go vet` / `go test ./...` — six Go services including `graph-service`
+2. Python `pytest` — `simulation-service`; Cedar CLI + `./scripts/run-policy-ci.sh`
 3. `mvn test` in `jobs/compliance-cep`; `./scripts/check-kafka-contracts.sh`
 4. Agent worktree / dependency-wave script hygiene (`./scripts/check-agent-worktrees.sh`)
 5. Mechanical live evals (`./scripts/run-live-evals.sh`, `./scripts/run-live-evals-phase2.sh`) and `./scripts/run-eval-fixtures.sh`
-6. Docker Compose stack → seed → Phase 3 service bring-up → schema registration → Debezium → outbox drain → twin pipeline verify
-7. `mvn package`, Next.js builds (`alert-console`, `audit-explorer`), Flink job submit
-8. `./scripts/smoke-test.sh`, `./scripts/smoke-test-phase2.sh`, `./scripts/smoke-test-phase3.sh`
+6. Docker Compose stack → seed → Phase 3/4 service bring-up → schema registration → Debezium → outbox drain → twin pipeline verify
+7. `mvn package`, Next.js builds (`alert-console`, `audit-explorer`, `graph-explorer`, `simulation-console`), Flink job submit
+8. `./scripts/smoke-test.sh`, `./scripts/smoke-test-phase2.sh`, `./scripts/smoke-test-phase3.sh`, `./scripts/smoke-test-phase4.sh`
 9. `./scripts/check-coverage-gates.sh`
 
 Separate workflows:

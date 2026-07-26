@@ -123,6 +123,14 @@ After verification or eval scoring, run `./scripts/token-efficiency.sh --strict`
 
 ## Commands
 
+**Agent Definition of Done (no Docker):**
+
+```bash
+./scripts/verify.sh
+```
+
+Full stack smoke (Docker required) matches `.github/workflows/ci.yml`.
+
 Run from repository root:
 
 ```bash

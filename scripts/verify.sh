@@ -1,11 +1,40 @@
 #!/usr/bin/env bash
-# Site oracle (hermetic early gate). Expanded by later CECT packets.
+# Definition of Done — static checks without Docker, plus CECT hermetic gates.
+# Full CI smoke still needs the compose stack (see AGENTS.md).
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 fail() { echo "verify: FAIL: $*" >&2; exit 1; }
 
+echo "==> publish-check"
+chmod +x scripts/publish-check.sh
+./scripts/publish-check.sh
+
+if [[ -x ./scripts/check-stub-canary.sh ]]; then
+  echo "==> stub canary"
+  ./scripts/check-stub-canary.sh
+fi
+
+echo "==> agent-worktree scripts"
+chmod +x scripts/check-agent-worktrees.sh
+./scripts/check-agent-worktrees.sh
+
+if command -v go >/dev/null 2>&1; then
+  echo "==> go vet (state-service)"
+  (cd services/state-service && go vet ./...)
+  echo "==> go vet (alert-service)"
+  (cd services/alert-service && go vet ./...)
+else
+  echo "skip go vet (go not installed)"
+fi
+
+if [[ -f ./scripts/check-threat-model.sh ]]; then
+  echo "==> threat model gate"
+  bash ./scripts/check-threat-model.sh
+fi
+
+echo "==> CECT hermetic gates (ADR-011/012/013)"
 test -f docs/adr/011-phase5-reporting-foundation.md || fail "missing ADR-011"
 test -x scripts/verify.sh || fail "scripts/verify.sh not executable"
 test -x scripts/adversarial.sh || fail "scripts/adversarial.sh not executable"
@@ -45,5 +74,5 @@ bash -n scripts/smoke-test-phase7-effectiveness.sh scripts/smoke-test-phase7-con
 ./scripts/check-cutting-edge-claims.sh
 ./scripts/smoke-test-phase7-reg2policy.sh
 
-echo "verify: OK (hermetic harness + ADR-011/012/013 + Phase 5–7 scaffolds + claim lint + reg2policy)"
+echo "verify: OK (static parity + CECT hermetic ADR-011/012/013 + claim lint + reg2policy; full smoke needs Docker)"
 exit 0

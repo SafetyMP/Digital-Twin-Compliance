@@ -90,10 +90,10 @@ else
   [[ -d "$cursor/rules" ]] && has_rules=1
   sensitive=()
   for f in hooks.json mcp.json; do
-    [[ -f "$cursor/$f" ]] && sensitive+=("$f")
+    git ls-files --error-unmatch ".cursor/$f" &>/dev/null && sensitive+=("$f")
   done
   has_agents=0
-  [[ -d "$cursor/agents" ]] && has_agents=1
+  git ls-files --error-unmatch .cursor/agents &>/dev/null && has_agents=1
 
   if [[ "$has_rules" -eq 1 && ${#sensitive[@]} -eq 0 && "$has_agents" -eq 0 ]]; then
     ok "agent-harness-cursor" ".cursor/rules/ present; no mcp.json, hooks.json, or agents/"

@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
-# Site adversarial wrapper placeholder for G-CECT-HARNESS / AC-HARNESS-001.
-# Full corporate adversary remains corporate-side after conformance; this stub
-# proves the site argv is wired and exits 0 safely without attacking systems.
+# Site adversarial oracle: hermetic CECT probes always; tier-3 cedar auth deny when stack is up.
 set -euo pipefail
+
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
@@ -26,5 +25,28 @@ if [[ -f "${ROOT}/policies/cedar/proposed-valid.cedar" ]]; then
   exit 1
 fi
 
-echo "adversarial: OK (claim lint + invalid reg2policy shape + no auto-deploy; corporate adversary is separate)"
+echo "adversarial: hermetic OK (claim lint + invalid reg2policy shape + no auto-deploy)"
+
+# Tier-3: cedar-service anonymous evaluate deny (requires warm stack)
+CEDAR="${CEDAR_SERVICE_URL:-http://localhost:8091}"
+log() { echo ""; echo "== adversarial: $* =="; }
+
+if curl -fsS "$CEDAR/api/v1/health" >/dev/null 2>&1; then
+  log "anonymous_cedar_evaluate (expect 401)"
+  code=$(curl -s -o /tmp/dt-adversarial.json -w "%{http_code}" \
+    -X POST "$CEDAR/api/v1/evaluate" \
+    -H "Content-Type: application/json" \
+    -d '{"ruleCode":"BASEL-R001","input":{"lcr":0.9}}')
+  if [[ "$code" != "401" ]]; then
+    echo "adversarial: FAIL: expected HTTP 401 from anonymous evaluate, got ${code}" >&2
+    exit 1
+  fi
+  echo "  ${code} (as expected)"
+  echo ""
+  echo "adversarial: ok (hermetic + cedar 401)"
+else
+  echo "adversarial: skip cedar 401 (cedar-service not running at $CEDAR)"
+  echo "adversarial: ok (hermetic only; corporate adversary is separate)"
+fi
+
 exit 0

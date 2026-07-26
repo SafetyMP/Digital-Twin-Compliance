@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 
 type AuditEntry = {
   entryId: string;
@@ -12,7 +13,8 @@ type AuditEntry = {
   metadata: Record<string, unknown>;
 };
 
-export default function EntryPage({ params }: { params: { entryId: string } }) {
+export default function EntryPage() {
+  const params = useParams<{ entryId: string }>();
   const [entry, setEntry] = useState<AuditEntry | null>(null);
 
   useEffect(() => {
